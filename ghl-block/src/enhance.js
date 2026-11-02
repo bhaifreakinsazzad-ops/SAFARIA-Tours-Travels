@@ -42,6 +42,9 @@
     S.configure({ phone: CFG.phone, source: "ghl-safaria-website" });
     var still = S.reduced(root);
     var mobile = W.matchMedia("(max-width: 767px)").matches;
+    // Visible proof the block loaded: <div id="safaria-site" data-sf-v2="motion|reduced-motion"> plus one console line.
+    root.setAttribute("data-sf-v2", still ? "reduced-motion" : "motion");
+    if (W.console) console.info("[SAFARIA v2] active · " + (still ? "reduced motion: animations off, still globe overlay only" : "motion on") + (mobile ? " · mobile (no 3D)" : ""));
 
     Promise.all([still ? null : imp(CFG.cdn.anime), still ? null : imp(CFG.cdn.motion)]).then(function (m) {
       S.use({ anime: m[0], motion: m[1] });
@@ -76,7 +79,8 @@
             hero art. Lazy, desktop/tablet only, and the 2D canvas is hidden only once WebGL actually runs. */
       safe("globe", function () {
         var hero = root.querySelector(".sf-hero"), art = hero && hero.querySelector(".sf-hero-art");
-        if (!CFG.globe || still || mobile || !art || !S.HeroGlobe.supported()) return;
+        // Under reduced motion the overlay still mounts, but HeroGlobe renders a single still frame (no movement).
+        if (!CFG.globe || mobile || !art || !S.HeroGlobe.supported()) return;
         var GLOBE = { cx: 1080, cy: 418, r: 404, w: 1536, h: 1024 }, FILL = 0.8;   // measured in hero-globe-dhaka.webp
         var host = D.createElement("div");
         host.className = "sf-globe-host";

@@ -1,27 +1,28 @@
 # Session state (auto-saved — last known reality)
 
-_Updated: 2026-11-03 03:49:06_  ·  branch: `master`
+_Updated: 2026-11-03 03:57:58_  ·  branch: `safaria-v2-production-block`
 
 ## Uncommitted changes
 ```
  M .anchor/session-state.md
- M ghl-block/README.md
- M ghl-block/build.js
- M ghl-block/test/make.js
-?? ghl-block/safaria-v2-block.min.html
+ M ghl-block/safaria-motion-block.html
+ M ghl-block/safaria-v2-block.min.html
+ M ghl-block/src/enhance.js
+?? ghl-block/delivery/
 ```
 
 Diff stat:
 ```
- .anchor/session-state.md | 14 +++++++-------
- ghl-block/README.md      |  4 +++-
- ghl-block/build.js       | 19 +++++++++++++++++++
- ghl-block/test/make.js   |  2 +-
- 4 files changed, 30 insertions(+), 9 deletions(-)
+ .anchor/session-state.md            | 25 +++++--------------------
+ ghl-block/safaria-motion-block.html |  6 +++++-
+ ghl-block/safaria-v2-block.min.html |  2 +-
+ ghl-block/src/enhance.js            |  6 +++++-
+ 4 files changed, 16 insertions(+), 23 deletions(-)
 ```
 
 ## Recent commits
 ```
+33ac6f8 Add minified production GHL block for SAFARIA v2
 494ea7e Baseline: SAFARIA v2 design system + GHL block (pre agent-army)
 ```
 
