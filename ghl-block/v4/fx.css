@@ -1,0 +1,129 @@
+/* SAFARIA v4 effects. Wrapped in #safaria-v4 at build time. Transform/opacity/CSS-variable driven only.
+   Scroll variables are written by fx.js: --hp (hero), --ip (element in viewport, -1..1), --on (word), --steps-p, --sv. */
+
+/* hero scroll scrub (variables default to 0, so the page is intact without JS) */
+.sf-hero { --hp: 0; }
+.sf-hero-copy { transform: translate3d(0, calc(var(--hp) * -46px), 0); opacity: calc(1 - var(--hp) * 1.15); will-change: transform, opacity; }
+.sf-hero-stage { transform: translate3d(0, calc(var(--hp) * 28px), 0) scale(calc(1 + var(--hp) * .07)); }
+.sf-hero-art { translate: 0 calc(var(--hp) * 90px); scale: calc(1 + var(--hp) * .06); }
+.sf-hero::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: radial-gradient(60% 50% at 70% 45%, rgba(214,183,121,.14), transparent 70%); opacity: calc(1 - var(--hp)); }
+
+/* split text */
+.sf-w { display: inline-block; overflow: hidden; vertical-align: top; padding: .08em .02em .14em; margin: -.08em -.02em -.14em; }
+.sf-wi, .sf-c { display: inline-block; will-change: transform; }
+.sf-sw { display: inline-block; overflow: visible; padding: 0; margin: 0; opacity: calc(.16 + var(--on, 1) * .84); }
+.sf-sw .sf-wi { will-change: auto; }
+.sf-hero h1 .sf-w { padding-right: .06em; }
+
+/* spotlight on cards, ripple on buttons */
+.sf-destination-card::after, .sf-why-grid article::after, .sf-card::after, .sf-steps li::after, .sf-contact-list a::after, .sf-trial::after, .sf-journey-stops li::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 300ms var(--ease-out);
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 50%), rgba(214,183,121,.16), transparent 62%);
+}
+.sf-destination-card:hover::after, .sf-why-grid article:hover::after, .sf-card:hover::after, .sf-steps li:hover::after, .sf-contact-list a:hover::after, .sf-trial:hover::after, .sf-journey-stops li:hover::after { opacity: 1; }
+.sf-why-grid article, .sf-card, .sf-steps li, .sf-contact-list a, .sf-trial { position: relative; }
+.sf-button, .sf-mini, .sf-chip { position: relative; overflow: hidden; }
+.sf-ripple { position: absolute; border-radius: 50%; background: rgba(255,255,255,.55); pointer-events: none; transform: scale(0); opacity: 0; }
+.sf-button.sf-outline .sf-ripple, .sf-mini .sf-ripple, .sf-chip .sf-ripple { background: rgba(214,183,121,.5); }
+
+/* cursor glow */
+.sf-cursor { position: fixed; left: 0; top: 0; width: 400px; height: 400px; margin: 0; border-radius: 50%; z-index: 65; pointer-events: none; opacity: 0; transition: opacity 400ms; background: radial-gradient(circle, rgba(214,183,121,.11), transparent 62%); mix-blend-mode: screen; will-change: transform; }
+
+/* section rail */
+.sf-rail { position: fixed; right: 18px; top: 50%; z-index: 68; display: grid; gap: 4px; transform: translate3d(14px, -50%, 0); opacity: 0; pointer-events: none; transition: opacity 400ms, transform 500ms var(--ease-out); }
+.sf-rail.sf-on { opacity: 1; transform: translate3d(0, -50%, 0); pointer-events: auto; }
+.sf-rail a { position: relative; display: grid; place-items: center; width: 26px; height: 26px; text-decoration: none; }
+.sf-rail a i { width: 7px; height: 7px; border-radius: 50%; border: 1px solid var(--ink-muted); background: transparent; transition: transform 300ms var(--ease-out), background 300ms, border-color 300ms; }
+.sf-rail a:hover i, .sf-rail a:focus-visible i { transform: scale(1.5); border-color: var(--gold); }
+.sf-rail a[aria-current] i { background: var(--gold); border-color: var(--gold); transform: scale(1.7); box-shadow: 0 0 12px rgba(214,183,121,.6); }
+.sf-rail a span { position: absolute; right: 30px; top: 50%; transform: translate(8px, -50%); padding: 5px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface-200); color: var(--ink); font-size: 11.5px; white-space: nowrap; opacity: 0; pointer-events: none; transition: opacity 200ms, transform 300ms var(--ease-out); }
+.sf-rail a:hover span, .sf-rail a:focus-visible span { opacity: 1; transform: translate(0, -50%); }
+
+/* marquee: speed is constant, skew follows scroll velocity */
+.sf-marquee { --sv: 0; position: relative; overflow: hidden; padding: 20px 0; border-top: 1px solid var(--line); background: var(--surface-000); }
+.sf-marquee-skew { transform: skewX(calc(var(--sv) * -9deg)); }
+.sf-marquee-track { display: flex; align-items: center; gap: 28px; width: max-content; animation: sf-marquee 90s linear infinite; font: italic 500 clamp(30px, 5vw, 56px)/1 var(--font-display); color: transparent; -webkit-text-stroke: 1px var(--line-strong); }
+.sf-marquee-track span { white-space: nowrap; }
+.sf-marquee-track i { font-style: normal; font-size: .4em; color: var(--gold); -webkit-text-stroke: 0; }
+.sf-marquee-track span:nth-of-type(3n) { color: var(--gold); -webkit-text-stroke: 0; opacity: .8; }
+@keyframes sf-marquee { to { transform: translate3d(-50%, 0, 0); } }
+
+/* decorative orbs and image parallax */
+.sf-orbhost { overflow: clip; }
+.sf-orb { position: absolute; z-index: 0; border-radius: 50%; pointer-events: none; --ip: 0; filter: blur(8px); }
+.sf-orb-a { width: min(46vw, 520px); height: min(46vw, 520px); right: -12%; top: 6%; background: radial-gradient(circle, rgba(214,183,121,.16), transparent 66%); translate: 0 calc(var(--ip) * -90px); }
+.sf-orb-b { width: min(38vw, 420px); height: min(38vw, 420px); left: -10%; bottom: 0; background: radial-gradient(circle, rgba(10,90,69,.5), transparent 66%); translate: 0 calc(var(--ip) * 70px); }
+.sf-orbhost > .sf-wrap, .sf-orbhost > .sf-pricing { position: relative; z-index: 1; }
+.sf-par { --ip: 0; translate: 0 calc(var(--ip) * -5%); scale: 1.14; will-change: translate; }
+
+/* steps: gold line follows the scroll */
+.sf-steps { position: relative; --steps-p: 0; }
+.sf-steps::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--gold); transform-origin: 0 50%; transform: scaleX(var(--steps-p)); z-index: 1; }
+@media (max-width: 900px) { .sf-steps::before { right: auto; width: 2px; height: 100%; transform-origin: 50% 0; transform: scaleY(var(--steps-p)); } }
+
+/* journey: pinned stage, scroll picks the stop, the globe flies the route */
+.sf-section.sf-journey { padding: 0; background: radial-gradient(70% 60% at 80% 40%, rgba(10,90,69,.45), transparent 70%), var(--surface-000); }
+.sf-journey-track { position: relative; height: 380vh; }
+.sf-journey-stage { position: sticky; top: 0; height: 100vh; height: 100svh; min-height: 560px; display: flex; align-items: center; padding-top: 76px; box-sizing: border-box; overflow: hidden; }
+.sf-journey-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: clamp(24px, 5vw, 80px); align-items: center; }
+.sf-journey-copy h2 { font-size: clamp(36px, 4.6vw, 64px); }
+.sf-journey-lead { margin-top: var(--space-4); max-width: 480px; }
+.sf-journey-stops { list-style: none; margin: var(--space-5) 0 var(--space-4); padding: 0; display: grid; gap: 10px; }
+.sf-journey-stops li { position: relative; display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: center; padding: 14px 18px; border: 1px solid var(--line); border-radius: var(--radius-md); cursor: pointer; overflow: hidden; opacity: .5; transform: translate3d(0, 0, 0) scale(.985); transition: opacity 400ms var(--ease-out), transform 500ms var(--ease-out), border-color 400ms, background 400ms; }
+.sf-journey-stops li b { font: 600 20px/1 var(--font-display); letter-spacing: .08em; color: var(--ink-muted); transition: color 400ms; }
+.sf-journey-stops li h3 { font: 500 22px/1.1 var(--font-display); }
+.sf-journey-stops li p { font-size: 13px; color: var(--ink-muted); margin-top: 3px; display: none; }
+.sf-journey-stops li[data-state="on"] { opacity: 1; transform: translate3d(10px, 0, 0); border-color: var(--gold); background: rgba(214,183,121,.07); }
+.sf-journey-stops li[data-state="on"] b { color: var(--gold); }
+.sf-journey-stops li[data-state="on"] p { display: block; }
+.sf-journey-stops li[data-state="done"] { opacity: .75; }
+.sf-journey-meter { height: 2px; background: var(--line); border-radius: 2px; overflow: hidden; margin: var(--space-4) 0 var(--space-5); max-width: 420px; }
+.sf-journey-meter i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi)); transform: scaleX(0); transform-origin: 0 50%; }
+.sf-journey-visual { position: relative; min-width: 0; }
+.sf-journey-globe { max-width: min(640px, 70vh); }
+.sf-journey-readout { position: absolute; left: 50%; bottom: -2%; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; padding: 10px 22px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--scrim); backdrop-filter: blur(8px); font: 600 24px/1 var(--font-display); letter-spacing: .08em; margin: 0; }
+.sf-journey-readout .sf-icon { color: var(--gold); transform: rotate(90deg); }
+.sf-journey-readout b { display: inline-block; min-width: 3ch; color: var(--gold); }
+&.sf-nogl .sf-journey-visual, &.sf-jnogl .sf-journey-visual { display: none; }
+&.sf-nogl .sf-journey-grid, &.sf-jnogl .sf-journey-grid { grid-template-columns: 1fr; }
+&.sf-nogl .sf-journey-track, &.sf-jnogl .sf-journey-track, &[data-sf-v4="reduced-motion"] .sf-journey-track { height: auto; }
+&.sf-nogl .sf-journey-stage, &.sf-jnogl .sf-journey-stage, &[data-sf-v4="reduced-motion"] .sf-journey-stage { position: static; height: auto; min-height: 0; padding: clamp(64px, 9vw, 112px) 0; }
+&[data-sf-v4="reduced-motion"] .sf-journey-stops li, &.sf-nogl .sf-journey-stops li, &.sf-jnogl .sf-journey-stops li { opacity: 1; transform: none; cursor: default; }
+&[data-sf-v4="reduced-motion"] .sf-journey-stops li p, &.sf-nogl .sf-journey-stops li p, &.sf-jnogl .sf-journey-stops li p { display: block; }
+&[data-sf-v4="reduced-motion"] .sf-journey-meter, &[data-sf-v4="reduced-motion"] .sf-journey-readout, &.sf-nogl .sf-journey-meter, &.sf-jnogl .sf-journey-meter { display: none; }
+&[data-sf-v4="reduced-motion"] .sf-journey-visual { max-width: 520px; }
+
+@media (max-width: 900px) {
+  .sf-journey-track { height: 340vh; }
+  .sf-journey-stage { padding-top: 64px; align-items: flex-start; }
+  .sf-journey-grid { grid-template-columns: 1fr; gap: 0; align-content: start; }
+  .sf-journey-visual { order: -1; margin: 0 auto; width: min(78vw, 42svh); }
+  .sf-journey-globe { max-width: 100%; }
+  .sf-journey-readout { font-size: 18px; padding: 8px 16px; bottom: -6%; }
+  .sf-journey-copy { padding-top: 22px; }
+  .sf-journey-copy h2 { font-size: clamp(28px, 8vw, 38px); }
+  .sf-journey-lead { display: none; }
+  .sf-journey-stops { margin: var(--space-3) 0; gap: 6px; }
+  .sf-journey-stops li { grid-template-columns: 52px 1fr; padding: 10px 14px; }
+  .sf-journey-stops li:not([data-state="on"]) { display: none; }
+  .sf-journey-stops li[data-state="on"] { transform: none; }
+  .sf-journey-meter { margin: var(--space-3) 0; }
+  .sf-journey-copy .sf-note { display: none; }
+  .sf-journey-cta { width: 100%; }
+  &[data-sf-v4="reduced-motion"] .sf-journey-lead, &.sf-nogl .sf-journey-lead, &.sf-jnogl .sf-journey-lead { display: block; }
+  &[data-sf-v4="reduced-motion"] .sf-journey-stops li, &.sf-nogl .sf-journey-stops li, &.sf-jnogl .sf-journey-stops li { display: grid; }
+  &[data-sf-v4="reduced-motion"] .sf-journey-copy .sf-note { display: block; }
+  .sf-hero-copy { transform: translate3d(0, calc(var(--hp) * -24px), 0); }
+  .sf-hero-stage { transform: translate3d(0, calc(var(--hp) * 14px), 0) scale(calc(1 + var(--hp) * .04)); }
+  .sf-orb { opacity: .6; }
+}
+@media (max-width: 1199px) { .sf-rail { display: none; } }
+@media (hover: none), (pointer: coarse) { .sf-cursor, .sf-rail { display: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .sf-hero-copy, .sf-hero-stage, .sf-hero-art { transform: none; translate: none; scale: none; opacity: 1; }
+  .sf-hero-art.sf-loaded { opacity: var(--art); }
+  .sf-marquee-track { animation: none; } .sf-marquee-skew { transform: none; }
+  .sf-par { translate: none; scale: none; } .sf-orb { translate: none; }
+  .sf-sw { opacity: 1; } .sf-cursor, .sf-rail { display: none; }
+  .sf-steps::before { transform: none; }
+}
