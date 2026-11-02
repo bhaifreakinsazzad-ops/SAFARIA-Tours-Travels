@@ -1,0 +1,3 @@
+const http = require("http"), fs = require("fs"), path = require("path");
+const dir = __dirname, port = +process.argv[2] || 5179;
+http.createServer((q, r) => { const f = path.join(dir, decodeURIComponent(q.url.split("?")[0]) === "/" ? "site.html" : decodeURIComponent(q.url.split("?")[0])); if (!f.startsWith(dir) || !fs.existsSync(f)) { r.writeHead(404); return r.end(); } r.writeHead(200, { "content-type": ({ ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript" })[path.extname(f)] || "application/octet-stream" }); fs.createReadStream(f).pipe(r); }).listen(port, () => console.log("http://localhost:" + port));

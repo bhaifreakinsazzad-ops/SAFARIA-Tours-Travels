@@ -1,0 +1,18 @@
+<!-- @dsCard group="Actions" height=200 subtitle="Gold primary, outline secondary, emerald (day), chips" -->
+<div class="sf-scope" style="padding:28px;display:grid;gap:18px">
+  <div style="display:flex;flex-wrap:wrap;gap:12px">
+    <a class="sf-button sf-gold" href="#" data-sf-magnetic>Request a flight quote <svg class="sf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+    <a class="sf-button sf-outline" href="#">Explore travel services</a>
+    <a class="sf-button sf-emerald" href="#">Apply for partnership</a>
+    <button class="sf-button sf-gold" disabled>Sending…</button>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:8px" role="group" aria-label="Trip type">
+    <button class="sf-chip" aria-pressed="true">Round-trip</button><button class="sf-chip" aria-pressed="false">One-way</button><button class="sf-chip" aria-pressed="false">Multi-city</button>
+  </div>
+</div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+Safaria.Motion.pointer(document);
+document.querySelectorAll(".sf-chip").forEach(b => b.addEventListener("click", () => document.querySelectorAll(".sf-chip").forEach(x => x.setAttribute("aria-pressed", String(x === b)))));
+</script>

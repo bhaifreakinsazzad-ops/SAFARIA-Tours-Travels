@@ -1,0 +1,19 @@
+<!-- @dsCard group="Content" height=660 subtitle="All 32 enquiry destinations from Dhaka; filter chips; tilt on hover" -->
+<div class="sf-scope" style="padding:28px">
+  <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px" role="group" aria-label="Filter destinations">
+    <button class="sf-chip" data-r="all" aria-pressed="true">All</button><button class="sf-chip" data-r="domestic" aria-pressed="false">Domestic</button><button class="sf-chip" data-r="international" aria-pressed="false">International</button>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-bottom:16px">
+    <a class="sf-destination-card sf-has-photo" href="#" data-sf-tilt><img src="/_blob/fb03e6dc50871c5191b175dae32a63da" alt="Istanbul at sunset"><span class="sf-code">IST</span><p class="sf-eyebrow">Türkiye</p><h3>Istanbul</h3><p>Request a quote from Dhaka</p></a>
+    <a class="sf-destination-card sf-has-photo" href="#" data-sf-tilt><img src="/_blob/3047add2cdd0c0a348f2a8b36e71c542" alt="Green hills, a coastal road and a golden bay"><span class="sf-code">CXB</span><p class="sf-eyebrow">Domestic</p><h3>Cox's Bazar</h3><p>Request a quote from Dhaka</p></a>
+  </div>
+  <div class="sf-destination-grid" id="grid"></div>
+  <p class="sf-note">Destinations are enquiry options. Routes and airlines are confirmed in your quotation.</p>
+</div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+const grid = Safaria.DestinationGrid.render(document.getElementById("grid"));
+Safaria.Motion.pointer(document);
+document.querySelectorAll("[data-r]").forEach(b => b.addEventListener("click", () => { document.querySelectorAll("[data-r]").forEach(x => x.setAttribute("aria-pressed", String(x === b))); grid.filter(b.dataset.r); }));
+</script>

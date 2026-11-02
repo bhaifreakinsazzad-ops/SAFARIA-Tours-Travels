@@ -1,0 +1,11 @@
+<!-- @dsCard group="Content" height=340 subtitle="FAQ on native details/summary; animated height, keyboard-native" -->
+<div class="sf-scope sf-accordions" style="padding:28px" id="faq">
+  <details open><summary>Is my enquiry a confirmed booking?<svg class="sf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="sf-answer">No. A SAFARIA agent checks availability and fares, then sends you a verified quotation. Your booking is confirmed only after you approve the quote and pay.</div></details>
+  <details><summary>Do you guarantee visa approval?<svg class="sf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="sf-answer">No. We help with documents and coordination. Decisions are made by the relevant government or immigration authority.</div></details>
+  <details><summary>How do I reach a person?<svg class="sf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><div class="sf-answer">WhatsApp, call or SMS the SAFARIA number, or submit the quote form and we'll contact you.</div></details>
+</div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+Safaria.Accordion.mount(document.getElementById("faq"));
+</script>

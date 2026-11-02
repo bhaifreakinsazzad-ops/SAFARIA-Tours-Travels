@@ -1,0 +1,174 @@
+@import url("https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Hind+Siliguri:wght@400;500;600&display=swap");
+
+/* SAFARIA v2 components.
+   Every rule is wrapped in :where(), so its specificity is zero and the live site's
+   own #safaria-site rules always win. The new sf-* components (quote, dock, globe3d,
+   drawer, chips, reveal states) don't exist on the site, so they apply cleanly. */
+
+:where(#safaria-site, .sf-scope) { font: 400 16px/1.65 var(--font-sans); color: var(--ink); background: var(--surface-000); -webkit-font-smoothing: antialiased; }
+:where(#safaria-site, .sf-scope)[lang="bn"] { font-family: var(--font-bengali); line-height: 1.8; }
+:where(.sf-scope) *, :where(.sf-scope) ::before, :where(.sf-scope) ::after { box-sizing: border-box; }
+:where(.sf-scope) :where(h1, h2, h3, p, figure, ol, ul) { margin: 0; }
+:where(.sf-scope) :where(button, input, select, textarea) { font: inherit; color: inherit; }
+:where(.sf-scope) a { color: inherit; text-decoration: none; }
+:where(#safaria-site, .sf-scope) :where(a, button, summary, input, select, textarea, [tabindex]):focus-visible { outline: 3px solid var(--focus); outline-offset: 5px; border-radius: var(--radius-xs); }
+
+/* Headings */
+:where(.sf-scope) :where(h1, h2, .sf-display) { font-family: var(--font-display); font-weight: 500; letter-spacing: -0.035em; line-height: 1.08; }
+:where(.sf-scope) h1 { font-size: clamp(54px, 6.1vw, 84px); }
+:where(.sf-scope) h2 { font-size: clamp(38px, 4vw, 58px); }
+:where(.sf-scope)[lang="bn"] :where(h1, h2) { font-family: var(--font-bengali); line-height: 1.4; }
+:where(.sf-scope) h2 em, :where(.sf-scope) h1 em { font-style: italic; color: var(--gold); }
+:where(.sf-scope) .sf-lead { font-size: 17px; line-height: 1.7; max-width: 470px; color: var(--ink); opacity: .93; }
+:where(.sf-scope) .sf-eyebrow { display: flex; align-items: center; gap: 15px; text-transform: uppercase; letter-spacing: .19em; font-size: 11px; font-weight: 600; color: var(--ink-muted); margin-bottom: 20px; }
+:where(.sf-scope) .sf-eyebrow::after { content: ""; height: 1px; width: 42px; background: var(--gold); }
+:where(.sf-scope) .sf-wrap { width: min(var(--wrap-max), 100% - var(--space-9)); margin-inline: auto; position: relative; }
+:where(.sf-scope) .sf-icon { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+/* Buttons */
+:where(#safaria-site, .sf-scope) :where(.sf-button) { display: inline-flex; justify-content: center; align-items: center; gap: var(--space-3); min-height: var(--button-h); padding: 14px 23px; border-radius: var(--radius-btn); font-size: 13px; font-weight: 600; line-height: 1.5; border: 1px solid transparent; cursor: pointer; position: relative; transition: box-shadow var(--dur-short), background var(--dur-short), border-color var(--dur-short), transform var(--dur-micro) var(--ease-out); }
+:where(.sf-scope) .sf-button:active { transform: scale(.98); }
+:where(.sf-scope) .sf-button[disabled], :where(.sf-scope) .sf-button[aria-disabled="true"] { opacity: .45; cursor: not-allowed; }
+:where(.sf-scope) .sf-gold { background: linear-gradient(120deg, var(--gold-hi), var(--gold-lo)); color: var(--on-gold); border-color: #dabc80; box-shadow: var(--shadow-btn); }
+:where(.sf-scope) .sf-gold:hover { box-shadow: var(--shadow-btn-hover); background: linear-gradient(120deg, #f6dfb0, #dfc28b); }
+:where(.sf-scope) .sf-outline { border-color: var(--line-strong); background: transparent; color: var(--ink); }
+:where(.sf-scope) .sf-outline:hover { background: rgba(207,181,124,.08); border-color: var(--gold); }
+:where(#safaria-site, .sf-scope) :where(.sf-emerald) { background: var(--emerald); color: var(--ivory); border-color: var(--emerald); }
+:where(#safaria-site, .sf-scope) :where(.sf-emerald:hover) { background: #075c46; }
+:where(#safaria-site, .sf-scope) :where(.sf-chip) { display: inline-flex; align-items: center; gap: var(--space-2); min-height: var(--touch-min); padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--scrim); color: var(--ink); font-size: 12px; cursor: pointer; transition: background var(--dur-short), border-color var(--dur-short), color var(--dur-short); }
+:where(#safaria-site, .sf-scope) :where(.sf-chip[aria-pressed="true"]) { background: var(--gold); border-color: var(--gold); color: var(--on-gold); }
+[data-theme="day"] :where(.sf-chip) { background: var(--surface-200); }
+[data-theme="day"] :where(.sf-chip[aria-pressed="true"]) { color: var(--ivory); }
+
+/* Header */
+:where(.sf-scope) .sf-header { position: sticky; top: 0; z-index: var(--z-header); transition: background var(--dur-short), box-shadow var(--dur-short); }
+:where(.sf-scope) .sf-header.sf-compact { background: var(--surface-000); box-shadow: var(--shadow-header); }
+:where(.sf-scope) .sf-header-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); min-height: 84px; }
+:where(.sf-scope) .sf-brand { display: flex; align-items: center; gap: var(--space-3); }
+:where(.sf-scope) .sf-brand img { width: 56px; height: 56px; }
+:where(.sf-scope) .sf-brand-name { font-family: var(--font-display); font-size: 24px; font-weight: 600; letter-spacing: .04em; line-height: 1.1; }
+:where(.sf-scope) .sf-brand-name small { display: block; font: 600 8px/1 var(--font-sans); letter-spacing: .32em; color: var(--gold); margin-top: 4px; }
+:where(.sf-scope) .sf-nav { display: flex; gap: var(--space-5); font-size: 13px; }
+:where(.sf-scope) .sf-nav a { position: relative; padding: 10px 0; color: var(--ink-muted); transition: color var(--dur-short); }
+:where(.sf-scope) .sf-nav a:hover, :where(.sf-scope) .sf-nav a[aria-current="page"] { color: var(--ink); }
+:where(.sf-scope) .sf-nav a[aria-current="page"]::after { content: ""; position: absolute; left: 0; right: 0; bottom: 2px; height: 1px; background: var(--gold); }
+:where(.sf-scope) .sf-header-actions { display: flex; align-items: center; gap: var(--space-2); }
+:where(.sf-scope) .sf-burger { display: none; width: var(--touch-min); height: var(--touch-min); place-items: center; border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: none; }
+
+/* Drawer (mobile nav) */
+:where(#safaria-site, .sf-scope) :where(.sf-drawer) { position: fixed; inset: 0 0 0 auto; width: min(360px, 88vw); z-index: var(--z-dialog); background: var(--surface-100); border-left: 1px solid var(--line); padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: var(--space-2); transform: translateX(100%); visibility: hidden; }
+:where(#safaria-site, .sf-scope) :where(.sf-drawer[data-open="true"]) { transform: none; visibility: visible; }
+:where(#safaria-site, .sf-scope) :where(.sf-drawer a) { min-height: var(--touch-min); display: flex; align-items: center; border-bottom: 1px solid var(--line); font-size: 16px; }
+:where(#safaria-site, .sf-scope) :where(.sf-veil) { position: fixed; inset: 0; z-index: calc(var(--z-dialog) - 1); background: rgba(3,19,15,.6); opacity: 0; visibility: hidden; }
+:where(#safaria-site, .sf-scope) :where(.sf-veil[data-open="true"]) { opacity: 1; visibility: visible; }
+
+/* Service list */
+:where(.sf-scope) .sf-service-list a { display: grid; grid-template-columns: 26px 1fr 20px; gap: var(--space-4); align-items: center; padding: 17px 0; border-bottom: 1px solid var(--line); }
+:where(.sf-scope) .sf-service-list a > .sf-icon { color: var(--gold); width: 26px; height: 26px; transition: transform var(--dur-short) var(--ease-out); }
+:where(.sf-scope) .sf-service-list a > .sf-icon:last-child { width: 19px; color: var(--ink-muted); }
+:where(.sf-scope) .sf-service-list a:hover > .sf-icon:last-child { transform: translateX(4px); color: var(--gold); }
+:where(.sf-scope) .sf-service-list strong { display: block; font-weight: 500; font-size: 18px; transition: color var(--dur-short); }
+:where(.sf-scope) .sf-service-list a:hover strong { color: var(--gold); }
+:where(.sf-scope) .sf-service-list small { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 4px; }
+:where(.sf-scope) .sf-service-list .sf-primary strong::after { content: "Primary"; margin-left: 10px; padding: 2px 8px; border: 1px solid var(--gold); border-radius: var(--radius-pill); font: 600 9px/1.6 var(--font-sans); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); vertical-align: 3px; }
+
+/* Destination cards */
+:where(.sf-scope) .sf-destination-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: var(--space-4); }
+:where(.sf-scope) .sf-destination-card { position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-200); padding: var(--space-5); min-height: 170px; display: flex; flex-direction: column; justify-content: flex-end; transition: border-color var(--dur-short); transform-style: preserve-3d; }
+:where(.sf-scope) .sf-destination-card:hover { border-color: var(--gold); }
+:where(.sf-scope) .sf-destination-card .sf-eyebrow { font-size: 10px; margin: 0; color: var(--gold); }
+:where(.sf-scope) .sf-destination-card h3 { font: 500 27px/1.15 var(--font-display); margin: 14px 0 4px; }
+:where(.sf-scope) .sf-destination-card p { font-size: 13px; color: var(--ink-muted); }
+:where(.sf-scope) .sf-destination-card .sf-code { position: absolute; top: 14px; right: 16px; font: 600 11px/1 var(--font-sans); letter-spacing: .18em; color: var(--ink-muted); }
+:where(.sf-scope) .sf-destination-card.sf-has-photo { min-height: 240px; color: var(--ivory); border-color: transparent; }
+:where(.sf-scope) .sf-destination-card.sf-has-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; }
+:where(.sf-scope) .sf-destination-card.sf-has-photo::before { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(180deg, transparent 30%, rgba(4,23,19,.92)); }
+:where(.sf-scope) .sf-destination-card.sf-has-photo > :not(img) { position: relative; z-index: 2; }
+:where(.sf-scope) .sf-destination-card.sf-has-photo p { color: #d8e3db; }
+:where(.sf-scope) .sf-note { font-size: 12px; color: var(--ink-muted); margin-top: var(--space-4); }
+
+/* Pricing (B2B) */
+:where(.sf-scope) .sf-billing-toggle { display: inline-flex; gap: 4px; border: 1px solid var(--line); padding: 4px; border-radius: 8px; background: var(--scrim); }
+:where(.sf-scope) .sf-billing-toggle button { min-height: var(--touch-min); padding: 9px 24px; font-size: 13px; border-radius: 5px; border: 0; background: none; color: var(--ink-muted); cursor: pointer; }
+:where(.sf-scope) .sf-billing-toggle button[aria-pressed="true"] { background: var(--gold); color: var(--on-gold); font-weight: 600; }
+:where(.sf-scope) .sf-prices { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-4); margin-top: var(--space-5); }
+:where(.sf-scope) .sf-price { border: 1px solid var(--line-strong); border-radius: var(--radius-md); padding: 22px 24px; min-height: 145px; background: linear-gradient(130deg, rgba(8,43,37,.92), rgba(4,23,19,.71)); transition: border-color var(--dur-short), box-shadow var(--dur-short); }
+[data-theme="day"] :where(.sf-scope) .sf-price, :where(.sf-scope)[data-theme="day"] .sf-price { background: var(--surface-200); }
+:where(.sf-scope) .sf-price.sf-selected { border-color: var(--gold); box-shadow: var(--shadow-selected); }
+:where(.sf-scope) .sf-price h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-muted); font-weight: 400; margin-bottom: 12px; }
+:where(.sf-scope) .sf-price strong { display: block; font: 500 40px/1 var(--font-display); }
+:where(.sf-scope) .sf-price small { display: block; font-size: 12px; color: var(--ink-muted); margin-top: 8px; }
+:where(.sf-scope) .sf-trial { display: grid; grid-template-columns: auto 1fr auto; gap: var(--space-5); align-items: center; padding: 22px 25px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface-100); margin-top: var(--space-4); }
+:where(.sf-scope) .sf-fine { font-size: 12px; color: var(--ink-muted); line-height: 1.6; margin-top: var(--space-4); max-width: 640px; }
+
+/* Accordion */
+:where(.sf-scope) .sf-accordions details { border: 1px solid var(--line); border-radius: var(--radius-sm); margin-bottom: 11px; background: rgba(4,23,19,.44); }
+[data-theme="day"] :where(.sf-scope) .sf-accordions details, :where(.sf-scope)[data-theme="day"] .sf-accordions details { background: var(--surface-200); }
+:where(.sf-scope) .sf-accordions summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: var(--space-4); min-height: 56px; padding: 14px 20px; font-weight: 500; }
+:where(.sf-scope) .sf-accordions summary::-webkit-details-marker { display: none; }
+:where(.sf-scope) .sf-accordions summary .sf-icon { color: var(--gold); transition: transform var(--dur-short) var(--ease-out); }
+:where(.sf-scope) .sf-accordions details[open] summary .sf-icon { transform: rotate(180deg); }
+:where(.sf-scope) .sf-accordions .sf-answer { padding: 0 20px 18px; color: var(--ink-muted); font-size: 14px; }
+
+/* Flight quote */
+:where(#safaria-site, .sf-scope) :where(.sf-quote) { border: 1px solid var(--line-strong); border-radius: var(--radius-lg); background: var(--surface-200); padding: clamp(20px, 4vw, 40px); box-shadow: var(--shadow-panel); color: var(--ink); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-progress) { display: flex; gap: var(--space-2); margin-bottom: var(--space-5); list-style: none; padding: 0; counter-reset: q; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-progress li) { flex: 1; font-size: 12px; color: var(--ink-muted); padding-top: 10px; border-top: 2px solid var(--line); counter-increment: q; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-progress li)::before { content: counter(q) " · "; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-progress li[aria-current="step"]) { color: var(--ink); border-color: var(--gold); font-weight: 600; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-progress li.sf-done) { border-color: var(--gold); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-step[hidden]) { display: none; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-grid) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-full) { grid-column: 1 / -1; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-field label, .sf-q-legend) { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-field :is(input, select, textarea)) { display: block; width: 100%; min-height: 48px; padding: 11px 13px; color: var(--ink); background: var(--surface-input); border: 1px solid var(--line-strong); border-radius: 8px; transition: border-color var(--dur-short); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-field textarea) { min-height: 96px; resize: vertical; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-field [aria-invalid="true"]) { border-color: var(--danger); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-error) { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--danger); margin-top: 6px; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-error:empty) { display: none; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-segment) { display: flex; flex-wrap: wrap; gap: var(--space-2); border: 0; padding: 0; margin: 0 0 var(--space-4); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-stepper) { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); border: 1px solid var(--line-strong); border-radius: 8px; padding: 4px 4px 4px 13px; background: var(--surface-input); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-stepper button) { width: var(--touch-min); height: var(--touch-min); border: 1px solid var(--line); border-radius: var(--radius-sm); background: none; font-size: 18px; cursor: pointer; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-stepper output) { min-width: 2ch; text-align: center; font-weight: 600; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-actions) { display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between; margin-top: var(--space-5); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-summary) { white-space: pre-wrap; font: 400 14px/1.8 var(--font-sans); background: var(--surface-input); border: 1px solid var(--line); border-radius: 10px; padding: var(--space-5); overflow-wrap: anywhere; }
+:where(#safaria-site, .sf-scope) :where(.sf-q-done) { display: flex; gap: var(--space-2); align-items: center; color: var(--success); font-weight: 600; margin-bottom: var(--space-4); }
+:where(#safaria-site, .sf-scope) :where(.sf-q-privacy) { font-size: 12px; color: var(--ink-muted); margin-top: var(--space-4); }
+
+/* Mobile contact dock */
+:where(#safaria-site, .sf-scope) :where(.sf-dock) { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-dock); display: none; grid-template-columns: 1fr 1fr 1.4fr; gap: var(--space-2); padding: 10px 16px calc(10px + env(safe-area-inset-bottom)); background: rgba(4,23,19,.94); border-top: 1px solid var(--line); backdrop-filter: blur(10px); }
+:where(#safaria-site, .sf-scope) :where(.sf-dock a) { min-height: var(--touch-min); display: flex; align-items: center; justify-content: center; gap: 6px; border: 1px solid var(--line-strong); border-radius: var(--radius-btn); font-size: 13px; font-weight: 600; color: var(--ivory); }
+:where(#safaria-site, .sf-scope) :where(.sf-dock a.sf-gold) { background: linear-gradient(120deg, var(--gold-hi), var(--gold-lo)); color: var(--on-gold); border-color: transparent; }
+:where(.sf-scope) .sf-dock.sf-demo { position: static; display: grid; }
+
+/* Footer credits */
+:where(.sf-scope) .sf-footer { background: var(--surface-footer); border-top: 1px solid var(--line); padding: 32px 0 40px; }
+:where(.sf-scope) .sf-footer-top { display: flex; flex-wrap: wrap; gap: var(--space-6); align-items: center; justify-content: space-between; }
+:where(.sf-scope) .sf-credits { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); margin-top: var(--space-5); font-size: 12px; color: var(--ink-faint); }
+:where(.sf-scope) .sf-credits strong { display: block; color: var(--ink); font-weight: 500; font-size: 13px; }
+:where(.sf-scope) .sf-footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--space-4); border-top: 1px solid var(--line); padding-top: var(--space-5); margin-top: var(--space-5); font-size: 11px; color: var(--ink-faint); }
+:where(.sf-scope) .sf-footer-bottom a { text-decoration: underline; text-underline-offset: 3px; }
+
+/* 3D globe */
+:where(#safaria-site, .sf-scope) :where(.sf-globe3d) { position: absolute; inset: 0; pointer-events: none; z-index: var(--z-canvas); }
+:where(#safaria-site, .sf-scope) :where(.sf-globe3d canvas) { width: 100% !important; height: 100% !important; display: block; }
+:where(#safaria-site, .sf-scope) :where(.sf-illustrative) { position: absolute; right: 16px; bottom: 12px; font-size: 10px; letter-spacing: .08em; color: var(--ink-muted); background: var(--scrim); border: 1px solid var(--line); border-radius: var(--radius-pill); padding: 4px 10px; pointer-events: none; }
+
+/* Motion states: the hidden starting state is set only by JS, so content is never hidden without it */
+:where(#safaria-site, .sf-scope) :where([data-sf-wipe]) { overflow: hidden; }
+
+@media (max-width: 900px) {
+  :where(.sf-scope) .sf-nav, :where(.sf-scope) .sf-header-actions .sf-hide-sm { display: none; }
+  :where(.sf-scope) .sf-burger { display: grid; }
+}
+@media (max-width: 767px) {
+  :where(#safaria-site, .sf-scope) :where(.sf-dock) { display: grid; }
+  :where(.sf-scope) .sf-wrap { width: calc(100% - 32px); }
+  :where(.sf-scope) h1 { font-size: 48px; }
+  :where(#safaria-site, .sf-scope) :where(.sf-q-grid) { grid-template-columns: 1fr; }
+  :where(.sf-scope) .sf-trial { grid-template-columns: 1fr; }
+  :where(.sf-scope) .sf-service-list strong { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(#safaria-site, .sf-scope) *, :where(#safaria-site, .sf-scope) ::before, :where(#safaria-site, .sf-scope) ::after { transition-duration: 1ms !important; animation-duration: 1ms !important; }
+}

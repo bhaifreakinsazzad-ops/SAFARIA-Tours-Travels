@@ -1,0 +1,11 @@
+<!-- @dsCard group="Foundations" height=240 subtitle="Eyebrow + display h2 + lead, revealed on scroll" -->
+<section class="sf-scope" style="padding:36px 32px">
+  <p class="sf-eyebrow" data-sf-reveal>B2B agency programme</p>
+  <h2 data-sf-reveal>Your agency. <em>Our travel operations.</em></h2>
+  <p class="sf-lead" data-sf-reveal style="margin-top:20px">Request ticketing support, fare sourcing and booking coordination for your customers, handled by a team that answers.</p>
+</section>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+Safaria.Motion.reveal(document);
+</script>

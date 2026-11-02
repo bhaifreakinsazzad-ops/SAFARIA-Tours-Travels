@@ -1,0 +1,19 @@
+<!-- @dsCard group="Navigation" height=150 subtitle="Sticky header, gold CTA, WhatsApp, mobile drawer under 900px" -->
+<div class="sf-scope">
+  <header class="sf-header sf-compact"><div class="sf-wrap sf-header-row">
+    <a class="sf-brand" href="#"><img src="/_blob/798e7269f68f652d431ab068b6f7dead" alt="SAFARIA Tours &amp; Travels"><span class="sf-brand-name">SAFARIA<small>TOURS &amp; TRAVELS</small></span></a>
+    <nav class="sf-nav" aria-label="Main"><a href="#" aria-current="page">Air tickets</a><a href="#">Services</a><a href="#">Destinations</a><a href="#">B2B</a><a href="#">Corporate</a><a href="#">Contact</a></nav>
+    <div class="sf-header-actions">
+      <a class="sf-chip sf-hide-sm" href="#" data-sf-event="whatsapp_click">WhatsApp</a>
+      <a class="sf-button sf-gold sf-hide-sm" href="#" style="min-height:44px">Request a quote</a>
+      <button class="sf-burger" aria-label="Open menu" aria-expanded="false" aria-controls="drawer"><svg class="sf-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    </div>
+  </div></header>
+  <div class="sf-veil"></div>
+  <nav class="sf-drawer" id="drawer" aria-label="Mobile"><a href="#">Air tickets</a><a href="#">Travel services</a><a href="#">Destinations</a><a href="#">B2B agency programme</a><a href="#">Corporate travel</a><a href="#">Contact</a><a class="sf-button sf-gold" href="#" style="margin-top:16px;border:0">Request a flight quote</a></nav>
+</div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+Safaria.Header.mount(document.querySelector(".sf-header"), { drawer: document.querySelector(".sf-drawer"), veil: document.querySelector(".sf-veil") });
+</script>

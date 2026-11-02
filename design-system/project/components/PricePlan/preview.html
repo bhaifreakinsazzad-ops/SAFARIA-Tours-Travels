@@ -1,0 +1,16 @@
+<!-- @dsCard group="Commerce" height=480 subtitle="B2B monthly / annual toggle, 72-hour trial, required disclaimer" -->
+<div class="sf-scope" style="padding:28px" id="plan">
+  <div class="sf-billing-toggle" role="group" aria-label="Billing period"><button data-plan="m" aria-pressed="true">Monthly</button><button data-plan="y" aria-pressed="false">Annual</button></div>
+  <div class="sf-prices">
+    <article class="sf-price sf-selected" data-plan="m"><h3>Monthly subscription</h3><strong>৳20,000</strong><small>per month · prepaid</small></article>
+    <article class="sf-price" data-plan="y"><h3>Annual subscription</h3><strong>৳130,000</strong><small>per year · prepaid</small></article>
+    <article class="sf-price"><h3>SAFARIA markup</h3><strong>0%</strong><small>on eligible air tickets</small></article>
+  </div>
+  <div class="sf-trial"><span class="sf-chip" aria-hidden="true">72h</span><div><strong>72-hour trial</strong><p class="sf-note" style="margin:4px 0 0">Subject to verification and operational availability.</p></div><a class="sf-button sf-gold" href="#">Request a demo</a></div>
+  <p class="sf-fine">Current terms, subject to confirmation. Airfare, taxes and supplier charges remain payable. 0% SAFARIA markup doesn't mean free tickets or the lowest fare. Ticketing, changes and refunds follow supplier availability and fare rules.</p>
+</div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+Safaria.PricePlan.mount(document.getElementById("plan"));
+</script>

@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "safaria-block-test", "runtimeExecutable": "node", "runtimeArgs": ["ghl-block/test/serve.js", "5179"], "port": 5179 }
+  ]
+}

@@ -1,0 +1,23 @@
+<!-- @dsCard group="Experiences" height=520 subtitle="three.js route globe + anime.js entrance; image fallback without WebGL" -->
+<section class="sf-scope" style="position:relative;min-height:520px;overflow:hidden;display:grid;align-items:center">
+  <img data-sf-hero="art" src="/_blob/95b85a651e9d31d7b0f1c9d73420996c" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:right center;-webkit-mask-image:linear-gradient(90deg,transparent 20%,#000 50%);mask-image:linear-gradient(90deg,transparent 20%,#000 50%)">
+  <div id="globe" style="position:absolute;top:0;right:0;width:58%;height:100%"></div>
+  <div style="position:relative;z-index:2;padding:40px 36px;max-width:560px">
+    <p class="sf-eyebrow" data-sf-hero="chip">AI-assisted travel agency · Made in Bangladesh</p>
+    <h1 style="font-size:64px"><span data-sf-hero="line" style="display:block">Your gateway</span><span data-sf-hero="line" style="display:block">to <em>global travel</em></span></h1>
+    <p class="sf-lead" data-sf-hero="lead" style="margin-top:20px">Air ticket enquiries to 32 destinations from Dhaka, plus visas, hotels and tours, coordinated by people.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:28px"><a class="sf-button sf-gold" data-sf-hero="cta" data-sf-magnetic href="#">Request a flight quote</a><a class="sf-button sf-outline" data-sf-hero="cta" href="#">Explore travel services</a></div>
+  </div>
+</section>
+<script type="module">
+const [anime, motion, THREE] = await Promise.all([
+  import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null),
+  import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null),
+  import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js").catch(() => null)]);
+Safaria.use({ anime, motion, THREE });
+const root = document.querySelector(".sf-scope");
+Safaria.Motion.hero(root);
+Safaria.Motion.pointer(root);
+const g = Safaria.HeroGlobe.mount(document.getElementById("globe"));
+if (g) document.querySelector('[data-sf-hero="art"]').style.opacity = "0.18";
+</script>

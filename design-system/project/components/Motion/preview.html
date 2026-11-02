@@ -1,0 +1,20 @@
+<!-- @dsCard group="Motion" height=540 page subtitle="Reveal, stagger, image wipe, verified counters, tilt (anime.js 4 + Motion 11)" -->
+<div class="sf-scope" style="padding:28px;display:grid;gap:22px">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:12px"><p class="sf-eyebrow" style="margin:0">Motion system</p><button class="sf-chip" id="replay">Replay</button></div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:20px" id="stage">
+    <figure data-sf-wipe style="border-radius:9px;height:260px"><img src="/_blob/87b8586fb8e333d576a55e1e30e0d590" alt="Emerald lagoon" style="width:100%;height:100%;object-fit:cover;display:block"></figure>
+    <div style="display:grid;gap:12px;align-content:start" data-sf-stagger>
+      <div class="sf-price" data-sf-tilt><h3>Destinations on enquiry</h3><strong data-sf-count="32">32</strong></div>
+      <div class="sf-price" data-sf-tilt><h3>Agency trial</h3><strong data-sf-count="72" data-sf-suffix="h">72h</strong></div>
+      <div class="sf-price" data-sf-tilt><h3>SAFARIA markup</h3><strong>0%</strong><small>eligible air tickets</small></div>
+    </div>
+  </div>
+  <p class="sf-note">Durations: micro 120 · short 250 · medium 600 · long 1100 · stagger 70ms. Easing: ease-out for entrances, ease-in-out for drawers. Everything turns off under reduced motion.</p>
+</div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+const stage = document.getElementById("stage");
+Safaria.Motion.init(document);
+document.getElementById("replay").addEventListener("click", () => { stage.querySelectorAll("[data-sf-done]").forEach(e => e.removeAttribute("data-sf-done")); stage.querySelectorAll("[data-sf-count]").forEach(e => e.textContent = "0"); Safaria.Motion.reveal(stage); });
+</script>

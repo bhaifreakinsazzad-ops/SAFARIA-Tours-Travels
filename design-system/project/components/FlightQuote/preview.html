@@ -1,0 +1,7 @@
+<!-- @dsCard group="Forms" height=620 subtitle="3-step structured enquiry, inline validation, WhatsApp / call / SMS handoff" -->
+<div class="sf-scope" style="padding:24px"><div id="quote"></div></div>
+<script type="module">
+const [anime, motion] = await Promise.all([import("https://cdn.jsdelivr.net/npm/animejs@4.0.2/+esm").catch(() => null), import("https://cdn.jsdelivr.net/npm/motion@11.11.17/+esm").catch(() => null)]);
+Safaria.use({ anime, motion });
+Safaria.FlightQuote.mount(document.getElementById("quote"), { source: "design-system-preview" });
+</script>
