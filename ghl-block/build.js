@@ -56,3 +56,22 @@ ${enh}
 `;
 fs.writeFileSync(path.join(__dirname, "safaria-motion-block.html"), out);
 console.log("safaria-motion-block.html", (out.length / 1024).toFixed(1) + " KB");
+
+// Production build: same block, minified. Needs esbuild; pass its folder in ESBUILD_DIR.
+// The SAFARIA_CONFIG script stays readable so it can be edited inside the site builder.
+if (process.env.ESBUILD_DIR) {
+  const esbuild = require(path.join(process.env.ESBUILD_DIR, "node_modules", "esbuild"));
+  const minJs = (s) => esbuild.transformSync(s, { minify: true, target: "es2020", legalComments: "none" }).code.trim();
+  const minCss = esbuild.transformSync(tokens + css + polish, { loader: "css", minify: true, target: ["chrome90", "safari14", "firefox90"] }).code.trim();
+  const runtime = minJs(js), enhance = minJs(enh);
+  for (const s of [runtime, enhance]) if (/<\/script|<!--/i.test(s)) throw new Error("minified output contains a script terminator");
+  const cfg = out.match(/<script>\n  \/\* Edit these[\s\S]*?<\/script>/)[0];
+  const min = `<!-- SAFARIA v2 · production block (minified) · build ${new Date().toISOString().slice(0, 10)} · paste BELOW the existing SAFARIA code element. Delete this element to roll back. -->
+<style id="safaria-v2-css">${minCss}</style>
+${cfg}
+<script id="safaria-v2-runtime">${runtime}</script>
+<script id="safaria-v2-enhance">${enhance}</script>
+`;
+  fs.writeFileSync(path.join(__dirname, "safaria-v2-block.min.html"), min);
+  console.log("safaria-v2-block.min.html", (min.length / 1024).toFixed(1) + " KB", "· gzip ≈", (require("zlib").gzipSync(min).length / 1024).toFixed(1) + " KB");
+}

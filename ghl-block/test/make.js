@@ -5,7 +5,7 @@ let html = fs.readFileSync(path.join(snap, "page.html"), "utf8");
 const css = fs.readFileSync(path.join(snap, "all.css"), "utf8");
 html = html.replace(/<link rel="stylesheet" type="text\/css" href="cid:[^"]+" \/>/g, "");
 html = html.replace("</head>", "<style>" + css.replace(/<\/style/gi, "<\/style") + "</style></head>");
-const block = fs.readFileSync(path.join(__dirname, "..", "safaria-motion-block.html"), "utf8");
+const block = fs.readFileSync(path.join(__dirname, "..", process.argv[3] || "safaria-motion-block.html"), "utf8");
 fs.writeFileSync(path.join(__dirname, "site-original.html"), html);
 fs.writeFileSync(path.join(__dirname, "site.html"), html.replace(/<\/body>/i, block + "</body>"));
 // Same page as a visitor with motion on (the snapshot was saved with the site's toggle paused).

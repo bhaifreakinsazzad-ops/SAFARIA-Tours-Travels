@@ -1,6 +1,8 @@
 # SAFARIA v2: GoHighLevel install guide
 
-`safaria-motion-block.html` (about 76 KB) adds the v2 motion, 3D and component layer to the existing SAFARIA page (`#safaria-site` 3.2.x). It doesn't change the site's markup. **To roll back, delete the element.**
+**Paste this one:** `safaria-v2-block.min.html` (55.6 KB, about 18 KB gzipped). It's the production build: minified CSS and JS, with only the `SAFARIA_CONFIG` settings left readable so you can edit them in the builder. `safaria-motion-block.html` (about 76 KB) is the same code in readable form, for reviewing or editing.
+
+The block adds the v2 motion, 3D and component layer to the existing SAFARIA page (`#safaria-site` 3.2.x). It doesn't change the site's markup. **To roll back, delete the element.**
 
 ## Install
 
