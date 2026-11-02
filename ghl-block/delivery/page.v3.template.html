@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SAFARIA v3 GHL Block</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+  :root { --bg: #041713; --panel: #0b352a; --code: #051f19; --ink: #f8f5ec; --muted: #b1c3bc; --gold: #d6b779; --line: rgba(207,181,124,.28); --ok: #7fd4a8; --on-gold: #092720;
+    --display: "Cormorant Garamond", Georgia, serif; --sans: Inter, system-ui, sans-serif; --mono: "JetBrains Mono", Consolas, monospace; color-scheme: dark; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg: #f8f5ec; --panel: #ffffff; --code: #fffdf7; --ink: #062b27; --muted: #3f5a50; --gold: #7d5f22; --line: rgba(125,95,34,.3); --ok: #0f6b47; --on-gold: #f8f5ec; color-scheme: light } }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 400 15px/1.65 var(--sans); }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 40px max(16px, env(safe-area-inset-right)) 72px max(16px, env(safe-area-inset-left)); display: grid; gap: 26px; }
+  .eyebrow { display: flex; align-items: center; gap: 14px; text-transform: uppercase; letter-spacing: .19em; font-size: 11px; font-weight: 600; color: var(--muted); margin: 0; }
+  .eyebrow::after { content: ""; width: 42px; height: 1px; background: var(--gold); }
+  h1 { font: 500 clamp(36px, 6vw, 56px)/1.05 var(--display); letter-spacing: -.03em; margin: 10px 0 12px; text-wrap: balance; }
+  h1 em { color: var(--gold); }
+  .lead { color: var(--muted); max-width: 64ch; margin: 0; }
+  .copybox { display: grid; gap: 14px; padding: clamp(18px, 4vw, 30px); border: 1px solid var(--gold); border-radius: 14px; background: var(--panel); text-align: center; justify-items: center; }
+  .meta { font: 400 12px var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+  button { font: 600 15px var(--sans); min-height: 56px; padding: 14px 32px; border-radius: 9px; cursor: pointer; border: 1px solid var(--line); background: transparent; color: var(--ink); }
+  button.primary { background: linear-gradient(120deg, #f0d6a1, #cbaa6a); color: #092720; border-color: #dabc80; font-size: 18px; min-width: min(100%, 340px); box-shadow: 0 4px 28px rgba(210,183,125,.22); }
+  button.primary:active { transform: scale(.98); }
+  button:focus-visible, summary:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+  #status { min-height: 1.5em; font-size: 14px; color: var(--ok); margin: 0; }
+  ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; counter-reset: s; }
+  ol li { counter-increment: s; display: grid; grid-template-columns: 34px 1fr; gap: 12px; align-items: start; padding: 14px 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
+  ol li::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--gold); border-radius: 50%; color: var(--gold); font-size: 12px; }
+  code { font: 400 13px var(--mono); background: var(--code); border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px; overflow-wrap: anywhere; }
+  .note { border: 1px solid var(--line); border-left: 3px solid var(--gold); border-radius: 9px; padding: 14px 16px; background: var(--panel); }
+  .note strong { color: var(--gold); }
+  details { border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+  summary { cursor: pointer; padding: 14px 16px; font-weight: 600; min-height: 48px; }
+  textarea { display: block; width: 100%; height: 360px; border: 0; border-top: 1px solid var(--line); margin: 0; padding: 14px; background: var(--code); color: var(--ink); font: 400 12px/1.5 var(--mono); white-space: pre; overflow: auto; border-radius: 0 0 10px 10px; resize: vertical; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <p class="eyebrow">SAFARIA Tours &amp; Travels · v3 full-site block</p>
+    <h1>One block. <em>The whole site.</em></h1>
+    <p class="lead">Press the button, paste into one GoHighLevel Custom JS/HTML element, save. It renders the full redesigned SAFARIA site: animated hero with an interactive 3D globe, flight quote, destinations, services, corporate and agency programmes, ViBE Trippin’, FAQ and footer, in Bengali and English.</p>
+  </header>
+
+  <section class="copybox" aria-labelledby="meta">
+    <button type="button" class="primary" id="copy">Copy all code</button>
+    <p class="meta" id="meta">safaria-v3-block.min.html · __SIZE__ · build __DATE__</p>
+    <p id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <ol aria-label="Install steps">
+    <li><span><strong>Clone the page first.</strong> GHL: Sites → Websites → your site → the page’s ⋮ menu → Clone. Work on the clone, never on the live page.</span></li>
+    <li><span><strong>Replace the old code.</strong> Delete the old SAFARIA 3.2 code element and the v2 motion element on the clone. This block replaces both.</span></li>
+    <li><span><strong>Add one Custom JS/HTML element</strong> and paste the copied code into it. Save.</span></li>
+    <li><span><strong>Set your numbers.</strong> Near the top of the pasted code, check <code>phone</code> (<code>+8801674178437</code>), <code>email</code> and <code>vibeUrl</code>. <strong>Confirm the official WhatsApp number</strong>: the previous site used <code>+8801641178437</code>.</span></li>
+    <li><span><strong>Preview, don’t edit-view.</strong> GHL doesn’t run custom scripts inside the builder canvas. Open Preview on desktop and phone, then publish the clone.</span></li>
+  </ol>
+
+  <div class="note"><strong>Roll back:</strong> delete this element and put the old 3.2 and v2 elements back (keep them hidden on the clone until you’re happy). <strong>Seeing no motion?</strong> The block follows your system’s “reduce motion” setting; you then get the still globe and no animation. Check the console for <code>[SAFARIA v3] active</code>.</div>
+
+  <details>
+    <summary>Preview the code (optional)</summary>
+    <textarea id="preview" readonly spellcheck="false" aria-label="Code preview"></textarea>
+  </details>
+</main>
+
+<script type="text/plain" id="code">__CODE__</script>
+<script>
+  /* The block is stored with "</script" escaped so it can sit inside this page; restore it before copying. */
+  var raw = document.getElementById("code").textContent.replace(/<\\\/script/g, "</script"), statusEl = document.getElementById("status");
+  function fallback() {
+    var d = document.querySelector("details"); d.open = true;
+    var a = document.getElementById("preview"); a.value = raw; a.focus(); a.select(); a.setSelectionRange(0, a.value.length);
+    statusEl.textContent = "Your browser blocked automatic copy. The code is selected below: press Ctrl+C (Cmd+C on Mac).";
+  }
+  document.getElementById("copy").addEventListener("click", function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(raw).then(function () { statusEl.textContent = "Copied " + raw.length.toLocaleString() + " characters. Paste into the GHL Custom JS/HTML element."; }, fallback);
+    } else fallback();
+  });
+  document.querySelector("details").addEventListener("toggle", function (e) { var a = document.getElementById("preview"); if (e.target.open && !a.value) a.value = raw; });
+</script>
+</body>
+</html>

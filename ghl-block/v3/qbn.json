@@ -1,0 +1,18 @@
+{
+"Route":"রুট","Travellers":"যাত্রী","Contact":"যোগাযোগ","Trip type":"ভ্রমণের ধরন","One-way":"একমুখী","Round-trip":"আসা-যাওয়া","Multi-city":"একাধিক শহর",
+"From":"যাত্রাস্থল","To":"গন্তব্য","Departure date":"যাত্রার তারিখ","Return date":"ফেরার তারিখ","Other legs (multi-city)":"অন্যান্য রুট (একাধিক শহর)",
+"Adults (12+)":"প্রাপ্তবয়স্ক (১২+)","Children (2–11)":"শিশু (২–১১)","Infants (under 2)":"ইনফ্যান্ট (২-এর কম)","Cabin class":"কেবিন ক্লাস",
+"Economy":"ইকোনমি","Premium Economy":"প্রিমিয়াম ইকোনমি","Business":"বিজনেস","First":"ফার্স্ট",
+"Preferred airline (optional)":"পছন্দের এয়ারলাইন (ঐচ্ছিক)","Baggage preference (optional)":"লাগেজের পছন্দ (ঐচ্ছিক)","Standard allowance":"স্ট্যান্ডার্ড লাগেজ","Extra checked bag":"অতিরিক্ত চেকড লাগেজ","Cabin bag only":"শুধু কেবিন ব্যাগ",
+"Full name":"পুরো নাম","WhatsApp number":"WhatsApp নম্বর","Email (optional)":"ইমেইল (ঐচ্ছিক)","Additional requirements":"অতিরিক্ত প্রয়োজন",
+"Back":"পেছনে","Continue":"চালিয়ে যান","Get my quote":"আমার কোটেশন নিন","Sending…":"পাঠানো হচ্ছে…",
+"Choose where you're flying from.":"কোথা থেকে যাত্রা করবেন বাছুন।","Choose a destination.":"গন্তব্য বাছুন।","Destination must differ from origin.":"গন্তব্য যাত্রাস্থল থেকে আলাদা হতে হবে।",
+"Pick a departure date.":"যাত্রার তারিখ বাছুন।","Date can't be in the past.":"তারিখ অতীতের হতে পারে না।","Pick a return date.":"ফেরার তারিখ বাছুন।","Return must be after departure.":"ফেরার তারিখ যাত্রার পরে হতে হবে।",
+"Enter your full name.":"আপনার পুরো নাম লিখুন।","Enter a WhatsApp number with country code.":"দেশের কোডসহ WhatsApp নম্বর দিন।","Check the email address.":"ইমেইল ঠিকানা দেখে নিন।","Each infant must travel with an adult.":"প্রতিটি ইনফ্যান্টকে একজন প্রাপ্তবয়স্কের সঙ্গে ভ্রমণ করতে হবে।",
+"Enquiry received. A SAFARIA agent will contact you with a verified quotation.":"কুয়েরি পাওয়া গেছে। একজন SAFARIA এজেন্ট যাচাইকৃত কোটেশনসহ যোগাযোগ করবেন।",
+"Your enquiry is ready. Send it to a SAFARIA agent:":"আপনার কুয়েরি প্রস্তুত। এটি SAFARIA এজেন্টকে পাঠান:",
+"Open in WhatsApp":"WhatsApp-এ খুলুন","Call":"কল","Copy":"কপি","Copied":"কপি হয়েছে","Get a quote":"কোটেশন নিন",
+"We only use these details to prepare your quotation. Please don't send passport scans here. A SAFARIA agent will ask for documents securely if needed.":"এই তথ্য শুধু আপনার কোটেশন তৈরিতে ব্যবহৃত হয়। এখানে পাসপোর্টের স্ক্যান পাঠাবেন না। প্রয়োজনে এজেন্ট নিরাপদভাবে নথি চাইবেন।",
+"WhatsApp opens with your details filled in. Press Send there to reach us. This is an enquiry, not a booking.":"WhatsApp আপনার তথ্যসহ খুলবে। সেখানে Send চাপলে আমাদের কাছে পৌঁছাবে। এটি কুয়েরি, বুকিং নয়।",
+"City or airport code":"শহর বা বিমানবন্দরের কোড","Any":"যেকোনো","e.g. Dubai → London, 12 Dec":"যেমন: দুবাই → লন্ডন, ১২ ডিসেম্বর","Wheelchair, meal, flexible dates…":"হুইলচেয়ার, খাবার, নমনীয় তারিখ…"
+}

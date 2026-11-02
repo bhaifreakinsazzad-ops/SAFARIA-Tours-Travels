@@ -1,0 +1,3 @@
+@keyframes sf-stamp-in { 0% { transform: scale(2.2) rotate(var(--r, -6deg)); opacity: 0; } 60% { transform: scale(.92) rotate(var(--r, -6deg)); opacity: 1; } 100% { transform: scale(1) rotate(var(--r, -6deg)); } }
+@keyframes sf-pop { 0% { transform: scale(.6); opacity: 0; } 70% { transform: scale(1.08); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes sf-draw { to { stroke-dashoffset: 0; } }
