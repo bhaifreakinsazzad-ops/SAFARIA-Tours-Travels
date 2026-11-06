@@ -1,0 +1,299 @@
+[
+  {
+    "code": "DAC",
+    "city": "Dhaka",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 23.84,
+    "lon": 90.4,
+    "origin": true
+  },
+  {
+    "code": "CGP",
+    "city": "Chattogram",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 22.25,
+    "lon": 91.81,
+    "origin": false
+  },
+  {
+    "code": "CXB",
+    "city": "Cox's Bazar",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 21.45,
+    "lon": 91.96,
+    "origin": false
+  },
+  {
+    "code": "ZYL",
+    "city": "Sylhet",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 24.96,
+    "lon": 91.87,
+    "origin": false
+  },
+  {
+    "code": "SPD",
+    "city": "Saidpur",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 25.76,
+    "lon": 88.91,
+    "origin": false
+  },
+  {
+    "code": "RJH",
+    "city": "Rajshahi",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 24.44,
+    "lon": 88.62,
+    "origin": false
+  },
+  {
+    "code": "JSR",
+    "city": "Jashore",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 23.18,
+    "lon": 89.16,
+    "origin": false
+  },
+  {
+    "code": "BZL",
+    "city": "Barishal",
+    "country": "Bangladesh",
+    "region": "domestic",
+    "lat": 22.8,
+    "lon": 90.3,
+    "origin": false
+  },
+  {
+    "code": "MAA",
+    "city": "Chennai",
+    "country": "India",
+    "region": "international",
+    "lat": 12.99,
+    "lon": 80.17,
+    "origin": false
+  },
+  {
+    "code": "KTM",
+    "city": "Kathmandu",
+    "country": "Nepal",
+    "region": "international",
+    "lat": 27.7,
+    "lon": 85.36,
+    "origin": false
+  },
+  {
+    "code": "BKK",
+    "city": "Bangkok",
+    "country": "Thailand",
+    "region": "international",
+    "lat": 13.69,
+    "lon": 100.75,
+    "origin": false
+  },
+  {
+    "code": "KUL",
+    "city": "Kuala Lumpur",
+    "country": "Malaysia",
+    "region": "international",
+    "lat": 2.74,
+    "lon": 101.7,
+    "origin": false
+  },
+  {
+    "code": "SIN",
+    "city": "Singapore",
+    "country": "Singapore",
+    "region": "international",
+    "lat": 1.36,
+    "lon": 103.99,
+    "origin": false
+  },
+  {
+    "code": "DXB",
+    "city": "Dubai",
+    "country": "UAE",
+    "region": "international",
+    "lat": 25.25,
+    "lon": 55.36,
+    "origin": false
+  },
+  {
+    "code": "AUH",
+    "city": "Abu Dhabi",
+    "country": "UAE",
+    "region": "international",
+    "lat": 24.43,
+    "lon": 54.65,
+    "origin": false
+  },
+  {
+    "code": "DOH",
+    "city": "Doha",
+    "country": "Qatar",
+    "region": "international",
+    "lat": 25.27,
+    "lon": 51.61,
+    "origin": false
+  },
+  {
+    "code": "JED",
+    "city": "Jeddah",
+    "country": "Saudi Arabia",
+    "region": "international",
+    "lat": 21.68,
+    "lon": 39.16,
+    "origin": false
+  },
+  {
+    "code": "RUH",
+    "city": "Riyadh",
+    "country": "Saudi Arabia",
+    "region": "international",
+    "lat": 24.96,
+    "lon": 46.7,
+    "origin": false
+  },
+  {
+    "code": "DMM",
+    "city": "Dammam",
+    "country": "Saudi Arabia",
+    "region": "international",
+    "lat": 26.47,
+    "lon": 49.8,
+    "origin": false
+  },
+  {
+    "code": "MCT",
+    "city": "Muscat",
+    "country": "Oman",
+    "region": "international",
+    "lat": 23.59,
+    "lon": 58.28,
+    "origin": false
+  },
+  {
+    "code": "CAN",
+    "city": "Guangzhou",
+    "country": "China",
+    "region": "international",
+    "lat": 23.39,
+    "lon": 113.3,
+    "origin": false
+  },
+  {
+    "code": "BJS",
+    "city": "Beijing",
+    "country": "China",
+    "region": "international",
+    "lat": 39.9,
+    "lon": 116.4,
+    "origin": false
+  },
+  {
+    "code": "MED",
+    "city": "Madinah",
+    "country": "Saudi Arabia",
+    "region": "international",
+    "lat": 24.55,
+    "lon": 39.71,
+    "origin": false
+  },
+  {
+    "code": "LON",
+    "city": "London",
+    "country": "United Kingdom",
+    "region": "international",
+    "lat": 51.47,
+    "lon": -0.45,
+    "origin": false
+  },
+  {
+    "code": "ROM",
+    "city": "Rome",
+    "country": "Italy",
+    "region": "international",
+    "lat": 41.8,
+    "lon": 12.25,
+    "origin": false
+  },
+  {
+    "code": "YTO",
+    "city": "Toronto",
+    "country": "Canada",
+    "region": "international",
+    "lat": 43.68,
+    "lon": -79.63,
+    "origin": false
+  },
+  {
+    "code": "TYO",
+    "city": "Tokyo",
+    "country": "Japan",
+    "region": "international",
+    "lat": 35.55,
+    "lon": 139.78,
+    "origin": false
+  },
+  {
+    "code": "NYC",
+    "city": "New York",
+    "country": "USA",
+    "region": "international",
+    "lat": 40.64,
+    "lon": -73.78,
+    "origin": false
+  },
+  {
+    "code": "FL",
+    "city": "Florida",
+    "country": "USA",
+    "region": "international",
+    "lat": 27.9,
+    "lon": -81.7,
+    "origin": false
+  },
+  {
+    "code": "SYD",
+    "city": "Sydney",
+    "country": "Australia",
+    "region": "international",
+    "lat": -33.94,
+    "lon": 151.18,
+    "origin": false
+  },
+  {
+    "code": "SEL",
+    "city": "Seoul",
+    "country": "South Korea",
+    "region": "international",
+    "lat": 37.46,
+    "lon": 126.44,
+    "origin": false
+  },
+  {
+    "code": "IST",
+    "city": "Istanbul",
+    "country": "Türkiye",
+    "region": "international",
+    "lat": 41.28,
+    "lon": 28.75,
+    "origin": false
+  },
+  {
+    "code": "CPT",
+    "city": "Cape Town",
+    "country": "South Africa",
+    "region": "international",
+    "lat": -33.97,
+    "lon": 18.6,
+    "origin": false
+  }
+]
