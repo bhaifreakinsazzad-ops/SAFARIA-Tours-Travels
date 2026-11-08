@@ -66,14 +66,24 @@ export function _resetRevocationRegistry(): void {
   revokedSessions.clear();
 }
 
-const SECRET_KEY =
-  process.env.SESSION_SECRET ||
-  (process.env.NODE_ENV === "production"
-    ? (() => {
-        console.warn("CRITICAL SECURITY: SESSION_SECRET is unset in production! Generating secure ephemeral key.");
-        return crypto.randomBytes(32).toString("hex");
-      })()
-    : "safaria-jwt-secret-emerald-gold-2026-production");
+/**
+ * Resolves the cryptographic signing secret.
+ * In production runtime, SESSION_SECRET is strictly mandatory; ephemeral fallbacks are rejected.
+ */
+export function getSecretKey(): string {
+  if (process.env.SESSION_SECRET) {
+    return process.env.SESSION_SECRET;
+  }
+  if (
+    process.env.NODE_ENV === "production" &&
+    process.env.NEXT_PHASE !== "phase-production-build"
+  ) {
+    throw new Error(
+      "FATAL SECURITY CONFIGURATION: SESSION_SECRET environment variable is mandatory in production! Ephemeral fallbacks are prohibited."
+    );
+  }
+  return "safaria-jwt-secret-emerald-gold-2026-production";
+}
 
 /**
  * Sign session payload into tamper-evident base64url token
@@ -90,7 +100,7 @@ export function signSession(
   const body = Buffer.from(JSON.stringify(fullPayload)).toString("base64url");
 
   const signature = crypto
-    .createHmac("sha256", SECRET_KEY)
+    .createHmac("sha256", getSecretKey())
     .update(`${header}.${body}`)
     .digest("base64url");
 
@@ -107,7 +117,7 @@ export function verifySession(token: string): SessionPayload | null {
 
     const [header, body, signature] = parts;
     const expectedSig = crypto
-      .createHmac("sha256", SECRET_KEY)
+      .createHmac("sha256", getSecretKey())
       .update(`${header}.${body}`)
       .digest("base64url");
 

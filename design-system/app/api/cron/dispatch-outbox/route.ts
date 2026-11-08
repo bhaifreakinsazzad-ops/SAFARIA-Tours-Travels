@@ -24,7 +24,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const summary = await outboxDispatcher.processPendingQueue(25);
-    return NextResponse.json({ success: true, summary });
+    const simulated = summary.providerMode === "STAGING_MOCK_DISPATCHER";
+    return NextResponse.json({
+      success: true,
+      summary,
+      isSimulatedMode: simulated,
+      notice: simulated
+        ? "SIMULATION NOTICE: Dispatched using Staging Mock Dispatcher. Third-party live delivery requires production GHL_API_KEY and GHL_LOCATION_ID."
+        : "LIVE DELIVERY: Dispatched to GoHighLevel CRM API v2.",
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

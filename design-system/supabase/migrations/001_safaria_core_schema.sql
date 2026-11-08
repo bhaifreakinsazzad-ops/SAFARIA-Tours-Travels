@@ -168,6 +168,8 @@ ALTER TABLE revoked_sessions ENABLE ROW LEVEL SECURITY;
 
 -- Grant minimal necessary table privileges to standard roles
 GRANT INSERT ON flight_enquiries, flight_legs, agency_applications, general_enquiries TO anon, authenticated;
+GRANT SELECT, INSERT, UPDATE ON b2b_desk_records TO authenticated;
+GRANT SELECT ON agency_applications TO authenticated;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO service_role;
 
 -- Anonymous public users may ONLY insert enquiries and applications (write-only)
@@ -182,6 +184,42 @@ CREATE POLICY "Public anonymous insert for agency applications"
 
 CREATE POLICY "Public anonymous insert for general enquiries" 
     ON general_enquiries FOR INSERT TO anon, authenticated WITH CHECK (true);
+
+-- ==============================================================================
+-- NATIVE POSTGRESQL MULTI-TENANT ROW-LEVEL SECURITY (RLS) FOR B2B PARTNERS
+-- Enforces cross-tenant isolation at the database engine level
+-- ==============================================================================
+CREATE POLICY "Tenant isolation for desk records select"
+    ON b2b_desk_records FOR SELECT TO authenticated
+    USING (
+        agency_id = NULLIF(current_setting('app.current_agency_id', true), '')::uuid
+        OR agency_id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb->>'agency_id')::uuid
+    );
+
+CREATE POLICY "Tenant isolation for desk records insert"
+    ON b2b_desk_records FOR INSERT TO authenticated
+    WITH CHECK (
+        agency_id = NULLIF(current_setting('app.current_agency_id', true), '')::uuid
+        OR agency_id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb->>'agency_id')::uuid
+    );
+
+CREATE POLICY "Tenant isolation for desk records update"
+    ON b2b_desk_records FOR UPDATE TO authenticated
+    USING (
+        agency_id = NULLIF(current_setting('app.current_agency_id', true), '')::uuid
+        OR agency_id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb->>'agency_id')::uuid
+    )
+    WITH CHECK (
+        agency_id = NULLIF(current_setting('app.current_agency_id', true), '')::uuid
+        OR agency_id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb->>'agency_id')::uuid
+    );
+
+CREATE POLICY "Tenant isolation for agency application select"
+    ON agency_applications FOR SELECT TO authenticated
+    USING (
+        id = NULLIF(current_setting('app.current_agency_id', true), '')::uuid
+        OR id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb->>'agency_id')::uuid
+    );
 
 -- NO PUBLIC READ FOR CUSTOMER DATA (Prevents PII scraping)
 -- Only service_role or authenticated staff with privileged role can select/update

@@ -329,6 +329,37 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     expect(betaRecords.rows[0].agency_id).toBe(agencyBetaId);
 
     await client.query("RESET ROLE;");
+
+    // 3. Database Engine RLS Verification with authenticated role:
+    // When executing as 'authenticated' with app.current_agency_id = agencyAlphaId,
+    // a SELECT with NO WHERE clause is filtered by PostgreSQL RLS to ONLY Alpha's rows.
+    await client.query("BEGIN;");
+    await client.query("SET ROLE authenticated;");
+    await client.query(`SET LOCAL app.current_agency_id = '${agencyAlphaId}';`);
+
+    const rlsAlphaRecords = await client.query("SELECT id, title, agency_id FROM b2b_desk_records;");
+    expect(rlsAlphaRecords.rows.length).toBe(1);
+    expect(rlsAlphaRecords.rows[0].title).toBe("Alpha Urgent Group Fare");
+    expect(rlsAlphaRecords.rows[0].agency_id).toBe(agencyAlphaId);
+
+    // Attempting to INSERT a record for Beta while authenticated as Alpha MUST be blocked by PostgreSQL RLS
+    await client.query("SAVEPOINT rls_insert_test;");
+    await expect(
+      client.query(`
+        INSERT INTO b2b_desk_records (agency_id, desk_type, title, status)
+        VALUES ($1, 'FARE_DESK', 'Malicious Cross Tenant Insert', 'OPEN');
+      `, [agencyBetaId])
+    ).rejects.toThrow(/violates row-level security policy/i);
+    await client.query("ROLLBACK TO SAVEPOINT rls_insert_test;");
+
+    // Attempting to UPDATE Beta's record while authenticated as Alpha affects 0 rows
+    const updateRes = await client.query(`
+      UPDATE b2b_desk_records SET title = 'Hacked by Alpha' WHERE agency_id = $1;
+    `, [agencyBetaId]);
+    expect(updateRes.rowCount).toBe(0);
+
+    await client.query("ROLLBACK;");
+    await client.query("RESET ROLE;");
     await client.end();
   }, 30000);
 

@@ -7,6 +7,7 @@ import {
   isSessionRevoked,
   isSessionRevokedDurable,
   verifySessionDurable,
+  getSecretKey,
   _resetRevocationRegistry,
 } from "@/lib/auth/authService";
 import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
@@ -165,5 +166,38 @@ describe("Auth & Session Security Service", () => {
     // Dynamic verification must now immediately reject the session
     const suspended = await verifySessionDurable(token);
     expect(suspended).toBeNull();
+  });
+
+  it("strictly enforces SESSION_SECRET in production runtime and rejects ephemeral fallbacks", () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalSecret = process.env.SESSION_SECRET;
+    const originalPhase = process.env.NEXT_PHASE;
+
+    try {
+      // In production without SESSION_SECRET
+      process.env.NODE_ENV = "production";
+      delete process.env.SESSION_SECRET;
+      delete process.env.NEXT_PHASE;
+
+      expect(() => getSecretKey()).toThrow(
+        /FATAL SECURITY CONFIGURATION: SESSION_SECRET environment variable is mandatory in production/i
+      );
+
+      // When SESSION_SECRET is provided in production
+      process.env.SESSION_SECRET = "production-cryptographic-secret-key-1234567890";
+      expect(getSecretKey()).toBe("production-cryptographic-secret-key-1234567890");
+    } finally {
+      process.env.NODE_ENV = originalEnv;
+      if (originalSecret) {
+        process.env.SESSION_SECRET = originalSecret;
+      } else {
+        delete process.env.SESSION_SECRET;
+      }
+      if (originalPhase) {
+        process.env.NEXT_PHASE = originalPhase;
+      } else {
+        delete process.env.NEXT_PHASE;
+      }
+    }
   });
 });
