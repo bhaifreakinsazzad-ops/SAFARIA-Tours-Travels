@@ -1,0 +1,2499 @@
+<!DOCTYPE html>
+<html lang="bn" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SAFARIA Tours & Travels | 3D Journey Atlas & Design System</title>
+
+  <!-- Google Fonts: Cormorant Garamond, Inter, Noto Sans Bengali -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'sf-bg': '#041713',
+            'sf-green': '#062b27',
+            'sf-gold': '#cfb57c',
+            'sf-gold-light': '#e6cca0',
+            'sf-ivory': '#f3f0e7',
+            'sf-muted': '#b1c3bc',
+            'sf-line': 'rgba(207, 181, 124, 0.28)',
+            'sf-card-bg': 'rgba(6, 43, 39, 0.65)',
+            'sf-emerald-glow': 'rgba(16, 185, 129, 0.15)'
+          },
+          fontFamily: {
+            display: ['"Cormorant Garamond"', 'serif'],
+            sans: ['"Inter"', 'sans-serif'],
+            bengali: ['"Noto Sans Bengali"', '"Inter"', 'sans-serif'],
+          },
+          boxShadow: {
+            'gold-glow': '0 0 25px rgba(207, 181, 124, 0.25)',
+            'emerald-glow': '0 0 35px rgba(6, 43, 39, 0.7)',
+            'glass-inset': 'inset 0 1px 1px rgba(255, 255, 255, 0.1)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Three.js & OrbitControls for 3D Globe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Anime.js for Timeline and Particle Effects -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+  <style>
+    :root {
+      --sf-bg: #041713;
+      --sf-green: #062b27;
+      --sf-gold: #cfb57c;
+      --sf-gold-light: #e6cca0;
+      --sf-ivory: #f3f0e7;
+      --sf-muted: #b1c3bc;
+      --sf-line: rgba(207, 181, 124, 0.28);
+    }
+
+    body {
+      background-color: var(--sf-bg);
+      color: var(--sf-ivory);
+      font-family: 'Inter', 'Noto Sans Bengali', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #041713;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #0d3d37;
+      border-radius: 4px;
+      border: 1px solid var(--sf-line);
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--sf-gold);
+    }
+
+    /* Glassmorphism Classes */
+    .glass-card {
+      background: rgba(6, 43, 39, 0.65);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--sf-line);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-card-interactive {
+      transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .glass-card-interactive:hover {
+      border-color: var(--sf-gold);
+      box-shadow: 0 12px 40px rgba(207, 181, 124, 0.2);
+      transform: translateY(-2px);
+    }
+
+    .ivory-surface {
+      background: #f3f0e7;
+      color: #062b27;
+    }
+
+    /* Gold Text Gradients */
+    .text-gold-gradient {
+      background: linear-gradient(135deg, #fcedc5 0%, #cfb57c 50%, #9e7f42 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Pulse Glow Keyframes */
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.08); }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 4s infinite ease-in-out;
+    }
+
+    /* 3D Tooltip Overlay Container */
+    #atlas-tooltip {
+      position: absolute;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 40;
+    }
+
+    /* Bento Card Hover Glow & Transitions */
+    .bento-card {
+      background: rgba(6, 43, 39, 0.6);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid var(--sf-line);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .bento-card:hover {
+      border-color: var(--sf-gold);
+      box-shadow: 0 10px 30px rgba(207, 181, 124, 0.18);
+      transform: translateY(-3px);
+    }
+
+    /* Badges */
+    .badge-ask {
+      background: rgba(207, 181, 124, 0.15);
+      color: #e6cca0;
+      border: 1px solid rgba(207, 181, 124, 0.4);
+    }
+    .badge-check {
+      background: rgba(16, 185, 129, 0.15);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+    .badge-rules {
+      background: rgba(243, 240, 231, 0.12);
+      color: #f3f0e7;
+      border: 1px solid rgba(243, 240, 231, 0.3);
+    }
+
+    /* Input Focus Outlines for Accessibility (P2) */
+    input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+      outline: 2px solid var(--sf-gold);
+      outline-offset: 2px;
+    }
+
+    /* Autocomplete dropdown positioning */
+    .autocomplete-dropdown {
+      max-height: 220px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+    }
+  </style>
+</head>
+<body class="bg-sf-bg text-sf-ivory selection:bg-sf-gold selection:text-sf-bg min-h-screen">
+
+  <!-- ==================== TOP SYSTEM BANNER (P0 VERIFIED STATUS) ==================== -->
+  <header class="border-b border-sf-line bg-[#03110e]/95 backdrop-blur-md sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
+      
+      <!-- Logo & Identity -->
+      <a href="#sf-home" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-full border border-sf-gold flex items-center justify-center bg-sf-green/60 shadow-gold-glow group-hover:scale-105 transition">
+          <svg class="w-5 h-5 text-sf-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+          </svg>
+        </div>
+        <div>
+          <span class="font-display tracking-widest text-lg md:text-xl font-bold text-gold-gradient">SAFARIA</span>
+          <span class="hidden sm:inline-block text-[10px] tracking-widest text-sf-muted ml-2 uppercase font-medium">Tours & Travels</span>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Links -->
+      <nav class="hidden lg:flex items-center gap-6 text-xs text-sf-muted">
+        <a href="#sf26-offers" class="hover:text-sf-gold transition" data-i18n="nav_offers">২৬টি অফার ও ক্যাম্পেইন</a>
+        <a href="#journey-atlas-section" class="hover:text-sf-gold transition" data-i18n="nav_atlas">৩ডি জার্নি অ্যাটলাস</a>
+        <a href="#sfp-studio" class="hover:text-sf-gold transition" data-i18n="nav_studio">ট্রাভেল স্টুডিও</a>
+        <a href="#sf-agency" class="hover:text-sf-gold transition" data-i18n="nav_agency">B2B এজেন্সি হাব</a>
+      </nav>
+
+      <!-- Center System Notice (Audit Verified) -->
+      <div class="hidden xl:flex items-center gap-2 text-xs text-sf-muted bg-sf-green/40 px-3 py-1.5 rounded-full border border-sf-line">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+        <span data-i18n="p0_tag">যাচাইকৃত কনট্যাক্ট: +8801674178437 | কোটেশন-ফার্স্ট মডেল</span>
+      </div>
+
+      <!-- Controls: Language Toggle & Quick Action -->
+      <div class="flex items-center gap-3">
+        <!-- Language Switcher -->
+        <button id="lang-toggle-btn" class="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-sf-line bg-sf-green/50 text-xs font-medium text-sf-gold hover:border-sf-gold transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"></path>
+          </svg>
+          <span id="lang-label" class="tracking-wide">বাং / EN</span>
+        </button>
+
+        <!-- Concierge WhatsApp Direct -->
+        <a href="https://wa.me/8801674178437?text=Hello%20SAFARIA,%20I%20would%20like%20to%20request%20a%20travel%20quotation." target="_blank" rel="noopener noreferrer" class="hidden sm:inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-sf-gold to-sf-gold-light text-sf-bg text-xs font-semibold hover:shadow-gold-glow transition transform hover:-translate-y-0.5">
+          <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.965 1.201.662.59 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+          <span data-i18n="cta_direct">কোটেশন ড্রাফট</span>
+        </a>
+      </div>
+
+    </div>
+  </header>
+
+
+  <!-- ==================== HERO SECTION & ORBIT CANVA ==================== -->
+  <section class="relative min-h-[92vh] flex items-center justify-center overflow-hidden border-b border-sf-line">
+    <!-- Anime.js Orbital Background Canvas -->
+    <canvas id="sf-orbit-canvas" class="absolute inset-0 w-full h-full pointer-events-none opacity-40"></canvas>
+
+    <!-- Ambient Luxury Background Glows -->
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-emerald-600/10 rounded-full blur-3xl pointer-events-none"></div>
+    <div class="absolute -bottom-40 -right-40 w-96 h-96 bg-sf-gold/10 rounded-full blur-3xl pointer-events-none"></div>
+
+    <div class="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center z-10 flex flex-col items-center">
+      
+      <!-- Sub-headline Pill -->
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full glass-card border border-sf-gold/40 text-sf-gold text-xs uppercase tracking-widest mb-6">
+        <svg class="w-3.5 h-3.5 text-sf-gold animate-spin" style="animation-duration: 9s;" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <circle cx="12" cy="12" r="10" stroke-width="2" stroke-dasharray="4 4" fill="none"></circle>
+        </svg>
+        <span data-i18n="hero_pill">Aviation & Luxury Travel Command Center</span>
+      </div>
+
+      <!-- Main Editorial Headline (Cormorant Garamond + Noto Sans Bengali) -->
+      <h1 class="text-4xl sm:text-6xl lg:text-7xl font-display font-bold leading-tight max-w-4xl tracking-tight mb-6">
+        <span class="text-gold-gradient block" data-i18n="hero_h1_bn">সঠিক ফ্লাইটে শুরু হোক যাত্রা।</span>
+        <span class="text-sf-ivory text-2xl sm:text-4xl font-light italic mt-2 block font-display tracking-normal" data-i18n="hero_h1_en">Your Gateway to Global Travel.</span>
+      </h1>
+
+      <p class="text-sf-muted max-w-2xl text-sm sm:text-base leading-relaxed mb-10 font-normal" data-i18n="hero_sub">
+        কোটেশন-ফার্স্ট সার্ভিস, ডেডিকেটেড কনসিয়ার্জ এবং বিশ্বমানের রুট সমন্বয়। ঢাকা থেকে বিশ্বের ৮টি প্রধান অ্যাটলাস হাব ও ৩৩টি বৈশ্বিক গন্তব্যে ভ্রমণের সঠিক পরিকল্পনা করুন।
+      </p>
+
+      <!-- Quick Route Launchpad / Enquiry Bar -->
+      <div class="w-full max-w-4xl glass-card rounded-2xl p-4 sm:p-6 border border-sf-line shadow-2xl backdrop-blur-xl">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
+          
+          <!-- Origin -->
+          <div class="p-3 rounded-xl bg-sf-bg/60 border border-sf-line/60">
+            <label class="block text-[11px] font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_from">প্রস্থান (Origin)</label>
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🛫</span>
+              <input type="text" id="quick-from" value="Dhaka, Bangladesh (DAC)" readonly class="w-full bg-transparent text-sm font-medium text-sf-ivory focus:outline-none cursor-not-allowed text-ellipsis overflow-hidden whitespace-nowrap">
+            </div>
+          </div>
+
+          <!-- Destination Picker Quick Selector -->
+          <div class="p-3 rounded-xl bg-sf-bg/60 border border-sf-line/60">
+            <label class="block text-[11px] font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_to">গন্তব্য (Atlas Destination)</label>
+            <div class="flex items-center gap-2">
+              <span class="text-lg">🛬</span>
+              <select id="quick-dest-select" class="w-full bg-transparent text-sm font-medium text-sf-ivory focus:outline-none cursor-pointer">
+                <option value="RUH" class="bg-sf-green text-sf-ivory">Riyadh (RUH) • রিয়াদ</option>
+                <option value="JED" class="bg-sf-green text-sf-ivory">Jeddah (JED) • জেদ্দা</option>
+                <option value="CXB" class="bg-sf-green text-sf-ivory">Cox's Bazar (CXB) • কক্সবাজার</option>
+                <option value="KUL" class="bg-sf-green text-sf-ivory">Kuala Lumpur (KUL) • কুয়ালালামপুর</option>
+                <option value="SIN" class="bg-sf-green text-sf-ivory">Singapore (SIN) • সিঙ্গাপুর</option>
+                <option value="DXB" class="bg-sf-green text-sf-ivory">Dubai (DXB) • দুবাই</option>
+                <option value="CAN" class="bg-sf-green text-sf-ivory">Guangzhou (CAN) • গুয়াংজু</option>
+                <option value="LON" class="bg-sf-green text-sf-ivory">London (LON) • লন্ডন</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Action Button: Focus 3D Atlas -->
+          <div class="flex items-end">
+            <button id="btn-focus-globe" class="w-full py-3.5 px-6 rounded-xl bg-gradient-to-r from-sf-gold to-sf-gold-light text-sf-bg font-bold text-sm tracking-wide hover:shadow-gold-glow transition flex items-center justify-center gap-2 group">
+              <span data-i18n="btn_explore_atlas">অ্যাটলাসে দেখুন</span>
+              <svg class="w-4 h-4 transform group-hover:translate-x-1 transition" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+              </svg>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Quick Assurance Note -->
+        <div class="mt-4 pt-3 border-t border-sf-line/40 flex flex-wrap items-center justify-between text-[11px] text-sf-muted gap-2">
+          <div class="flex items-center gap-2">
+            <span class="w-1.5 h-1.5 rounded-full bg-sf-gold"></span>
+            <span data-i18n="note_transparency">স্বচ্ছ কোটেশন ও এয়ারলাইন নিয়ম মেনে যাচাই</span>
+          </div>
+          <div class="flex items-center gap-4">
+            <span>🛡️ B2C কাস্টমাইজড ফেয়ার</span>
+            <span>📑 ৭২ ঘণ্টার এজেন্সি ট্রায়াল উপলব্ধ</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- ==================== 3D JOURNEY ATLAS SECTION (THREE.JS) ==================== -->
+  <section id="journey-atlas-section" class="relative py-20 bg-gradient-to-b from-sf-bg via-[#031c17] to-sf-bg border-b border-sf-line overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      
+      <!-- Section Header -->
+      <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+        <div>
+          <div class="flex items-center gap-2 text-xs font-semibold text-sf-gold uppercase tracking-widest mb-2">
+            <span class="w-8 h-[1px] bg-sf-gold"></span>
+            <span data-i18n="atlas_badge">Interactive 3D Journey Atlas</span>
+          </div>
+          <h2 class="text-3xl sm:text-5xl font-display font-bold text-sf-ivory">
+            <span data-i18n="atlas_heading">ঢাকা থেকে বৈশ্বিক রুটসমূহ</span>
+          </h2>
+          <p class="text-sm text-sf-muted mt-2 max-w-xl font-light" data-i18n="atlas_subheading">
+            ৮টি মূল অ্যাটলাস গন্তব্যে সরাসরি বা ট্রানজিট ফ্লাইটের জন্য ইন্টারেক্টিভ থ্রিডি গ্লোব এক্সপ্লোর করুন। প্রতিটি নোডে ক্লিক করে সরাসরি কোটেশন ব্রিফ তৈরি করুন।
+          </p>
+        </div>
+
+        <!-- Controls: View Mode & Reset -->
+        <div class="flex items-center gap-3">
+          <button id="btn-toggle-view" class="px-4 py-2 rounded-xl glass-card text-xs text-sf-ivory hover:text-sf-gold border border-sf-line hover:border-sf-gold transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+            <span id="view-mode-label" data-i18n="view_mode_2d">2D রুট লিস্ট দেখুন</span>
+          </button>
+          <button id="btn-reset-camera" class="px-4 py-2 rounded-xl glass-card text-xs text-sf-ivory hover:text-sf-gold border border-sf-line hover:border-sf-gold transition flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span data-i18n="btn_reset_view">গ্লোব রিসেট</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Atlas Destination Quick Pills (Interactive Selector) -->
+      <div class="flex items-center gap-2 overflow-x-auto pb-4 mb-6 no-scrollbar text-xs">
+        <span class="text-sf-gold uppercase tracking-wider font-semibold mr-2 shrink-0 text-[11px]" data-i18n="filter_pills">দ্রুত নির্বাচন:</span>
+        <div id="destination-pills-container" class="flex items-center gap-2">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </div>
+
+      <!-- 3D Globe Viewport Container -->
+      <div id="globe-wrapper" class="relative w-full h-[600px] sm:h-[680px] rounded-3xl glass-card overflow-hidden border border-sf-line shadow-2xl">
+        
+        <!-- Three.js Canvas Element -->
+        <div id="atlas-canvas-container" class="w-full h-full cursor-grab active:cursor-grabbing"></div>
+
+        <!-- 3D Tooltip (Positioned in 2D space based on 3D node coordinates) -->
+        <div id="atlas-tooltip" class="glass-card px-4 py-3 rounded-xl border border-sf-gold shadow-gold-glow pointer-events-none">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="w-2 h-2 rounded-full bg-sf-gold animate-ping"></span>
+            <span id="tooltip-code" class="text-xs font-bold text-sf-gold font-mono tracking-widest">DXB</span>
+            <span class="text-[10px] text-sf-muted uppercase" id="tooltip-country">UAE</span>
+          </div>
+          <div id="tooltip-name" class="text-sm font-semibold text-sf-ivory">Dubai (দুবাই)</div>
+          <div class="text-[10px] text-sf-muted mt-1" data-i18n="tooltip_click_hint">ক্লিক করে কোটেশন প্রস্তুত করুন</div>
+        </div>
+
+        <!-- Globe HUD Overlay Details (Bottom Left) -->
+        <div class="absolute bottom-6 left-6 p-4 rounded-2xl glass-card border border-sf-line max-w-xs pointer-events-none hidden sm:block">
+          <div class="flex items-center gap-2 text-[11px] text-sf-gold font-mono uppercase mb-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>Origin Station: DAC (Dhaka)</span>
+          </div>
+          <div class="text-xs text-sf-ivory font-medium">Hazrat Shahjalal Int'l Airport (DAC)</div>
+          <div class="text-[10px] text-sf-muted mt-1">Lat: 23.84° N, Lon: 90.40° E • Central Hub</div>
+        </div>
+
+        <!-- Active Selected Route Card (Bottom Right Floating) -->
+        <div id="selected-route-card" class="absolute bottom-6 right-6 p-5 rounded-2xl glass-card border border-sf-gold shadow-gold-glow max-w-sm transition-all duration-300 transform translate-y-0 opacity-100">
+          <div class="flex items-center justify-between mb-3">
+            <span class="px-2.5 py-0.5 rounded-full bg-sf-gold/20 text-sf-gold text-[10px] font-bold uppercase tracking-wider" id="route-card-badge">সৌদি প্রবাসী ও ওমরাহ</span>
+            <span class="text-xs font-mono text-sf-muted" id="route-card-coords">24.96° N, 46.70° E</span>
+          </div>
+          
+          <div class="flex items-center gap-3 my-2">
+            <div>
+              <div class="text-lg font-bold text-sf-ivory font-mono">DAC</div>
+              <div class="text-[10px] text-sf-muted">Dhaka</div>
+            </div>
+            <div class="flex-1 flex flex-col items-center">
+              <span class="text-[10px] text-sf-gold font-mono mb-0.5">Golden Arc</span>
+              <div class="w-full h-[1px] bg-gradient-to-r from-sf-gold/20 via-sf-gold to-sf-gold/20 relative">
+                <div class="w-1.5 h-1.5 rounded-full bg-sf-gold absolute -top-[2px] left-1/2 -translate-x-1/2"></div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-lg font-bold text-sf-gold font-mono" id="route-card-code">RUH</div>
+              <div class="text-[10px] text-sf-muted" id="route-card-city">Riyadh</div>
+            </div>
+          </div>
+
+          <div class="text-xs text-sf-ivory font-medium mb-3 mt-1" id="route-card-desc">
+            রিয়াদগামী নিয়মিত প্রবাসী ও পেশাদারদের জন্য রুট কোটেশন।
+          </div>
+
+          <button id="btn-open-enquiry-modal" class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-sf-gold to-sf-gold-light text-sf-bg font-bold text-xs hover:shadow-gold-glow transition flex items-center justify-center gap-2">
+            <span data-i18n="btn_quote_route">এই রুটের কোটেশন চান</span>
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </button>
+        </div>
+
+        <!-- 2D Route Matrix Fallback (Hidden by default, toggled via button) -->
+      <div id="atlas-2d-view" class="absolute inset-0 bg-sf-bg/95 backdrop-blur-xl p-6 overflow-y-auto hidden z-30">
+        <div class="flex items-center justify-between mb-4 border-b border-sf-line pb-3">
+          <h3 class="font-display text-xl font-bold text-gold-gradient" data-i18n="route_catalog_title">৮টি প্রধান অ্যাটলাস ডেস্টিনেশন ক্যাটালগ</h3>
+          <span class="text-xs text-sf-muted">Pre-Calculated Fares & Rules</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4" id="atlas-cards-grid">
+          <!-- Populated via JS -->
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ==================== MODULE A: 26-CAMPAIGN BENTO ENQUIRY GRID ==================== -->
+<section id="sf26-offers" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-sf-line">
+  
+  <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+    <div>
+      <div class="flex items-center gap-2 text-xs font-semibold text-sf-gold uppercase tracking-widest mb-2">
+        <span class="w-8 h-[1px] bg-sf-gold"></span>
+        <span data-i18n="offers_badge">26 Campaign Enquiry Categories</span>
+      </div>
+      <h2 class="text-3xl sm:text-5xl font-display font-bold text-sf-ivory">
+        <span data-i18n="offers_heading">ভ্রমণের সব আয়োজন, সুনির্দিষ্ট ক্যাটাগরিতে</span>
+      </h2>
+      <p class="text-sm text-sf-muted mt-2 max-w-2xl font-light" data-i18n="offers_subheading">
+        ফ্লাইট, স্টুডেন্ট ফেয়ার, সৌদি রুট, প্রিমিয়াম কেবিন এবং বুকিং-পরবর্তী সহায়তা। যেকোনো কার্ডে ক্লিক করে সরাসরি ট্রাভেল স্টুডিওতে আপনার কোটেশন প্রিসেট লোড করুন।
+      </p>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="flex items-center gap-1.5 overflow-x-auto pb-2 no-scrollbar text-xs">
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-gold bg-sf-gold text-sf-bg font-semibold transition" data-filter="all">All (26)</button>
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition" data-filter="flights">Flights (6)</button>
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition" data-filter="student">Student (5)</button>
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition" data-filter="saudi">Saudi & Expat (6)</button>
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition" data-filter="premium">Premium (3)</button>
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition" data-filter="care">Care & Support (2)</button>
+      <button class="offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition" data-filter="services">Services (4)</button>
+    </div>
+  </div>
+
+  <!-- Bento Grid Container -->
+  <div id="bento-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <!-- 26 Cards generated dynamically with staggered motion -->
+  </div>
+
+</section>
+
+
+<!-- ==================== MODULE B: MULTI-STEP TRAVEL STUDIO FORM ENGINE ==================== -->
+<section id="sfp-studio" class="py-20 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-sf-line">
+  
+  <div class="text-center max-w-2xl mx-auto mb-10">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card border border-sf-gold text-sf-gold text-xs uppercase tracking-widest mb-3">
+      <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+      <span data-i18n="studio_badge">Interactive Travel Studio Engine</span>
+    </div>
+    <h2 class="text-3xl sm:text-4xl font-display font-bold text-sf-ivory mb-2" data-i18n="studio_heading">
+      আপনার ভ্রমণের পূর্ণাঙ্গ ব্রিফ তৈরি করুন
+    </h2>
+    <p class="text-xs sm:text-sm text-sf-muted" data-i18n="studio_subheading">
+      ৫টি সহজ ধাপে আপনার কাঙ্ক্ষিত রুট, যাত্রী ও বিশেষ চাহিদা জানান। কোনো আগাম পেমেন্ট ছাড়াই সরাসরি নির্ভরযোগ্য কোটেশন পান।
+    </p>
+  </div>
+
+  <!-- Travel Studio Frame (Ivory Glass Container) -->
+  <div class="glass-card rounded-3xl border border-sf-line p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+    
+    <!-- Step Progress Indicator -->
+    <div class="mb-8">
+      <div class="flex items-center justify-between text-xs text-sf-muted mb-2 font-medium">
+        <span id="step-label-text">ধাপ ১/৫: সার্ভিসের ধরন ও ট্রিপ টাইপ</span>
+        <span id="step-percentage" class="text-sf-gold font-mono">20% সম্পন্ন</span>
+      </div>
+      <div class="w-full h-1.5 bg-sf-green/80 rounded-full overflow-hidden border border-sf-line">
+        <div id="studio-progress-bar" class="h-full bg-gradient-to-r from-sf-gold to-sf-gold-light transition-all duration-500 ease-out" style="width: 20%;"></div>
+      </div>
+      
+      <!-- Stepper Nav Pills -->
+      <div class="grid grid-cols-5 gap-2 mt-4 text-center">
+        <button type="button" onclick="goToStep(1)" class="step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-gold text-sf-gold font-semibold bg-sf-gold/10 transition" data-step="1">1. সার্ভিস</button>
+        <button type="button" onclick="goToStep(2)" class="step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-line text-sf-muted hover:border-sf-gold transition" data-step="2">2. রুট</button>
+        <button type="button" onclick="goToStep(3)" class="step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-line text-sf-muted hover:border-sf-gold transition" data-step="3">3. যাত্রী</button>
+        <button type="button" onclick="goToStep(4)" class="step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-line text-sf-muted hover:border-sf-gold transition" data-step="4">4. প্রেফারেন্স</button>
+        <button type="button" onclick="goToStep(5)" class="step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-line text-sf-muted hover:border-sf-gold transition" data-step="5">5. যোগাযোগ</button>
+      </div>
+    </div>
+
+    <!-- The 18-Field Form Wizard -->
+    <form id="sf-travel-form" novalidate>
+
+      <!-- STEP 1: Service & Trip Type -->
+      <div id="step-1" class="studio-step space-y-6">
+        <div>
+          <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-2" data-i18n="fld_service_category">সার্ভিস ক্যাটাগরি নির্বাচন করুন *</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="category" value="Air Ticketing" class="peer sr-only" checked>
+              <div class="p-3.5 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition">
+                <div class="text-lg mb-1">✈️</div>
+                <span class="font-medium">এয়ার টিকিট</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="category" value="Student Travel" class="peer sr-only">
+              <div class="p-3.5 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition">
+                <div class="text-lg mb-1">🎓</div>
+                <span class="font-medium">স্টুডেন্ট ফেয়ার</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="category" value="Saudi / Expat Travel" class="peer sr-only">
+              <div class="p-3.5 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition">
+                <div class="text-lg mb-1">🕋</div>
+                <span class="font-medium">সৌদি / ওমরাহ</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="category" value="Holiday & Tour Package" class="peer sr-only">
+              <div class="p-3.5 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition">
+                <div class="text-lg mb-1">🏝️</div>
+                <span class="font-medium">ট্যুর ও ভিসা</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-2" data-i18n="fld_trip_type">ট্রিপ টাইপ *</label>
+          <div class="grid grid-cols-3 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="tripType" value="One-Way" class="peer sr-only" checked>
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                One-Way (একমুখী)
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="tripType" value="Round-Trip" class="peer sr-only">
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                Round-Trip (যাওয়া-আসা)
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="tripType" value="Multi-City" class="peer sr-only">
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                Multi-City (বহু-শহর)
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Route & Dates (with 33 Destinations Fuzzy Search) -->
+      <div id="step-2" class="studio-step space-y-5 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <!-- Origin -->
+          <div class="relative">
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_origin">প্রস্থান বিমানবন্দর (Origin) *</label>
+            <input type="text" id="studio-origin" name="origin" value="Dhaka (DAC) - Bangladesh" required autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+            <div id="origin-dropdown" class="autocomplete-dropdown absolute w-full mt-1 bg-[#041713] border border-sf-line rounded-xl z-20 shadow-2xl hidden"></div>
+          </div>
+
+          <!-- Destination -->
+          <div class="relative">
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_destination">গন্তব্য বিমানবন্দর (Destination) *</label>
+            <input type="text" id="studio-destination" name="destination" placeholder="শহর বা কোড লিখুন (যেমন Riyadh, KUL...)" required autocomplete="off" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+            <div id="dest-dropdown" class="autocomplete-dropdown absolute w-full mt-1 bg-[#041713] border border-sf-line rounded-xl z-20 shadow-2xl hidden"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_dept_date">যাত্রার তারিখ (Departure) *</label>
+            <input type="date" id="studio-departure" name="departure" required class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory focus:border-sf-gold">
+          </div>
+
+          <div class="pt-5">
+            <label class="flex items-center gap-3 p-3 rounded-xl bg-sf-bg/40 border border-sf-line cursor-pointer hover:border-sf-gold/50 transition">
+              <input type="checkbox" id="studio-flexible" name="flexible" class="w-4 h-4 rounded text-sf-gold bg-sf-bg border-sf-line">
+              <span class="text-xs text-sf-ivory" data-i18n="lbl_flexible_dates">ফ্লেক্সিবল ডেটস (±৩ দিন কম ভাড়ার অপশন থাকলে জানাবেন)</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Passengers & Cabin -->
+      <div id="step-3" class="studio-step space-y-6 hidden">
+        <div>
+          <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-3" data-i18n="lbl_passengers">যাত্রীদের সংখ্যা (Passenger Breakdown)</label>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            
+            <!-- Adults -->
+            <div class="p-4 rounded-2xl bg-sf-bg/60 border border-sf-line flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold text-sf-ivory" data-i18n="lbl_adults">প্রাপ্তবয়স্ক (Adults)</div>
+                <div class="text-[10px] text-sf-muted">বয়স ১২+ বছর</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustPax('adults', -1)" class="w-8 h-8 rounded-lg bg-sf-green border border-sf-line text-sf-gold hover:bg-sf-gold hover:text-sf-bg font-bold">-</button>
+                <input type="number" id="studio-adults" name="adults" min="1" max="9" value="1" readonly class="w-8 text-center bg-transparent font-bold text-sf-ivory text-sm">
+                <button type="button" onclick="adjustPax('adults', 1)" class="w-8 h-8 rounded-lg bg-sf-green border border-sf-line text-sf-gold hover:bg-sf-gold hover:text-sf-bg font-bold">+</button>
+              </div>
+            </div>
+
+            <!-- Children -->
+            <div class="p-4 rounded-2xl bg-sf-bg/60 border border-sf-line flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold text-sf-ivory" data-i18n="lbl_children">শিশু (Children)</div>
+                <div class="text-[10px] text-sf-muted">বয়স ২-১১ বছর</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustPax('children', -1)" class="w-8 h-8 rounded-lg bg-sf-green border border-sf-line text-sf-gold hover:bg-sf-gold hover:text-sf-bg font-bold">-</button>
+                <input type="number" id="studio-children" name="children" min="0" max="8" value="0" readonly class="w-8 text-center bg-transparent font-bold text-sf-ivory text-sm">
+                <button type="button" onclick="adjustPax('children', 1)" class="w-8 h-8 rounded-lg bg-sf-green border border-sf-line text-sf-gold hover:bg-sf-gold hover:text-sf-bg font-bold">+</button>
+              </div>
+            </div>
+
+            <!-- Infants -->
+            <div class="p-4 rounded-2xl bg-sf-bg/60 border border-sf-line flex items-center justify-between">
+              <div>
+                <div class="text-sm font-semibold text-sf-ivory" data-i18n="lbl_infants">নবজাতক (Infants)</div>
+                <div class="text-[10px] text-sf-muted">বয়স ২ বছরের নিচে</div>
+              </div>
+              <div class="flex items-center gap-2">
+                <button type="button" onclick="adjustPax('infants', -1)" class="w-8 h-8 rounded-lg bg-sf-green border border-sf-line text-sf-gold hover:bg-sf-gold hover:text-sf-bg font-bold">-</button>
+                <input type="number" id="studio-infants" name="infants" min="0" max="4" value="0" readonly class="w-8 text-center bg-transparent font-bold text-sf-ivory text-sm">
+                <button type="button" onclick="adjustPax('infants', 1)" class="w-8 h-8 rounded-lg bg-sf-green border border-sf-line text-sf-gold hover:bg-sf-gold hover:text-sf-bg font-bold">+</button>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-2" data-i18n="lbl_cabin">কেবিন ক্লাস (Cabin Class) *</label>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <label class="cursor-pointer">
+              <input type="radio" name="cabin" value="Economy" class="peer sr-only" checked>
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                ইকোনমি (Economy)
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="cabin" value="Premium Economy" class="peer sr-only">
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                প্রিমিয়াম ইকোনমি
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="cabin" value="Business" class="peer sr-only">
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                বিজনেস ক্লাস
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="cabin" value="First Class" class="peer sr-only">
+              <div class="p-3 rounded-xl border border-sf-line peer-checked:border-sf-gold peer-checked:bg-sf-gold/15 text-center text-xs text-sf-ivory transition font-medium">
+                ফার্স্ট ক্লাস (First)
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Airline & Preferences + AI Draft Feature -->
+      <div id="step-4" class="studio-step space-y-5 hidden">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_pref_airline">পছন্দের এয়ারলাইন (ঐচ্ছিক)</label>
+            <input type="text" id="studio-airline" name="airline" placeholder="e.g. Biman, Saudia, Emirates, Malaysia Airlines" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_baggage">ব্যাগেজ চাহিদা (ঐচ্ছিক)</label>
+            <input type="text" id="studio-baggage" name="baggage" placeholder="e.g. Standard 23kg, Student 40kg, Hand baggage only" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+          </div>
+        </div>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider" data-i18n="lbl_special_notes">বিশেষ চাহিদা বা ট্রানজিট নোট</label>
+            <!-- AI Draft Button -->
+            <button type="button" id="btn-ai-draft" class="text-xs text-sf-gold hover:text-sf-gold-light flex items-center gap-1.5 transition font-semibold">
+              <span class="animate-pulse">✨</span>
+              <span data-i18n="btn_ai_draft">AI দিয়ে ড্রাফট লিখুন</span>
+            </button>
+          </div>
+          <textarea id="studio-notes" name="notes" rows="3" placeholder="নির্দিষ্ট ট্রানজিট সময়, হুইলচেয়ার সহায়তা বা স্টুডেন্ট ডকুমেন্টের তথ্য এখানে লিখুন..." class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold"></textarea>
+        </div>
+      </div>
+
+      <!-- STEP 5: Contact & Consent -->
+      <div id="step-5" class="studio-step space-y-5 hidden">
+        
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_fullname">আপনার পুরো নাম (পাসপোর্ট অনুযায়ী) *</label>
+            <input type="text" id="studio-fullname" name="fullName" required placeholder="Full Name as on Passport" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_phone">মোবাইল / WhatsApp নম্বর *</label>
+            <input type="tel" id="studio-phone" name="phone" required placeholder="+8801..." class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_email">ইমেইল ঠিকানা (ঐচ্ছিক)</label>
+            <input type="email" id="studio-email" name="email" placeholder="example@domain.com" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory placeholder-sf-muted focus:border-sf-gold">
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="lbl_contact_method">পছন্দের যোগাযোগ মাধ্যম *</label>
+            <select id="studio-contactMethod" name="contactMethod" class="w-full px-3.5 py-2.5 rounded-xl bg-sf-bg/80 border border-sf-line text-sm text-sf-ivory focus:border-sf-gold">
+              <option value="WhatsApp">WhatsApp Message (দ্রুততম)</option>
+              <option value="Phone Call">Phone Call (সরাসরি কল)</option>
+              <option value="Email">Email Communication</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Strict P0 Disclosure Consent Checkbox -->
+        <div class="p-4 rounded-2xl bg-sf-bg/60 border border-sf-line/80">
+          <label class="flex items-start gap-3 cursor-pointer">
+            <input type="checkbox" id="studio-consent" name="consent" required class="w-4 h-4 mt-0.5 rounded text-sf-gold bg-sf-bg border-sf-line focus:ring-0">
+            <span class="text-xs text-sf-muted leading-relaxed" data-i18n="consent_statement">
+              আমি সম্মতি দিচ্ছি যে SAFARIA একটি কোটেশন-ফার্স্ট সার্ভিস প্ল্যাটফর্ম। এটি তাৎক্ষণিক টিকিট বুকিং নয়; আমার প্রদত্ত তথ্যের ভিত্তিতে SAFARIA প্রতিনিধি এয়ারলাইনের নিয়ম অনুযায়ী কোটেশন যাচাই করে আমাকে জানাবেন।
+            </span>
+          </label>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons Navigation -->
+      <div class="mt-8 pt-6 border-t border-sf-line flex items-center justify-between gap-4">
+        <button type="button" id="btn-studio-prev" onclick="handleStudioStepChange(-1)" class="px-5 py-2.5 rounded-xl border border-sf-line text-xs font-semibold text-sf-muted hover:text-sf-ivory hover:border-sf-gold transition hidden">
+          ← পূর্ববর্তী ধাপ
+        </button>
+
+        <div class="flex items-center gap-3 ml-auto">
+          <button type="button" id="btn-studio-next" onclick="handleStudioStepChange(1)" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-sf-gold to-sf-gold-light text-sf-bg font-bold text-xs hover:shadow-gold-glow transition flex items-center gap-2">
+            <span>পরবর্তী ধাপ</span>
+            <span>→</span>
+          </button>
+
+          <!-- Final Submit Button (Visible only on Step 5) -->
+          <button type="submit" id="btn-studio-submit" class="px-8 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-sf-bg font-bold text-xs hover:shadow-emerald-glow transition items-center gap-2 hidden">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.965 1.201.662.59 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+            <span data-i18n="btn_submit_brief">WhatsApp-এ কোটেশন রিকোয়েস্ট পাঠান</span>
+          </button>
+        </div>
+      </div>
+
+    </form>
+
+  </div>
+
+</section>
+
+
+<!-- ==================== MODULE C: B2B AGENCY PRICING & PARTNER HUB ==================== -->
+<section id="sf-agency" class="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-b border-sf-line">
+  
+  <div class="text-center max-w-3xl mx-auto mb-14">
+    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full glass-card border border-sf-gold text-sf-gold text-xs uppercase tracking-widest mb-3">
+      <span class="w-2 h-2 rounded-full bg-sf-gold animate-ping"></span>
+      <span data-i18n="agency_badge">B2B Travel Partner Ecosystem</span>
+    </div>
+    <h2 class="text-3xl sm:text-5xl font-display font-bold text-sf-ivory mb-3" data-i18n="agency_heading">
+      আপনার এজেন্সি। আরও বেশি মুনাফা ও সক্ষমতা।
+    </h2>
+    <p class="text-sm text-sf-muted max-w-2xl mx-auto" data-i18n="agency_subheading">
+      ০% SAFARIA মার্কআপে সরাসরি নেট এয়ার ফেয়ার এক্সেস। কোনো লুকানো চার্জ ছাড়া ৭২ ঘণ্টার ভেরিফায়েড ট্রায়াল দিয়ে শুরু করুন।
+    </p>
+
+    <!-- Pricing Frequency Interactive Toggle -->
+    <div class="mt-8 inline-flex items-center p-1.5 rounded-full glass-card border border-sf-line gap-2">
+      <button id="toggle-monthly" onclick="setBillingCycle('monthly')" class="px-5 py-2 rounded-full text-xs font-bold transition bg-sf-gold text-sf-bg shadow-gold-glow">
+        মাসিক বিলিং
+      </button>
+      <button id="toggle-annual" onclick="setBillingCycle('annual')" class="px-5 py-2 rounded-full text-xs font-medium text-sf-muted hover:text-sf-ivory transition flex items-center gap-1.5">
+        <span>বার্ষিক বিলিং</span>
+        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-bold">Save ৳১,৯৮৯</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Pricing Cards Showcase -->
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-16">
+    
+    <!-- Standard B2B Agency Plan -->
+    <div class="glass-card rounded-3xl p-8 border border-sf-line flex flex-col justify-between relative">
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-semibold text-sf-gold uppercase tracking-wider" data-i18n="plan_title_starter">Agency Direct Access</span>
+          <span class="text-[10px] text-sf-muted px-2 py-0.5 rounded-md bg-sf-bg border border-sf-line">Prepaid Net Model</span>
+        </div>
+        
+        <div class="mb-4">
+          <div class="flex items-baseline gap-2">
+            <span id="price-display-main" class="text-4xl sm:text-5xl font-display font-bold text-sf-ivory transition-all duration-300">৳৫,৯৯৯</span>
+            <span id="price-period-main" class="text-xs text-sf-muted">/ মাস</span>
+          </div>
+          <div id="price-sub-main" class="text-[11px] text-sf-gold mt-1">ফ্লেক্সিবল মাসিক সাবস্ক্রিপশন</div>
+        </div>
+
+        <ul class="space-y-3 text-xs text-sf-muted my-6">
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>০% SAFARIA মার্কআপ (এলিজেবল এয়ার টিকিট)</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>ক ডেডিকেটেড টিকিটিং সাপোর্ট ডেস্ক</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>৭২ ঘণ্টার ফ্রি ভেরিফায়েড ট্রায়াল অন্তর্ভুক্ত</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>প্রিপেইড এয়ারলাইন নেট ফেয়ার সুবিধা</span>
+          </li>
+        </ul>
+      </div>
+
+      <button onclick="openAgencyModal('monthly')" class="w-full py-3.5 rounded-xl border border-sf-gold text-sf-gold font-bold text-xs hover:bg-sf-gold hover:text-sf-bg transition flex items-center justify-center gap-2">
+        <span data-i18n="btn_agency_trial">৭২ ঘণ্টার ট্রায়ালে আবেদন করুন</span>
+        <span>→</span>
+      </button>
+    </div>
+
+    <!-- Annual Enterprise Partner Plan -->
+    <div class="glass-card rounded-3xl p-8 border-2 border-sf-gold shadow-gold-glow flex flex-col justify-between relative overflow-hidden">
+      <div class="absolute top-4 right-4 px-3 py-1 rounded-full bg-sf-gold text-sf-bg font-bold text-[10px] uppercase tracking-wider">
+        Most Popular
+      </div>
+
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <span class="text-xs font-semibold text-sf-gold uppercase tracking-wider" data-i18n="plan_title_annual">Annual Growth Partner</span>
+        </div>
+        
+        <div class="mb-4">
+          <div class="flex items-baseline gap-2">
+            <span id="price-display-annual" class="text-4xl sm:text-5xl font-display font-bold text-gold-gradient transition-all duration-300">৳৬৯,৯৯৯</span>
+            <span id="price-period-annual" class="text-xs text-sf-muted">/ বছর</span>
+          </div>
+          <div class="text-[11px] text-emerald-400 mt-1 font-medium">মাসিক মাত্র ৳৫,৮৩৩ (সাশ্রয় ৳১,৯৮৯/বছর)</div>
+        </div>
+
+        <ul class="space-y-3 text-xs text-sf-muted my-6">
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>সব starter ফিচারের সাথে আনলিমিটেড নেট ফেয়ার ইস্যু</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>ভিআইপি প্রায়োরিটি আফটার-সেলস ও রি-ইস্যু সমন্বয়</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>কর্পোরেট ও গ্রুপ বুকিং স্পেশাল কোটেশন ডেস্ক</span>
+          </li>
+          <li class="flex items-center gap-2">
+            <span class="text-emerald-400">✓</span>
+            <span>বাৎসরিক পার্টনার সার্টিফিকেট ও ডেডিকেটেড অ্যাকাউন্ট ম্যানেজার</span>
+          </li>
+        </ul>
+      </div>
+
+      <button onclick="openAgencyModal('annual')" class="w-full py-3.5 rounded-xl bg-gradient-to-r from-sf-gold to-sf-gold-light text-sf-bg font-bold text-xs hover:shadow-gold-glow transition flex items-center justify-center gap-2">
+        <span data-i18n="btn_agency_annual">বার্ষিক পার্টনারশিপ শুরু করুন</span>
+        <span>→</span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Partner Hub Fast Action (10-field Partner Trigger) -->
+  <div class="p-6 sm:p-8 rounded-3xl glass-card border border-sf-line flex flex-col md:flex-row items-center justify-between gap-6">
+    <div>
+      <div class="text-xs font-semibold text-sf-gold uppercase tracking-wider mb-1" data-i18n="partner_badge">হোটেল, ট্যুর অপারেটর ও লজিস্টিকস পার্টনার</div>
+      <h3 class="text-xl sm:text-2xl font-display font-bold text-sf-ivory" data-i18n="partner_title">SAFARIA পার্টনার হাবে যোগ দিন</h3>
+      <p class="text-xs text-sf-muted mt-1 max-w-xl" data-i18n="partner_sub">
+        আপনি যদি হোটেল সরবরাহকারী, বিমান পরিবহন সংস্থা বা স্থানীয় ট্যুর অপারেটর হন, তবে আমাদের গ্লোবাল ট্রাভেলার নেটওয়ার্কের সাথে যুক্ত হতে প্রস্তাব পাঠান।
+      </p>
+    </div>
+    <button onclick="openPartnerModal()" class="px-6 py-3 rounded-xl bg-sf-green border border-sf-gold text-sf-gold font-bold text-xs hover:bg-sf-gold hover:text-sf-bg transition shrink-0">
+      <span data-i18n="btn_partner_hub">পার্টনার হাব প্রস্তাব দিন</span>
+    </button>
+  </div>
+
+</section>
+
+
+<!-- ==================== 16-FIELD B2B AGENCY APPLICATION MODAL ==================== -->
+<div id="agency-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+  <div id="agency-modal-card" class="ivory-surface w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-300 relative max-h-[92vh] overflow-y-auto">
+    
+    <button onclick="closeAgencyModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-sf-green/10 hover:bg-sf-green/20 text-sf-green flex items-center justify-center font-bold text-lg transition">✕</button>
+
+    <div class="mb-6">
+      <div class="flex items-center gap-2 text-xs font-bold text-sf-green uppercase tracking-wider mb-1">
+        <span class="w-2 h-2 rounded-full bg-sf-green"></span>
+        <span>B2B Travel Agency Verification</span>
+      </div>
+      <h3 class="text-2xl sm:text-3xl font-display font-bold text-sf-green" data-i18n="modal_agency_title">
+        এজেন্সি সাবস্ক্রিপশন ও ট্রায়াল আবেদন
+      </h3>
+      <p class="text-xs text-[#062b27]/80 mt-1">
+        আপনার এজেন্সির তথ্য দিন। যাচাইকরণ সম্পন্ন হলে ৭২ ঘণ্টার ফ্রি ট্রায়াল সক্রিয় করা হবে।
+      </p>
+    </div>
+
+    <form id="sf-agency-form" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">আবেদনের ধরন *</label>
+          <select id="agency-applicationType" name="applicationType" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:border-sf-green">
+            <option value="72h Free Trial">৭২ ঘণ্টা ফ্রি ট্রায়াল (Free Trial)</option>
+            <option value="Monthly Subscription">মাসিক সাবস্ক্রিপশন (৳৫,৯৯৯/মাস)</option>
+            <option value="Annual Subscription">বার্ষিক সাবস্ক্রিপশন (৳৬৯,৯৯৯/বছর)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">এজেন্সির নাম *</label>
+          <input type="text" id="agency-agencyName" name="agencyName" required placeholder="Agency Name" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">অফিসের ঠিকানা / শহর *</label>
+          <input type="text" id="agency-location" name="location" required placeholder="Dhaka / Chittagong / ..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">ওয়েবসাইট / ফেসবুক পেজ</label>
+          <input type="text" id="agency-website" name="website" placeholder="https://..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">ব্যবসার স্থায়িত্ব *</label>
+          <select id="agency-businessStatus" name="businessStatus" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+            <option value="Established">বিদ্যমান চালু এজেন্সি</option>
+            <option value="New Startup">নতুন এজেন্সি</option>
+            <option value="Freelance Agent">ফ্রিল্যান্স ট্রাভেল কনসালটেন্ট</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">অভিজ্ঞতা (বছর)</label>
+          <input type="number" id="agency-years" name="years" placeholder="1, 2, 5..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">সম্ভাব্য মাসিক টিকেট সংখ্যা</label>
+          <input type="text" id="agency-volume" name="volume" placeholder="10-50, 50-200" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">প্রধান সেবা চাহিদা *</label>
+          <select id="agency-requirement" name="requirement" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+            <option value="Net Air Tickets">০% মার্কআপ নেট এয়ার টিকিট</option>
+            <option value="Student & Saudi Special">স্টুডেন্ট ও সৌদি স্পেশাল ফেয়ার</option>
+            <option value="Complete Agency Support">সম্পূর্ণ এজেন্সির রুট সাপোর্ট</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">আবেদনের প্রধান আগ্রহ *</label>
+          <select id="agency-interest" name="interest" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+            <option value="72h Trial First">আগে ৭২ ঘণ্টা ট্রায়াল ব্যবহার</option>
+            <option value="Direct Subscription">সরাসরি পেইড সাবস্ক্রিপশন</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">মালিক / প্রতিনিধির নাম *</label>
+          <input type="text" id="agency-fullName" name="fullName" required placeholder="Owner/Manager" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">মোবাইল / WhatsApp *</label>
+          <input type="tel" id="agency-phone" name="phone" required placeholder="+8801..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">অফিসিয়াল ইমেইল *</label>
+          <input type="email" id="agency-email" name="email" required placeholder="agency@domain.com" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+      </div>
+
+      <!-- Mandatory 72h Trial Consent & P0 Terms -->
+      <div class="p-3 rounded-xl bg-[#062b27]/5 border border-[#062b27]/15 space-y-2">
+        <label class="flex items-start gap-2.5 cursor-pointer">
+          <input type="checkbox" id="agency-trialConsent" name="trialConsent" required class="w-4 h-4 mt-0.5 rounded text-sf-green bg-white border-[#062b27]/30">
+          <span class="text-[11px] text-[#062b27]/85">
+            <strong>৭২ ঘণ্টার ট্রায়াল শর্ত:</strong> ট্রায়াল চলাকালে কেবলমাত্র বৈধ বিজনেস যাচাই সাপেক্ষে প্রি-পেইড কোটেশন প্রদান করা হবে; এটি কোনো ক্রেডিট বা বাকিতে টিকিট ইস্যু সুবিধা নয়।
+          </span>
+        </label>
+        <label class="flex items-start gap-2.5 cursor-pointer">
+          <input type="checkbox" id="agency-consent" name="consent" required class="w-4 h-4 mt-0.5 rounded text-sf-green bg-white border-[#062b27]/30">
+          <span class="text-[11px] text-[#062b27]/85">
+            আমি স্বীকার করছি যে নতুন অনুমোদিত মূল্য (মাসিক ৳৫,৯৯৯ ও বার্ষিক ৳৬৯,৯৯৯) এবং ০% মার্কআপ শর্ত মেনে আবেদন করছি।
+          </span>
+        </label>
+      </div>
+
+      <button type="submit" class="w-full py-3 rounded-xl bg-sf-green text-sf-gold font-bold text-xs hover:bg-[#083832] transition flex items-center justify-center gap-2 shadow-lg">
+        <span>আবেদন জমা দিন (WhatsApp কনসিয়ার্জ)</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ==================== 10-FIELD PARTNER HUB MODAL ==================== -->
+<div id="partner-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+  <div id="partner-modal-card" class="ivory-surface w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-300 relative max-h-[92vh] overflow-y-auto">
+    
+    <button onclick="closePartnerModal()" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-sf-green/10 hover:bg-sf-green/20 text-sf-green flex items-center justify-center font-bold text-lg transition">✕</button>
+
+    <div class="mb-6">
+      <div class="flex items-center gap-2 text-xs font-bold text-sf-green uppercase tracking-wider mb-1">
+        <span class="w-2 h-2 rounded-full bg-sf-green"></span>
+        <span>SAFARIA Partner Hub</span>
+      </div>
+      <h3 class="text-2xl sm:text-3xl font-display font-bold text-sf-green">
+        পার্টনার প্রস্তাব জমা দিন
+      </h3>
+      <p class="text-xs text-[#062b27]/80 mt-1">
+        হোটেল, ট্যুর এবং এয়ারপোর্ট ট্রান্সফার সরবরাহকারী প্রতিষ্ঠানসমূহ এই ফর্মের মাধ্যমে প্রস্তাব জানাতে পারেন।
+      </p>
+    </div>
+
+    <form id="sf-partner-form" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">পার্টনার ক্যাটাগরি *</label>
+          <select id="partner-category" name="partnerCategory" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:border-sf-green">
+            <option value="Hotel & Accommodation">হোটেল ও আবাসন</option>
+            <option value="Tour Operator">ট্যুর ও অ্যাক্টিভিটি অপারেটর</option>
+            <option value="Airport Transfer">এয়ারপোর্ট ও লোকাল ট্রান্সপোর্ট</option>
+            <option value="Corporate Partner">কর্পোরেট সহযোগী</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">প্রতিষ্ঠানের নাম *</label>
+          <input type="text" id="partner-businessName" name="businessName" required placeholder="Business Name" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-sf-green mb-1">অপারেশন এলাকা / শহর *</label>
+        <input type="text" id="partner-location" name="location" required placeholder="City / Country" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-sf-green mb-1">পার্টনারশিপের সংক্ষিপ্ত প্রস্তাব *</label>
+        <textarea id="partner-proposal" name="proposal" rows="2" required placeholder="Describe your services, rates and coverage..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green"></textarea>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">যোগাযোগের নাম *</label>
+          <input type="text" id="partner-fullName" name="fullName" required placeholder="Contact Person" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">মোবাইল / WhatsApp *</label>
+          <input type="tel" id="partner-phone" name="phone" required placeholder="+8801..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1">অফিসিয়াল ইমেইল</label>
+          <input type="email" id="partner-email" name="email" placeholder="partner@domain.com" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs text-sf-green focus:border-sf-green">
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-[#062b27]/5 border border-[#062b27]/15">
+        <label class="flex items-start gap-2.5 cursor-pointer">
+          <input type="checkbox" id="partner-consent" name="consent" required class="w-4 h-4 mt-0.5 rounded text-sf-green bg-white border-[#062b27]/30">
+          <span class="text-[11px] text-[#062b27]/85">
+            আমি সম্মতি দিচ্ছি যে SAFARIA ব্যবসায়িক নীতি যাচাই করে আমার সাথে যোগাযোগ করবে।
+          </span>
+        </label>
+      </div>
+
+      <button type="submit" class="w-full py-3 rounded-xl bg-sf-green text-sf-gold font-bold text-xs hover:bg-[#083832] transition flex items-center justify-center gap-2 shadow-lg">
+        <span>পার্টনার প্রস্তাব পাঠান</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+
+<!-- ==================== ROUTE QUOTATION ENQUIRY MODAL (QUICK) ==================== -->
+<div id="enquiry-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+  <div id="enquiry-modal-card" class="ivory-surface w-full max-w-xl rounded-3xl p-6 sm:p-8 shadow-2xl transform scale-95 transition-transform duration-300 relative max-h-[92vh] overflow-y-auto">
+    
+    <button id="btn-close-modal" class="absolute top-5 right-5 w-8 h-8 rounded-full bg-sf-green/10 hover:bg-sf-green/20 text-sf-green flex items-center justify-center font-bold text-lg transition">✕</button>
+
+    <div class="mb-6">
+      <div class="flex items-center gap-2 text-xs font-bold text-sf-green uppercase tracking-wider mb-1">
+        <span class="w-2 h-2 rounded-full bg-sf-green"></span>
+        <span data-i18n="modal_badge">সরাসরি রুট কোটেশন রিকোয়েস্ট</span>
+      </div>
+      <h3 class="text-2xl sm:text-3xl font-display font-bold text-sf-green" id="modal-route-title">
+        Dhaka (DAC) ➔ Riyadh (RUH)
+      </h3>
+      <p class="text-xs text-[#062b27]/80 mt-1" data-i18n="modal_sub">
+        আপনার ভ্রমণের প্রাথমিক বিবরণ দিন। SAFARIA টিম এয়ারলাইনের নিয়মানুযায়ী সঠিক কোটেশন জানাবে।
+      </p>
+    </div>
+
+    <form id="atlas-enquiry-form" class="space-y-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_category">যাত্রার ধরন / ক্যাটাগরি</label>
+          <select id="modal-category" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green">
+            <option value="General Flight">General Flight (সাধারণ ফ্লাইট)</option>
+            <option value="Student Fare">Student Fare (স্টুডেন্ট ফেয়ার/এক্সট্রা ব্যাগেজ)</option>
+            <option value="Saudi Expat">Saudi Expat (সৌদি প্রবাসী ফেয়ার)</option>
+            <option value="Umrah Travel">Umrah Travel (ওমরাহ সফর)</option>
+            <option value="Premium Business">Premium Business (বিজনেস ক্লাস)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_trip_type">ট্রিপ টাইপ</label>
+          <select id="modal-trip-type" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green">
+            <option value="One-Way">One-Way (একমুখী)</option>
+            <option value="Round-Trip">Round-Trip (যাওয়া-আসা)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_date">যাত্রার তারিখ (সম্ভাব্য)</label>
+          <input type="date" id="modal-date" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_pax">যাত্রীর সংখ্যা (Passengers)</label>
+          <input type="number" id="modal-pax" min="1" max="9" value="1" class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green">
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_name">আপনার পুরো নাম</label>
+          <input type="text" id="modal-name" placeholder="Name as on Passport" required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green">
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_phone">মোবাইল / WhatsApp নম্বর</label>
+          <input type="tel" id="modal-phone" placeholder="+8801..." required class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green">
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-sf-green mb-1" data-i18n="fld_notes">বিশেষ চাহিদা (এয়ারলাইন পছন্দ বা অতিরিক্ত ব্যাগেজ)</label>
+        <textarea id="modal-notes" rows="2" placeholder="SalamAir, Saudia, Biman, extra baggage or student proof..." class="w-full px-3 py-2 rounded-xl bg-white border border-[#062b27]/20 text-xs font-medium text-sf-green focus:outline-none focus:border-sf-green"></textarea>
+      </div>
+
+      <div class="p-3 rounded-xl bg-[#062b27]/5 border border-[#062b27]/15 text-[11px] text-[#062b27]/80 leading-relaxed">
+        <strong data-i18n="disc_title">গুরুত্বপূর্ণ নোটিশ:</strong> 
+        <span data-i18n="disc_body">SAFARIA একটি কোটেশন-ভিত্তিক ট্রাভেল সমন্বয় সংস্থা। এটি রিয়েলটাইম স্বয়ংক্রিয় টিকেট কাটার মাধ্যম নয়; এয়ারলাইনের প্রাপ্যতা সাপেক্ষে মূল্য ও শর্ত নিশ্চিত করা হয়।</span>
+      </div>
+
+      <div class="pt-2 flex flex-col sm:flex-row gap-3">
+        <button type="submit" class="flex-1 py-3 px-4 rounded-xl bg-sf-green text-sf-gold font-bold text-xs hover:bg-[#083832] transition flex items-center justify-center gap-2 shadow-lg">
+          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12.031 6.172c-3.181 0-5.767 2.586-5.768 5.766-.001 1.298.38 2.27 1.019 3.287l-.582 2.128 2.182-.573c.978.58 1.911.928 3.145.929 3.178 0 5.767-2.587 5.768-5.766.001-3.187-2.575-5.77-5.764-5.771zm3.392 8.244c-.144.405-.837.774-1.17.824-.299.045-.677.063-1.092-.069-.252-.08-.575-.187-.988-.365-1.739-.751-2.874-2.502-2.961-2.617-.087-.116-.708-.94-.708-1.793s.448-1.273.607-1.446c.159-.173.346-.217.462-.217l.332.007c.106.005.249-.04.39.299.144.347.491 1.2.534 1.287.043.087.072.188.014.304-.058.116-.087.188-.173.289l-.26.304c-.087.087-.179.182-.077.357.101.174.45 0.742.965 1.201.662.59 1.221.774 1.394.86.173.086.275.072.376-.044.101-.116.433-.506.549-.68.116-.173.231-.145.39-.087s1.011.477 1.184.564.289.13.332.203c.043.072.043.419-.101.824z"/></svg>
+          <span data-i18n="btn_send_whatsapp">WhatsApp-এ কোটেশন পাঠান</span>
+        </button>
+
+        <a href="https://forms.gle/o5vTzTryLLAfEwjp6" target="_blank" rel="noopener noreferrer" class="py-3 px-4 rounded-xl border border-sf-green/30 text-sf-green font-semibold text-xs hover:bg-[#062b27]/10 transition text-center flex items-center justify-center gap-1.5">
+          <span data-i18n="btn_google_form">গুগল ফর্মে পাঠান</span>
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+        </a>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+
+<!-- ==================== FOOTER ==================== -->
+<footer class="border-t border-sf-line bg-[#03110e] py-12">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+      
+      <div>
+        <span class="font-display text-2xl font-bold text-gold-gradient">SAFARIA</span>
+        <span class="text-xs text-sf-muted ml-2">Tours & Travels • Elite Aviation Platform</span>
+        <p class="text-xs text-sf-muted mt-1" data-i18n="footer_rights">
+          © 2026 SAFARIA Tours & Travels. All rights reserved.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap items-center gap-6 text-xs text-sf-muted">
+        <span class="text-sf-gold">Hotline: +8801674178437</span>
+        <a href="mailto:safariatoursandtravels@gmail.com" class="hover:text-sf-gold transition">safariatoursandtravels@gmail.com</a>
+        <a href="#sf-agency" class="hover:text-sf-gold transition">B2B Portal</a>
+      </div>
+
+    </div>
+
+    <!-- Legal Disclaimer -->
+    <div class="mt-8 pt-6 border-t border-sf-line/30 text-[11px] text-sf-muted/70 text-center leading-relaxed">
+      SAFARIA operates strictly as a specialized travel coordination and quotation service agency. Final seat reservations, fare issuance, baggage privileges and visa clearances remain subject to individual airline supplier, embassy and IATA rules at the time of formal confirmation.
+    </div>
+  </div>
+</footer>
+
+
+<!-- ==================== CORE PLATFORM JAVASCRIPT ==================== -->
+<script>
+  /* ==========================================================
+     1. P0 CONFIGURATION & DATASETS
+     ========================================================== */
+  const CONFIG = {
+    phone: '+8801674178437',
+    email: 'safariatoursandtravels@gmail.com',
+    googleFormUrl: 'https://forms.gle/o5vTzTryLLAfEwjp6',
+    pricing: {
+      monthly: '৳৫,৯৯৯',
+      annual: '৳৬৯,৯৯৯',
+      savings: '৳১,৯৮৯'
+    }
+  };
+
+  // Flag to halt Three.js render loop when modals/studio are active (Saves Mobile GPU)
+  let isGlobeRenderingPaused = false;
+
+  // The Exact 33 Destinations Catalogue (8 Domestic + 25 International)
+  const DESTINATIONS = [
+    { code: "DAC", city: "Dhaka", country: "Bangladesh", region: "domestic", origin: true },
+    { code: "CGP", city: "Chattogram", country: "Bangladesh", region: "domestic" },
+    { code: "CXB", city: "Cox's Bazar", country: "Bangladesh", region: "domestic" },
+    { code: "ZYL", city: "Sylhet", country: "Bangladesh", region: "domestic" },
+    { code: "SPD", city: "Saidpur", country: "Bangladesh", region: "domestic" },
+    { code: "RJH", city: "Rajshahi", country: "Bangladesh", region: "domestic" },
+    { code: "JSR", city: "Jashore", country: "Bangladesh", region: "domestic" },
+    { code: "BZL", city: "Barishal", country: "Bangladesh", region: "domestic" },
+    { code: "MAA", city: "Chennai", country: "India", region: "international" },
+    { code: "KTM", city: "Kathmandu", country: "Nepal", region: "international" },
+    { code: "BKK", city: "Bangkok", country: "Thailand", region: "international" },
+    { code: "KUL", city: "Kuala Lumpur", country: "Malaysia", region: "international" },
+    { code: "SIN", city: "Singapore", country: "Singapore", region: "international" },
+    { code: "DXB", city: "Dubai", country: "UAE", region: "international" },
+    { code: "AUH", city: "Abu Dhabi", country: "UAE", region: "international" },
+    { code: "DOH", city: "Doha", country: "Qatar", region: "international" },
+    { code: "JED", city: "Jeddah", country: "Saudi Arabia", region: "international" },
+    { code: "RUH", city: "Riyadh", country: "Saudi Arabia", region: "international" },
+    { code: "DMM", city: "Dammam", country: "Saudi Arabia", region: "international" },
+    { code: "MCT", city: "Muscat", country: "Oman", region: "international" },
+    { code: "CAN", city: "Guangzhou", country: "China", region: "international" },
+    { code: "BJS", city: "Beijing", country: "China", region: "international" },
+    { code: "MED", city: "Madinah", country: "Saudi Arabia", region: "international" },
+    { code: "LON", city: "London", country: "United Kingdom", region: "international" },
+    { code: "ROM", city: "Rome", country: "Italy", region: "international" },
+    { code: "YTO", city: "Toronto", country: "Canada", region: "international" },
+    { code: "TYO", city: "Tokyo", country: "Japan", region: "international" },
+    { code: "NYC", city: "New York", country: "USA", region: "international" },
+    { code: "FL",  city: "Florida", country: "USA", region: "international" },
+    { code: "SYD", city: "Sydney", country: "Australia", region: "international" },
+    { code: "SEL", city: "Seoul", country: "South Korea", region: "international" },
+    { code: "IST", city: "Istanbul", country: "Türkiye", region: "international" },
+    { code: "CPT", city: "Cape Town", country: "South Africa", region: "international" }
+  ];
+
+  // The Exact 26 Campaign Enquiry Categories from safaria-offers.csv
+  const OFFERS = [
+    { id: "fare-options", category: "flights", bn_title: "স্মার্ট ফেয়ার অপশন", en_title: "Explore fare options", bn_desc: "আপনার রুটে ভাড়া, ট্রানজিট ও ব্যাগেজ তুলনার জন্য কোটেশন চান।", en_desc: "Request quotations to evaluate fares, transit and baggage.", badge: "ask", mode: "air", preset: "" },
+    { id: "transparent-pricing", category: "flights", bn_title: "স্বচ্ছ মূল্য ও প্রযোজ্য চার্জ", en_title: "Fare & charge breakdown", bn_desc: "ভাড়া, কর ও প্রযোজ্য চার্জ সম্পর্কে বুকিংয়ের আগে জানুন।", en_desc: "Ask about fare, taxes and applicable charges before booking.", badge: "rules", mode: "air", preset: "" },
+    { id: "international", category: "flights", bn_title: "ইন্টারন্যাশনাল ফ্লাইট", en_title: "International flights", bn_desc: "বিশ্বের পছন্দের গন্তব্যে ভ্রমণের কোটেশন ও রুট অপশন।", en_desc: "Explore flight quotations for your preferred international destination.", badge: "ask", mode: "air", preset: "" },
+    { id: "domestic", category: "flights", bn_title: "বাংলাদেশের ডোমেস্টিক ফ্লাইট", en_title: "Bangladesh domestic flights", bn_desc: "ঢাকা, চট্টগ্রাম, সিলেট, সৈয়দপুরসহ দেশীয় যাত্রার কোটেশন।", en_desc: "Request domestic travel quotes across Bangladesh.", badge: "ask", mode: "air", preset: "" },
+    { id: "one-way-return", category: "flights", bn_title: "One-Way ও Return", en_title: "One-way & round-trip", bn_desc: "শুধু যাওয়া অথবা যাওয়া-ফেরা, আপনার পরিকল্পনা অনুযায়ী।", en_desc: "Ask about one-way or round-trip fares for your itinerary.", badge: "ask", mode: "air", preset: "" },
+    { id: "cox-bazar", category: "flights", bn_title: "ঢাকা–কক্সবাজার স্পেশাল", en_title: "Dhaka to Cox’s Bazar", bn_desc: "সমুদ্রভ্রমণের জন্য ঢাকা–কক্সবাজার ফ্লাইটের ফেয়ার জানুন।", en_desc: "Request a Dhaka–Cox’s Bazar flight quotation.", badge: "ask", mode: "air", preset: "Cox's Bazar (CXB)" },
+    { id: "student", category: "student", bn_title: "স্টুডেন্ট ফেয়ার অপশন", en_title: "Student fare options", bn_desc: "বিদেশে পড়তে যাওয়া যোগ্য শিক্ষার্থীদের জন্য প্রযোজ্য ফেয়ার জানুন।", en_desc: "Check eligible international student fares.", badge: "check", mode: "air", preset: "Student Travel" },
+    { id: "baggage", category: "student", bn_title: "স্টুডেন্ট এক্সট্রা ব্যাগেজ", en_title: "Student extra baggage", bn_desc: "নির্বাচিত ফেয়ারে অতিরিক্ত ব্যাগেজের যোগ্যতা ও শর্ত যাচাই করুন।", en_desc: "Check whether extra baggage applies to an eligible fare.", badge: "check", mode: "air", preset: "Extra Baggage" },
+    { id: "china-student", category: "student", bn_title: "চীনগামী শিক্ষার্থীদের ফ্লাইট", en_title: "Flights for students to China", bn_desc: "Beijing, Shanghai, Guangzhou ও Kunming ভ্রমণের কোটেশন।", en_desc: "Ask about student flights to Beijing, Shanghai, Guangzhou or Kunming.", badge: "check", mode: "air", preset: "Guangzhou (CAN)" },
+    { id: "china-southern", category: "student", bn_title: "China Southern Student", en_title: "China Southern student enquiries", bn_desc: "China Southern-এর প্রযোজ্য স্টুডেন্ট ফেয়ার ও ব্যাগেজ নিয়ম জানুন।", en_desc: "Check China Southern student fare and baggage eligibility.", badge: "check", mode: "air", preset: "China Southern" },
+    { id: "malaysia-student", category: "student", bn_title: "মালয়েশিয়া স্টুডেন্ট ট্রাভেল", en_title: "Malaysia student travel", bn_desc: "Malaysia Airlines বা অন্যান্য উপলব্ধ ফেয়ার ও ব্যাগেজ অপশন যাচাই করুন।", en_desc: "Ask about applicable Malaysia student fares and baggage rules.", badge: "check", mode: "air", preset: "Kuala Lumpur (KUL)" },
+    { id: "saudi-fare", category: "saudi", bn_title: "সৌদি ফেয়ার চেক", en_title: "Saudi fare check", bn_desc: "সৌদি টিকিট কাটার আগে আপনার রুটে একটি কোটেশন নিন।", en_desc: "Request a Saudi route quotation before booking.", badge: "ask", mode: "air", preset: "Saudi Arabia" },
+    { id: "saudi-cities", category: "saudi", bn_title: "জেদ্দা · রিয়াদ · মদিনা · দাম্মাম", en_title: "Jeddah · Riyadh · Madinah · Dammam", bn_desc: "চারটি জনপ্রিয় সৌদি গন্তব্যের ফ্লাইট অপশন জানুন।", en_desc: "Enquire about four major Saudi destinations.", badge: "ask", mode: "air", preset: "Saudi Cities" },
+    { id: "salamair", category: "saudi", bn_title: "SalamAir রিয়াদ ফেয়ার", en_title: "SalamAir Riyadh fare", bn_desc: "SalamAir-এর প্রযোজ্য ফেয়ার, ট্রানজিট ও ব্যাগেজ শর্ত জানুন।", en_desc: "Check applicable SalamAir Riyadh itineraries and fare rules.", badge: "check", mode: "air", preset: "Riyadh (RUH)|SalamAir" },
+    { id: "saudia-usbangla", category: "saudi", bn_title: "Saudia ও US-Bangla অপশন", en_title: "Saudia & US-Bangla options", bn_desc: "পছন্দের এয়ারলাইনের উপলব্ধ রুট ও প্রযোজ্য ভাড়া জানতে চান।", en_desc: "Ask about route-relevant options for your preferred airline.", badge: "ask", mode: "air", preset: "Saudia / US-Bangla" },
+    { id: "expat", category: "saudi", bn_title: "প্রবাসী ট্রাভেল ফেয়ার", en_title: "Expat travel enquiries", bn_desc: "দেশে ফেরা বা কর্মস্থলে ফেরার জন্য কোটেশন ও রিটার্ন অপশন।", en_desc: "Compare suitable outbound and return flight enquiries.", badge: "ask", mode: "air", preset: "Expat Fare" },
+    { id: "umrah", category: "saudi", bn_title: "ওমরাহ যাত্রার সমন্বয়", en_title: "Umrah travel assistance", bn_desc: "পবিত্র সফরের ফ্লাইট ও প্রাসঙ্গিক ভ্রমণ সহায়তা জানতে চান।", en_desc: "Enquire about Umrah flight and relevant travel coordination.", badge: "rules", mode: "tour", preset: "Jeddah (JED)|Umrah" },
+    { id: "premium-airlines", category: "premium", bn_title: "প্রিমিয়াম এয়ারলাইন অপশন", en_title: "Premium airline options", bn_desc: "Turkish, Singapore, Qatar Airways ও Emirates-এর ফেয়ার জানতে চান।", en_desc: "Enquire about Turkish, Singapore, Qatar Airways and Emirates.", badge: "ask", mode: "air", preset: "Premium Airlines" },
+    { id: "business-class", category: "premium", bn_title: "Business Class ট্রাভেল", en_title: "Business Class travel", bn_desc: "আরামদায়ক প্রিমিয়াম কেবিনের প্রযোজ্য কোটেশন জানতে চান।", en_desc: "Check available premium cabin quotes for your route.", badge: "ask", mode: "air", preset: "Business Class" },
+    { id: "corporate", category: "premium", bn_title: "কর্পোরেট ও গ্রুপ ট্রাভেল", en_title: "Corporate & group travel", bn_desc: "অফিস টিম, নিয়মিত কর্মী ও গ্রুপের ভ্রমণ সমন্বয়ের কোটেশন।", en_desc: "Request corporate team or group travel coordination.", badge: "ask", mode: "corporate", preset: "Corporate Group" },
+    { id: "after-sales", category: "care", bn_title: "বুকিং-পরবর্তী সহায়তা", en_title: "After-sales enquiries", bn_desc: "টিকিট বা ভ্রমণ সংক্রান্ত প্রশ্নে মানবিক সহায়তার অনুরোধ করুন।", en_desc: "Request human assistance about an existing travel booking.", badge: "rules", mode: "support", preset: "After-Sales" },
+    { id: "refund", category: "care", bn_title: "Refund · Re-Issue · Void", en_title: "Refund · Re-Issue · Void", bn_desc: "টিকিটের শর্ত অনুযায়ী পরিবর্তন বা সম্ভাব্য রিফান্ড জানুন।", en_desc: "Check change, cancellation and refund possibilities under fare rules.", badge: "rules", mode: "support", preset: "Refund/Reissue" },
+    { id: "visa", category: "services", bn_title: "ভিসা সহায়তা", en_title: "Visa assistance", bn_desc: "প্রাসঙ্গিক ডকুমেন্ট ও আবেদনের প্রস্তুতি সম্পর্কে জানুন।", en_desc: "Ask about visa documentation and application preparation assistance.", badge: "rules", mode: "visa", preset: "Visa Service" },
+    { id: "hotel", category: "services", bn_title: "হোটেল বুকিং অনুসন্ধান", en_title: "Hotel booking enquiries", bn_desc: "আপনার ভ্রমণ পরিকল্পনা অনুযায়ী থাকার অপশন জানতে চান।", en_desc: "Request accommodation options based on your trip.", badge: "ask", mode: "hotel", preset: "Hotel Booking" },
+    { id: "tour", category: "services", bn_title: "ট্যুর ও প্যাকেজ", en_title: "Tours & packages", bn_desc: "আপনার গন্তব্য ও সময় অনুযায়ী ভ্রমণ পরিকল্পনা আলোচনা করুন।", en_desc: "Enquire about destination and itinerary planning.", badge: "ask", mode: "tour", preset: "Holiday Package" },
+    { id: "transport", category: "services", bn_title: "এয়ারপোর্ট ও লোকাল ট্রান্সফার", en_title: "Airport & local transfers", bn_desc: "গন্তব্যে পরিবহন ও এয়ারপোর্ট ট্রান্সফারের সম্ভাব্য অপশন।", en_desc: "Ask about relevant transport and airport transfer arrangements.", badge: "ask", mode: "transport", preset: "Airport Transfer" }
+  ];
+
+  // 8 Atlas Featured Destinations
+  const ORIGIN = { code: 'DAC', en: 'Dhaka', bn: 'ঢাকা', lat: 23.8433, lon: 90.4033 };
+  const ATLAS_DESTINATIONS = [
+    { code: 'RUH', en: 'Riyadh', bn: 'রিয়াদ', countryEn: 'Saudi Arabia', countryBn: 'সৌদি আরব', lat: 24.96, lon: 46.70, category: 'saudi', tagEn: 'Saudi Expat & Direct Route', tagBn: 'সৌদি প্রবাসী ও সরাসরি রুট', descEn: 'High demand expatriate & business route to the Kingdom capital.', descBn: 'সৌদি রাজধানীগামী নিয়মিত প্রবাসী ও পেশাদারদের জন্য নির্ভরযোগ্য রুট কোটেশন।' },
+    { code: 'JED', en: 'Jeddah', bn: 'জেদ্দা', countryEn: 'Saudi Arabia', countryBn: 'সৌদি আরব', lat: 21.68, lon: 39.16, category: 'saudi', tagEn: 'Umrah & Expat Gateway', tagBn: 'পবিত্র ওমরাহ ও প্রবাসী হাব', descEn: 'Major gateway for holy Umrah journeys and western province travelers.', descBn: 'পবিত্র ওমরাহ সফর ও পশ্চিম প্রদেশের যাত্রীদের জন্য প্রধান এয়ারলাইন রুট।' },
+    { code: 'CXB', en: "Cox's Bazar", bn: 'কক্সবাজার', countryEn: 'Bangladesh', countryBn: 'বাংলাদেশ', lat: 21.45, lon: 91.96, category: 'domestic', tagEn: 'Domestic Beach Special', tagBn: 'দেশীয় সমুদ্রসৈকত স্পেশাল', descEn: 'Fastest coastal connection from Dhaka for leisure and family holidays.', descBn: 'ছুটি ও অবকাশযাপনে ঢাকা থেকে দেশের দীর্ঘতম সমুদ্রসৈকতে ভ্রমণের ফ্লাইট।' },
+    { code: 'KUL', en: 'Kuala Lumpur', bn: 'কুয়ালালামপুর', countryEn: 'Malaysia', countryBn: 'মালয়েশিয়া', lat: 2.74, lon: 101.70, category: 'student', tagEn: 'Student & ASEAN Transit', tagBn: 'স্টুডেন্ট ও আসিয়ান ট্রানজিট', descEn: 'Primary hub for scholars, tourists and regional connections.', descBn: 'শিক্ষার্থী, পর্যটক ও দক্ষিণ-পূর্ব এশিয়া ট্রানজিটের অন্যতম জনপ্রিয় গন্তব্য।' },
+    { code: 'SIN', en: 'Singapore', bn: 'সিঙ্গাপুর', countryEn: 'Singapore', countryBn: 'সিঙ্গাপুর', lat: 1.36, lon: 103.99, category: 'premium', tagEn: 'Global Business & Changi Hub', tagBn: 'গ্লোবাল বিজনেস ও চাঙ্গি হাব', descEn: 'World-class corporate travel, medical tourism and trans-pacific transit.', descBn: 'বিশ্বমানের কর্পোরেট ভ্রমণ, উন্নত চিকিৎসা এবং বিশ্বব্যাপী ট্রানজিট রুট।' },
+    { code: 'DXB', en: 'Dubai', bn: 'দুবাই', countryEn: 'UAE', countryBn: 'সংযুক্ত আরব আমিরাত', lat: 25.25, lon: 55.36, category: 'premium', tagEn: 'Global Megacity & Transit', tagBn: 'বৈশ্বিক মেগাসিটি ও ট্রানজিট', descEn: 'Middle East flagship hub with Turkish, Emirates & flydubai options.', descBn: 'এমিরেটস, ফ্লাইদুবাই ও ট্রানজিট ফ্লাইটের মাধ্যমে বিশ্বের কেন্দ্রবিন্দু।' },
+    { code: 'CAN', en: 'Guangzhou', bn: 'গুয়াংজু', countryEn: 'China', countryBn: 'চীন', lat: 23.39, lon: 113.30, category: 'student', tagEn: 'Student & Trade Capital', tagBn: 'শিক্ষার্থী ও বাণিজ্য কেন্দ্র', descEn: 'Direct China Southern student fares, business canton fair and cargo briefs.', descBn: 'চায়না সাউদার্ন স্টুডেন্ট ফেয়ার এবং ব্যবসায়ী দলের জন্য প্রধান রুট।' },
+    { code: 'LON', en: 'London', bn: 'লন্ডন', countryEn: 'United Kingdom', countryBn: 'যুক্তরাজ্য', lat: 51.47, lon: -0.45, category: 'premium', tagEn: 'Flagship European Hub', tagBn: 'ইউরোপের প্রধান হাব', descEn: 'Heathrow & Gatwick connections with student luggage & Biman direct routes.', descBn: 'লন্ডন হিথ্রো ও গ্যাটউইকগামী স্টুডেন্ট ফেয়ার এবং সরাসরি কোটেশন সার্ভিস।' }
+  ];
+
+
+  /* ==========================================================
+     2. BILINGUAL DICTIONARY (BN / EN)
+     ========================================================== */
+  const I18N = {
+    bn: {
+      nav_offers: '২৬টি অফার ও ক্যাম্পেইন',
+      nav_atlas: '৩ডি জার্নি অ্যাটলাস',
+      nav_studio: 'ট্রাভেল স্টুডিও',
+      nav_agency: 'B2B এজেন্সি হাব',
+      p0_tag: 'যাচাইকৃত কনট্যাক্ট: +8801674178437 | কোটেশন-ফার্স্ট মডেল',
+      cta_direct: 'কোটেশন ড্রাফট',
+      hero_pill: 'Aviation & Luxury Travel Command Center',
+      hero_h1_bn: 'সঠিক ফ্লাইটে শুরু হোক যাত্রা।',
+      hero_h1_en: 'Your Gateway to Global Travel.',
+      hero_sub: 'কোটেশন-ফার্স্ট সার্ভিস, ডেডিকেটেড কনসিয়ার্জ এবং বিশ্বমানের রুট সমন্বয়। ঢাকা থেকে বিশ্বের ৮টি প্রধান অ্যাটলাস হাব ও ৩৩টি বৈশ্বিক গন্তব্যে ভ্রমণের সঠিক পরিকল্পনা করুন।',
+      lbl_from: 'প্রস্থান (Origin)',
+      lbl_to: 'গন্তব্য (Atlas Destination)',
+      btn_explore_atlas: 'অ্যাটলাসে দেখুন',
+      note_transparency: 'স্বচ্ছ কোটেশন ও এয়ারলাইন নিয়ম মেনে যাচাই',
+      atlas_badge: 'Interactive 3D Journey Atlas',
+      atlas_heading: 'ঢাকা থেকে বৈশ্বিক রুটসমূহ',
+      atlas_subheading: '৮টি মূল অ্যাটলাস গন্তব্যে সরাসরি বা ট্রানজিট ফ্লাইটের জন্য ইন্টারেক্টিভ থ্রিডি গ্লোব এক্সপ্লোর করুন। প্রতিটি নোডে ক্লিক করে সরাসরি কোটেশন ব্রিফ তৈরি করুন।',
+      view_mode_2d: '2D রুট লিস্ট দেখুন',
+      view_mode_3d: '3D গ্লোবে ফিরুন',
+      btn_reset_view: 'গ্লোব রিসেট',
+      filter_pills: 'দ্রুত নির্বাচন:',
+      tooltip_click_hint: 'ক্লিক করে কোটেশন প্রস্তুত করুন',
+      btn_quote_route: 'এই রুটের কোটেশন চান',
+      route_catalog_title: '৮টি প্রধান অ্যাটলাস ডেস্টিনেশন ক্যাটালগ',
+      offers_badge: '26 Campaign Enquiry Categories',
+      offers_heading: 'ভ্রমণের সব আয়োজন, সুনির্দিষ্ট ক্যাটাগরিতে',
+      offers_subheading: 'ফ্লাইট, স্টুডেন্ট ফেয়ার, সৌদি রুট, প্রিমিয়াম কেবিন এবং বুকিং-পরবর্তী সহায়তা। যেকোনো কার্ডে ক্লিক করে সরাসরি ট্রাভেল স্টুডিওতে আপনার কোটেশন প্রিসেট লোড করুন।',
+      studio_badge: 'Interactive Travel Studio Engine',
+      studio_heading: 'আপনার ভ্রমণের পূর্ণাঙ্গ ব্রিফ তৈরি করুন',
+      studio_subheading: '৫টি সহজ ধাপে আপনার কাঙ্ক্ষিত রুট, যাত্রী ও বিশেষ চাহিদা জানান। কোনো আগাম পেমেন্ট ছাড়াই সরাসরি নির্ভরযোগ্য কোটেশন পান।',
+      agency_badge: 'B2B Travel Partner Ecosystem',
+      agency_heading: 'আপনার এজেন্সি। আরও বেশি মুনাফা ও সক্ষমতা।',
+      agency_subheading: '০% SAFARIA মার্কআপে সরাসরি নেট এয়ার ফেয়ার এক্সেস। কোনো লুকানো চার্জ ছাড়া ৭২ ঘণ্টার ভেরিফায়েড ট্রায়াল দিয়ে শুরু করুন।',
+      btn_agency_trial: '৭২ ঘণ্টার ট্রায়ালে আবেদন করুন',
+      btn_agency_annual: 'বার্ষিক পার্টনারশিপ শুরু করুন',
+      partner_badge: 'হোটেল, ট্যুর অপারেটর ও লজিস্টিকস পার্টনার',
+      partner_title: 'SAFARIA পার্টনার হাবে যোগ দিন',
+      partner_sub: 'আপনি যদি হোটেল সরবরাহকারী, বিমান পরিবহন সংস্থা বা স্থানীয় ট্যুর অপারেটর হন, তবে আমাদের গ্লোবাল ট্রাভেলার নেটওয়ার্কের সাথে যুক্ত হতে প্রস্তাব পাঠান।',
+      btn_partner_hub: 'পার্টনার হাব প্রস্তাব দিন',
+      modal_badge: 'সরাসরি রুট কোটেশন রিকোয়েস্ট',
+      modal_sub: 'আপনার ভ্রমণের প্রাথমিক বিবরণ দিন। SAFARIA টিম এয়ারলাইনের নিয়মানুযায়ী সঠিক কোটেশন জানাবে।',
+      fld_category: 'যাত্রার ধরন / ক্যাটাগরি',
+      fld_trip_type: 'ট্রিপ টাইপ',
+      fld_date: 'যাত্রার তারিখ (সম্ভাব্য)',
+      fld_pax: 'যাত্রীর সংখ্যা (Passengers)',
+      fld_name: 'আপনার পুরো নাম',
+      fld_phone: 'মোবাইল / WhatsApp নম্বর',
+      fld_notes: 'বিশেষ চাহিদা (এয়ারলাইন পছন্দ বা অতিরিক্ত ব্যাগেজ)',
+      disc_title: 'গুরুত্বপূর্ণ নোটিশ:',
+      disc_body: 'SAFARIA একটি কোটেশন-ভিত্তিক ট্রাভেল সমন্বয় সংস্থা। এটি রিয়েলটাইম স্বয়ংক্রিয় টিকেট কাটার মাধ্যম নয়; এয়ারলাইনের প্রাপ্যতা সাপেক্ষে মূল্য ও শর্ত নিশ্চিত করা হয়।',
+      btn_send_whatsapp: 'WhatsApp-এ কোটেশন পাঠান',
+      btn_google_form: 'গুগল ফর্মে পাঠান',
+      btn_submit_brief: 'WhatsApp-এ কোটেশন রিকোয়েস্ট পাঠান',
+      btn_ai_draft: 'AI দিয়ে ড্রাফট লিখুন',
+      footer_rights: '© ২০২৬ SAFARIA Tours & Travels. সর্বস্বত্ব সংরক্ষিত।'
+    },
+    en: {
+      nav_offers: '26 Campaign Offers',
+      nav_atlas: '3D Journey Atlas',
+      nav_studio: 'Travel Studio',
+      nav_agency: 'B2B Agency Hub',
+      p0_tag: 'Verified Contact: +8801674178437 | Quotation-First Model',
+      cta_direct: 'Draft Quotation',
+      hero_pill: 'Aviation & Luxury Travel Command Center',
+      hero_h1_bn: 'Start Your Journey with the Right Flight.',
+      hero_h1_en: 'Your Gateway to Global Travel.',
+      hero_sub: 'Quotation-first consultation, dedicated travel desk and global route coordination. Plan your journeys seamlessly from Dhaka to 8 primary Atlas hubs and 33 worldwide destinations.',
+      lbl_from: 'Origin',
+      lbl_to: 'Atlas Destination',
+      btn_explore_atlas: 'Explore on Atlas',
+      note_transparency: 'Transparent quotations verified against airline rules',
+      atlas_badge: 'Interactive 3D Journey Atlas',
+      atlas_heading: 'Global Flight Routes from Dhaka',
+      atlas_subheading: 'Interact with our 3D globe to preview flight arcs from Dhaka to 8 key global destinations. Click on any node to launch a customized quotation brief.',
+      view_mode_2d: 'Switch to 2D Route List',
+      view_mode_3d: 'Return to 3D Globe',
+      btn_reset_view: 'Reset Globe',
+      filter_pills: 'Quick Select:',
+      tooltip_click_hint: 'Click to prepare quotation',
+      btn_quote_route: 'Request Route Quotation',
+      route_catalog_title: '8 Featured Atlas Route Directories',
+      offers_badge: '26 Campaign Enquiry Categories',
+      offers_heading: 'Complete Travel Coordination by Category',
+      offers_subheading: 'Flights, student fares, Saudi routes, premium cabins and post-booking support. Click any card to launch the Travel Studio with that preset loaded.',
+      studio_badge: 'Interactive Travel Studio Engine',
+      studio_heading: 'Build Your Complete Journey Brief',
+      studio_subheading: '5 quick steps to outline your route, cabin, passenger requirements, and airline preferences. Receive a verified quote with zero upfront commitment.',
+      agency_badge: 'B2B Travel Partner Ecosystem',
+      agency_heading: 'Empower Your Travel Agency.',
+      agency_subheading: 'Direct 0% SAFARIA markup net air ticketing access. Start with a verified 72-hour trial under transparent commercial terms.',
+      btn_agency_trial: 'Apply for 72-Hour Trial',
+      btn_agency_annual: 'Start Annual Partnership',
+      partner_badge: 'Hotels, Operators & Ground Logistics',
+      partner_title: 'Join the SAFARIA Partner Hub',
+      partner_sub: 'If you provide hospitality, transport or regional tour activities, submit your proposal to cooperate with our client itineraries.',
+      btn_partner_hub: 'Submit Partner Proposal',
+      modal_badge: 'Direct Route Quotation Request',
+      modal_sub: 'Provide your tentative itinerary. The SAFARIA team will verify supplier fare rules and reply with a tailored quote.',
+      fld_category: 'Journey Category',
+      fld_trip_type: 'Trip Type',
+      fld_date: 'Departure Date (Tentative)',
+      fld_pax: 'Passenger Count',
+      fld_name: 'Full Legal Name',
+      fld_phone: 'Mobile / WhatsApp Number',
+      fld_notes: 'Preferences (Preferred Airline / Baggage Allowance)',
+      disc_title: 'Essential Disclosure:',
+      disc_body: 'SAFARIA operates as a quotation-first agency. Bookings are confirmed with suppliers upon agreement and prepayment; we do not claim instant automated seat issuance.',
+      btn_send_whatsapp: 'Send via WhatsApp',
+      btn_google_form: 'Open Google Form',
+      btn_submit_brief: 'Send Quotation Request via WhatsApp',
+      btn_ai_draft: 'Draft with AI',
+      footer_rights: '© 2026 SAFARIA Tours & Travels. All rights reserved.'
+    }
+  };
+
+  let currentLang = 'bn';
+
+  function setLanguage(lang) {
+    currentLang = lang;
+    document.documentElement.lang = lang;
+    
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.getAttribute('data-i18n');
+      if (I18N[lang] && I18N[lang][key]) {
+        el.textContent = I18N[lang][key];
+      }
+    });
+
+    document.getElementById('lang-label').textContent = lang === 'bn' ? 'বাং / EN' : 'EN / বাং';
+    renderBentoGrid(currentOfferFilter);
+    renderPills();
+    render2DCards();
+    updateSelectedCard(selectedDestination);
+    updateStudioStepLabels();
+  }
+
+  document.getElementById('lang-toggle-btn').addEventListener('click', () => {
+    setLanguage(currentLang === 'bn' ? 'en' : 'bn');
+  });
+
+
+  /* ==========================================================
+     3. MODULE A: 26-CAMPAIGN BENTO ENQUIRY GRID LOGIC
+     ========================================================== */
+  let currentOfferFilter = 'all';
+
+  function renderBentoGrid(filter = 'all') {
+    currentOfferFilter = filter;
+    const grid = document.getElementById('bento-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const filtered = filter === 'all' ? OFFERS : OFFERS.filter(o => o.category === filter);
+
+    filtered.forEach((offer, idx) => {
+      const card = document.createElement('div');
+      card.className = 'bento-card rounded-2xl p-5 flex flex-col justify-between cursor-pointer group';
+      card.onclick = () => launchStudioWithPreset(offer);
+
+      const badgeClass = offer.badge === 'ask' ? 'badge-ask' : (offer.badge === 'check' ? 'badge-check' : 'badge-rules');
+      const badgeText = offer.badge === 'ask' 
+        ? (currentLang === 'bn' ? 'কোটেশন রিকোয়েস্ট' : 'Request Quote')
+        : (offer.badge === 'check' 
+            ? (currentLang === 'bn' ? 'যোগ্যতা যাচাই' : 'Eligibility Check')
+            : (currentLang === 'bn' ? 'নিয়মাবলী ও সাপোর্ট' : 'Fare Rules & Care'));
+
+      card.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase ${badgeClass}">
+              ${badgeText}
+            </span>
+            <span class="text-[11px] font-mono text-sf-gold/80 uppercase">#${String(idx + 1).padStart(2, '0')}</span>
+          </div>
+
+          <h3 class="text-base font-bold text-sf-ivory group-hover:text-sf-gold transition mb-2">
+            ${currentLang === 'bn' ? offer.bn_title : offer.en_title}
+          </h3>
+
+          <p class="text-xs text-sf-muted line-clamp-3 leading-relaxed">
+            ${currentLang === 'bn' ? offer.bn_desc : offer.en_desc}
+          </p>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-sf-line/40 flex items-center justify-between text-xs font-semibold text-sf-gold">
+          <span>${currentLang === 'bn' ? 'স্টুডিওতে লোড করুন' : 'Open in Studio'}</span>
+          <span class="transform group-hover:translate-x-1.5 transition">→</span>
+        </div>
+      `;
+
+      grid.appendChild(card);
+    });
+
+    // Staggered reveal animation with Anime.js
+    if (typeof anime !== 'undefined') {
+      anime({
+        targets: '#bento-grid .bento-card',
+        translateY: [20, 0],
+        opacity: [0, 1],
+        delay: anime.stagger(30),
+        duration: 450,
+        easing: 'easeOutQuad'
+      });
+    }
+  }
+
+  // Filter Buttons
+  document.querySelectorAll('.offer-filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.offer-filter-btn').forEach(b => {
+        b.className = 'offer-filter-btn px-3 py-1.5 rounded-full border border-sf-line glass-card text-sf-muted hover:text-sf-gold hover:border-sf-gold transition';
+      });
+      btn.className = 'offer-filter-btn px-3 py-1.5 rounded-full border border-sf-gold bg-sf-gold text-sf-bg font-semibold transition';
+      renderBentoGrid(btn.getAttribute('data-filter'));
+    });
+  });
+
+  // Seamless jump from Bento card to Travel Studio with preset props
+  function launchStudioWithPreset(offer) {
+    // Map category
+    const catMap = {
+      'flights': 'Air Ticketing',
+      'student': 'Student Travel',
+      'saudi': 'Saudi / Expat Travel',
+      'premium': 'Air Ticketing',
+      'care': 'Air Ticketing',
+      'services': 'Holiday & Tour Package'
+    };
+    const radio = document.querySelector(`input[name="category"][value="${catMap[offer.category] || 'Air Ticketing'}"]`);
+    if (radio) radio.checked = true;
+
+    // Map preset to destination or notes
+    if (offer.preset) {
+      if (offer.preset.includes('CXB') || offer.preset.includes('Cox')) {
+        document.getElementById('studio-destination').value = "Cox's Bazar (CXB) - Bangladesh";
+      } else if (offer.preset.includes('CAN') || offer.preset.includes('China')) {
+        document.getElementById('studio-destination').value = "Guangzhou (CAN) - China";
+      } else if (offer.preset.includes('KUL') || offer.preset.includes('Malaysia')) {
+        document.getElementById('studio-destination').value = "Kuala Lumpur (KUL) - Malaysia";
+      } else if (offer.preset.includes('RUH') || offer.preset.includes('Riyadh')) {
+        document.getElementById('studio-destination').value = "Riyadh (RUH) - Saudi Arabia";
+      } else if (offer.preset.includes('JED') || offer.preset.includes('Jeddah')) {
+        document.getElementById('studio-destination').value = "Jeddah (JED) - Saudi Arabia";
+      }
+      document.getElementById('studio-notes').value = `[Inquiry Reference: ${offer.en_title}] - ${offer.preset}`;
+    }
+
+    // Scroll smoothly to studio
+    const studioSection = document.getElementById('sfp-studio');
+    studioSection.scrollIntoView({ behavior: 'smooth' });
+
+    // Highlight studio container
+    if (typeof anime !== 'undefined') {
+      anime({
+        targets: '#sfp-studio .glass-card',
+        boxShadow: ['0 0 0 rgba(207,181,124,0)', '0 0 40px rgba(207,181,124,0.3)', '0 0 10px rgba(207,181,124,0.1)'],
+        duration: 1200,
+        easing: 'easeInOutQuad'
+      });
+    }
+  }
+
+
+  /* ==========================================================
+     4. MODULE B: 5-STEP TRAVEL STUDIO ENGINE (18 FIELDS)
+     ========================================================== */
+  let studioStep = 1;
+
+  function updateStudioStepLabels() {
+    const labels = {
+      1: currentLang === 'bn' ? 'ধাপ ১/৫: সার্ভিসের ধরন ও ট্রিপ টাইপ' : 'Step 1/5: Service Category & Trip Type',
+      2: currentLang === 'bn' ? 'ধাপ ২/৫: রুট ও যাত্রার সময়সূচি' : 'Step 2/5: Route & Travel Schedule',
+      3: currentLang === 'bn' ? 'ধাপ ৩/৫: যাত্রী সংখ্যা ও কেবিন ক্লাস' : 'Step 3/5: Passengers & Cabin Class',
+      4: currentLang === 'bn' ? 'ধাপ ৪/৫: এয়ারলাইন পছন্দ ও বিশেষ নোট' : 'Step 4/5: Preferences & Travel Brief',
+      5: currentLang === 'bn' ? 'ধাপ ৫/৫: যোগাযোগের বিবরণ ও সম্মতি' : 'Step 5/5: Contact Information & Consent'
+    };
+    document.getElementById('step-label-text').textContent = labels[studioStep];
+    document.getElementById('step-percentage').textContent = `${studioStep * 20}%`;
+    document.getElementById('studio-progress-bar').style.width = `${studioStep * 20}%`;
+
+    // Update pill highlights
+    document.querySelectorAll('.step-nav-pill').forEach(pill => {
+      const step = parseInt(pill.getAttribute('data-step'), 10);
+      if (step === studioStep) {
+        pill.className = 'step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-gold text-sf-gold font-semibold bg-sf-gold/15 transition';
+      } else if (step < studioStep) {
+        pill.className = 'step-nav-pill py-1.5 text-[11px] rounded-lg border border-emerald-500/40 text-emerald-400 font-medium bg-emerald-500/10 transition';
+      } else {
+        pill.className = 'step-nav-pill py-1.5 text-[11px] rounded-lg border border-sf-line text-sf-muted hover:border-sf-gold transition';
+      }
+    });
+
+    // Toggle Back / Next / Submit button visibility
+    const prevBtn = document.getElementById('btn-studio-prev');
+    const nextBtn = document.getElementById('btn-studio-next');
+    const submitBtn = document.getElementById('btn-studio-submit');
+
+    if (studioStep === 1) {
+      prevBtn.classList.add('hidden');
+    } else {
+      prevBtn.classList.remove('hidden');
+    }
+
+    if (studioStep === 5) {
+      nextBtn.classList.add('hidden');
+      submitBtn.classList.remove('hidden');
+      submitBtn.classList.add('flex');
+    } else {
+      nextBtn.classList.remove('hidden');
+      submitBtn.classList.add('hidden');
+      submitBtn.classList.remove('flex');
+    }
+  }
+
+  function validateCurrentStep() {
+    if (studioStep === 2) {
+      const origin = document.getElementById('studio-origin');
+      const dest = document.getElementById('studio-destination');
+      const dep = document.getElementById('studio-departure');
+      let valid = true;
+
+      if (!origin.value.trim()) { triggerShake(origin); valid = false; }
+      if (!dest.value.trim()) { triggerShake(dest); valid = false; }
+      if (!dep.value.trim()) { triggerShake(dep); valid = false; }
+      return valid;
+    }
+    return true;
+  }
+
+  function triggerShake(element) {
+    if (typeof anime !== 'undefined') {
+      anime({
+        targets: element,
+        translateX: [-8, 8, -6, 6, -3, 3, 0],
+        duration: 400,
+        easing: 'easeInOutSine'
+      });
+    }
+    element.focus();
+  }
+
+  function goToStep(targetStep) {
+    if (targetStep > studioStep && !validateCurrentStep()) return;
+    
+    document.querySelectorAll('.studio-step').forEach(stepEl => {
+      stepEl.classList.add('hidden');
+    });
+
+    studioStep = targetStep;
+    const targetEl = document.getElementById(`step-${studioStep}`);
+    targetEl.classList.remove('hidden');
+
+    if (typeof anime !== 'undefined') {
+      anime({
+        targets: targetEl,
+        opacity: [0, 1],
+        translateY: [15, 0],
+        duration: 350,
+        easing: 'easeOutQuad'
+      });
+    }
+
+    updateStudioStepLabels();
+  }
+
+  function handleStudioStepChange(delta) {
+    const next = studioStep + delta;
+    if (next >= 1 && next <= 5) {
+      goToStep(next);
+    }
+  }
+
+  function adjustPax(type, delta) {
+    const input = document.getElementById(`studio-${type}`);
+    if (!input) return;
+    let val = parseInt(input.value, 10) + delta;
+    const min = parseInt(input.min, 10);
+    const max = parseInt(input.max, 10);
+    if (val >= min && val <= max) {
+      input.value = val;
+    }
+  }
+
+  // 33 Destinations Fuzzy Autocomplete
+  function setupAutocomplete(inputId, dropdownId) {
+    const input = document.getElementById(inputId);
+    const dropdown = document.getElementById(dropdownId);
+    if (!input || !dropdown) return;
+
+    input.addEventListener('input', () => {
+      const val = input.value.trim().toLowerCase();
+      if (!val) {
+        dropdown.classList.add('hidden');
+        return;
+      }
+
+      const matches = DESTINATIONS.filter(d => 
+        d.city.toLowerCase().includes(val) || 
+        d.code.toLowerCase().includes(val) || 
+        d.country.toLowerCase().includes(val)
+      );
+
+      dropdown.innerHTML = '';
+      if (matches.length === 0) {
+        dropdown.innerHTML = `<div class="p-2.5 text-xs text-sf-muted">কোনো নির্দিষ্ট বিমানবন্দর মেলেনি। আপনার পছন্দ টাইপ করুন।</div>`;
+        dropdown.classList.remove('hidden');
+        return;
+      }
+
+      matches.slice(0, 6).forEach(m => {
+        const item = document.createElement('div');
+        item.className = 'px-3 py-2 text-xs hover:bg-sf-green/80 cursor-pointer flex items-center justify-between border-b border-sf-line/20 last:border-b-0 text-sf-ivory';
+        item.innerHTML = `
+          <div>
+            <span class="font-bold text-sf-gold">${m.city}</span> 
+            <span class="text-sf-muted">(${m.country})</span>
+          </div>
+          <span class="font-mono text-[10px] px-1.5 py-0.5 rounded bg-sf-green text-sf-gold border border-sf-line">${m.code}</span>
+        `;
+        item.onclick = () => {
+          input.value = `${m.city} (${m.code}) - ${m.country}`;
+          dropdown.classList.add('hidden');
+        };
+        dropdown.appendChild(item);
+      });
+      dropdown.classList.remove('hidden');
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!input.contains(e.target) && !dropdown.contains(e.target)) {
+        dropdown.classList.add('hidden');
+      }
+    });
+  }
+
+  setupAutocomplete('studio-origin', 'origin-dropdown');
+  setupAutocomplete('studio-destination', 'dest-dropdown');
+
+  // AI Itinerary Draft Simulator with typewriter effect
+  document.getElementById('btn-ai-draft').addEventListener('click', () => {
+    const origin = document.getElementById('studio-origin').value || 'Dhaka';
+    const dest = document.getElementById('studio-destination').value || 'Selected Destination';
+    const date = document.getElementById('studio-departure').value || 'Tentative schedule';
+    const adults = document.getElementById('studio-adults').value;
+    const cabin = document.querySelector('input[name="cabin"]:checked')?.value || 'Economy';
+
+    const draft = `Requesting best quotation for ${adults} passenger(s) on ${origin} to ${dest}. Target departure around ${date} in ${cabin} class. Prefer minimal transit layovers and transparent baggage allowances under official supplier rules.`;
+    
+    const textarea = document.getElementById('studio-notes');
+    textarea.value = '';
+    let i = 0;
+    const timer = setInterval(() => {
+      textarea.value += draft.charAt(i);
+      i++;
+      if (i >= draft.length) clearInterval(timer);
+    }, 18);
+  });
+
+  // Final Form Submission to WhatsApp Concierge (+8801674178437)
+  document.getElementById('sf-travel-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const consent = document.getElementById('studio-consent');
+    if (!consent.checked) {
+      triggerShake(consent.parentElement);
+      return;
+    }
+
+    const category = document.querySelector('input[name="category"]:checked')?.value || 'Air Ticketing';
+    const tripType = document.querySelector('input[name="tripType"]:checked')?.value || 'One-Way';
+    const origin = document.getElementById('studio-origin').value;
+    const destination = document.getElementById('studio-destination').value;
+    const departure = document.getElementById('studio-departure').value;
+    const flexible = document.getElementById('studio-flexible').checked ? 'Yes (±3 days)' : 'No';
+    const adults = document.getElementById('studio-adults').value;
+    const children = document.getElementById('studio-children').value;
+    const infants = document.getElementById('studio-infants').value;
+    const cabin = document.querySelector('input[name="cabin"]:checked')?.value || 'Economy';
+    const airline = document.getElementById('studio-airline').value || 'Any Carrier';
+    const baggage = document.getElementById('studio-baggage').value || 'Standard';
+    const notes = document.getElementById('studio-notes').value;
+    const fullName = document.getElementById('studio-fullname').value;
+    const phone = document.getElementById('studio-phone').value;
+    const email = document.getElementById('studio-email').value || 'Not provided';
+    const contactMethod = document.getElementById('studio-contactMethod').value;
+
+    const message = `*SAFARIA Travel Studio Quotation Request*\n` +
+      `------------------------------------\n` +
+      `• Service: ${category}\n` +
+      `• Trip Type: ${tripType}\n` +
+      `• Route: ${origin} ➔ ${destination}\n` +
+      `• Departure Date: ${departure} (${flexible})\n` +
+      `• Cabin Class: ${cabin}\n` +
+      `• Passengers: ${adults} Adult(s), ${children} Child, ${infants} Infant\n` +
+      `• Preferred Airline: ${airline}\n` +
+      `• Baggage: ${baggage}\n` +
+      (notes ? `• Special Notes: ${notes}\n` : '') +
+      `------------------------------------\n` +
+      `• Traveler Name: ${fullName}\n` +
+      `• Mobile / WhatsApp: ${phone}\n` +
+      `• Email: ${email}\n` +
+      `• Contact Mode: ${contactMethod}\n` +
+      `• Consent: Agreed to Quotation-First Model\n` +
+      `------------------------------------\n` +
+      `Please verify supplier fare rules and share official quotation.`;
+
+    const encoded = encodeURIComponent(message);
+    window.open(`https://wa.me/8801674178437?text=${encoded}`, '_blank');
+  });
+
+
+  /* ==========================================================
+     5. MODULE C: B2B PRICING TOGGLE & MODAL ENGINES
+     ========================================================== */
+  let currentBillingCycle = 'monthly';
+
+  function setBillingCycle(cycle) {
+    currentBillingCycle = cycle;
+    const btnMonthly = document.getElementById('toggle-monthly');
+    const btnAnnual = document.getElementById('toggle-annual');
+    const priceMain = document.getElementById('price-display-main');
+    const periodMain = document.getElementById('price-period-main');
+    const subMain = document.getElementById('price-sub-main');
+
+    if (cycle === 'annual') {
+      btnMonthly.className = 'px-5 py-2 rounded-full text-xs font-medium text-sf-muted hover:text-sf-ivory transition';
+      btnAnnual.className = 'px-5 py-2 rounded-full text-xs font-bold transition bg-sf-gold text-sf-bg shadow-gold-glow flex items-center gap-1.5';
+      
+      // Morph prices
+      priceMain.textContent = '৳৬৯,৯৯৯';
+      periodMain.textContent = '/ বছর';
+      subMain.textContent = 'মাসিক সমতুল্য ৳৫,৮৩৩ (সাশ্রয় ৳১,৯৮৯/বছর)';
+    } else {
+      btnMonthly.className = 'px-5 py-2 rounded-full text-xs font-bold transition bg-sf-gold text-sf-bg shadow-gold-glow';
+      btnAnnual.className = 'px-5 py-2 rounded-full text-xs font-medium text-sf-muted hover:text-sf-ivory transition flex items-center gap-1.5';
+      
+      priceMain.textContent = '৳৫,৯৯৯';
+      periodMain.textContent = '/ মাস';
+      subMain.textContent = 'ফ্লেক্সিবল মাসিক সাবস্ক্রিপশন';
+    }
+
+    if (typeof anime !== 'undefined') {
+      anime({
+        targets: '#price-display-main',
+        scale: [1.1, 1],
+        duration: 300,
+        easing: 'easeOutBack'
+      });
+    }
+  }
+
+  // Agency Modal Handlers (Pause 3D Globe to save GPU)
+  const agencyModal = document.getElementById('agency-modal');
+  const agencyModalCard = document.getElementById('agency-modal-card');
+
+  window.openAgencyModal = function(plan = 'monthly') {
+    isGlobeRenderingPaused = true; // PAUSE 3D RENDER
+    const select = document.getElementById('agency-applicationType');
+    if (plan === 'annual') {
+      select.value = 'Annual Subscription';
+    } else {
+      select.value = '72h Free Trial';
+    }
+    agencyModal.classList.remove('pointer-events-none', 'opacity-0');
+    agencyModalCard.classList.remove('scale-95');
+    agencyModalCard.classList.add('scale-100');
+  };
+
+  window.closeAgencyModal = function() {
+    agencyModal.classList.add('pointer-events-none', 'opacity-0');
+    agencyModalCard.classList.remove('scale-100');
+    agencyModalCard.classList.add('scale-95');
+    isGlobeRenderingPaused = false; // RESUME 3D RENDER
+  };
+
+  document.getElementById('sf-agency-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const type = document.getElementById('agency-applicationType').value;
+    const agency = document.getElementById('agency-agencyName').value;
+    const loc = document.getElementById('agency-location').value;
+    const name = document.getElementById('agency-fullName').value;
+    const phone = document.getElementById('agency-phone').value;
+
+    const msg = `*SAFARIA B2B Agency Application*\n` +
+      `• Plan Requested: ${type}\n` +
+      `• Agency Name: ${agency}\n` +
+      `• Location: ${loc}\n` +
+      `• Contact Person: ${name}\n` +
+      `• Phone/WhatsApp: ${phone}\n` +
+      `• Commercial Terms: Agreed to 0% markup terms & 72h verified trial conditions.\n` +
+      `Please contact for agency onboarding.`;
+
+    window.open(`https://wa.me/8801674178437?text=${encodeURIComponent(msg)}`, '_blank');
+    closeAgencyModal();
+  });
+
+  // Partner Modal Handlers
+  const partnerModal = document.getElementById('partner-modal');
+  const partnerModalCard = document.getElementById('partner-modal-card');
+
+  window.openPartnerModal = function() {
+    isGlobeRenderingPaused = true;
+    partnerModal.classList.remove('pointer-events-none', 'opacity-0');
+    partnerModalCard.classList.remove('scale-95');
+    partnerModalCard.classList.add('scale-100');
+  };
+
+  window.closePartnerModal = function() {
+    partnerModal.classList.add('pointer-events-none', 'opacity-0');
+    partnerModalCard.classList.remove('scale-100');
+    partnerModalCard.classList.add('scale-95');
+    isGlobeRenderingPaused = false;
+  };
+
+  document.getElementById('sf-partner-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const cat = document.getElementById('partner-category').value;
+    const bName = document.getElementById('partner-businessName').value;
+    const prop = document.getElementById('partner-proposal').value;
+    const name = document.getElementById('partner-fullName').value;
+    const phone = document.getElementById('partner-phone').value;
+
+    const msg = `*SAFARIA Partner Hub Proposal*\n` +
+      `• Category: ${cat}\n` +
+      `• Business: ${bName}\n` +
+      `• Proposal: ${prop}\n` +
+      `• Contact Name: ${name}\n` +
+      `• Phone: ${phone}\n` +
+      `Please connect regarding partnership opportunities.`;
+
+    window.open(`https://wa.me/8801674178437?text=${encodeURIComponent(msg)}`, '_blank');
+    closePartnerModal();
+  });
+
+
+  /* ==========================================================
+     6. THREE.JS 3D JOURNEY ATLAS GLOBE (GPU-AWARE)
+     ========================================================== */
+  let scene, camera, renderer, controls;
+  let globeMesh, atmosphereMesh;
+  let markersGroup, arcsGroup;
+  let raycaster, mouse;
+  let selectedDestination = ATLAS_DESTINATIONS[0];
+  const GLOBE_RADIUS = 100;
+
+  function latLonToVector3(lat, lon, radius = GLOBE_RADIUS) {
+    const phi = (90 - lat) * (Math.PI / 180);
+    const theta = (lon + 180) * (Math.PI / 180);
+    return new THREE.Vector3(
+      -radius * Math.sin(phi) * Math.cos(theta),
+      radius * Math.cos(phi),
+      radius * Math.sin(phi) * Math.sin(theta)
+    );
+  }
+
+  function createProceduralGlobeTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 2048;
+    canvas.height = 1024;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#041713';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.strokeStyle = 'rgba(207, 181, 124, 0.08)';
+    ctx.lineWidth = 1;
+    for (let y = 0; y < canvas.height; y += 64) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    for (let x = 0; x < canvas.width; x += 64) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = 'rgba(6, 43, 39, 0.85)';
+    ctx.beginPath(); ctx.ellipse(1350, 420, 320, 180, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(1120, 560, 160, 200, 0.2, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(1680, 560, 140, 120, 0.1, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(540, 420, 180, 150, -0.2, 0, Math.PI * 2); ctx.fill();
+
+    ctx.fillStyle = 'rgba(207, 181, 124, 0.35)';
+    for (let i = 0; i < 2800; i++) {
+      const x = Math.random() * canvas.width;
+      const y = Math.random() * canvas.height;
+      ctx.fillRect(x, y, 1.5, 1.5);
+    }
+
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  function initJourneyAtlas() {
+    const container = document.getElementById('atlas-canvas-container');
+    if (!container) return;
+
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(45, width / height, 1, 2000);
+    camera.position.set(0, 70, 320);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    container.appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.enablePan = false;
+    controls.minDistance = 160;
+    controls.maxDistance = 450;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.6;
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.85);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xcfb57c, 1.2);
+    directionalLight.position.set(200, 300, 200);
+    scene.add(directionalLight);
+
+    const globeGeometry = new THREE.SphereGeometry(GLOBE_RADIUS, 64, 64);
+    const globeTexture = createProceduralGlobeTexture();
+    const globeMaterial = new THREE.MeshPhongMaterial({
+      map: globeTexture,
+      bumpScale: 1.5,
+      shininess: 15,
+      specular: new THREE.Color(0x062b27)
+    });
+    globeMesh = new THREE.Mesh(globeGeometry, globeMaterial);
+    scene.add(globeMesh);
+
+    const atmosphereGeo = new THREE.SphereGeometry(GLOBE_RADIUS * 1.03, 64, 64);
+    const atmosphereMat = new THREE.MeshBasicMaterial({
+      color: 0x064e3b,
+      transparent: true,
+      opacity: 0.15,
+      side: THREE.BackSide
+    });
+    atmosphereMesh = new THREE.Mesh(atmosphereGeo, atmosphereMat);
+    scene.add(atmosphereMesh);
+
+    markersGroup = new THREE.Group();
+    arcsGroup = new THREE.Group();
+    scene.add(markersGroup);
+    scene.add(arcsGroup);
+
+    raycaster = new THREE.Raycaster();
+    mouse = new THREE.Vector2();
+
+    buildOriginDhakaMarker();
+    buildDestinationMarkers();
+    drawFlightArcs();
+
+    focusOnDestination(ATLAS_DESTINATIONS[0], false);
+
+    window.addEventListener('resize', onWindowResize);
+    container.addEventListener('mousemove', onMouseMove);
+    container.addEventListener('click', onGlobeClick);
+
+    animate();
+  }
+
+  function buildOriginDhakaMarker() {
+    const pos = latLonToVector3(ORIGIN.lat, ORIGIN.lon, GLOBE_RADIUS + 0.5);
+    const pinGeo = new THREE.SphereGeometry(2.4, 16, 16);
+    const pinMat = new THREE.MeshBasicMaterial({ color: 0x10b981 });
+    const dacMarker = new THREE.Mesh(pinGeo, pinMat);
+    dacMarker.position.copy(pos);
+    markersGroup.add(dacMarker);
+
+    const ringGeo = new THREE.RingGeometry(2.8, 4.2, 32);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x10b981, side: THREE.DoubleSide, transparent: true, opacity: 0.7 });
+    const beaconRing = new THREE.Mesh(ringGeo, ringMat);
+    beaconRing.position.copy(pos);
+    beaconRing.lookAt(pos.clone().multiplyScalar(2));
+    markersGroup.add(beaconRing);
+  }
+
+  const destinationMeshes = [];
+  function buildDestinationMarkers() {
+    ATLAS_DESTINATIONS.forEach(dest => {
+      const pos = latLonToVector3(dest.lat, dest.lon, GLOBE_RADIUS + 0.5);
+      const pinGeo = new THREE.SphereGeometry(1.9, 16, 16);
+      const pinMat = new THREE.MeshStandardMaterial({ color: 0xcfb57c, emissive: 0x755d28, roughness: 0.3 });
+      const pin = new THREE.Mesh(pinGeo, pinMat);
+      pin.position.copy(pos);
+      pin.userData = { destination: dest };
+
+      const ringGeo = new THREE.RingGeometry(2.2, 3.2, 32);
+      const ringMat = new THREE.MeshBasicMaterial({ color: 0xcfb57c, side: THREE.DoubleSide, transparent: true, opacity: 0.6 });
+      const ring = new THREE.Mesh(ringGeo, ringMat);
+      ring.position.copy(pos);
+      ring.lookAt(pos.clone().multiplyScalar(2));
+
+      markersGroup.add(pin);
+      markersGroup.add(ring);
+      destinationMeshes.push(pin);
+    });
+  }
+
+  function drawFlightArcs() {
+    const dacPos = latLonToVector3(ORIGIN.lat, ORIGIN.lon, GLOBE_RADIUS);
+    ATLAS_DESTINATIONS.forEach(dest => {
+      const destPos = latLonToVector3(dest.lat, dest.lon, GLOBE_RADIUS);
+      const distance = dacPos.distanceTo(destPos);
+      const midPoint = new THREE.Vector3().addVectors(dacPos, destPos).multiplyScalar(0.5);
+      const altitude = GLOBE_RADIUS + (distance * 0.28);
+      midPoint.normalize().multiplyScalar(altitude);
+
+      const curve = new THREE.QuadraticBezierCurve3(dacPos, midPoint, destPos);
+      const points = curve.getPoints(50);
+      const geometry = new THREE.BufferGeometry().setFromPoints(points);
+      const material = new THREE.LineBasicMaterial({ color: 0xcfb57c, transparent: true, opacity: 0.55 });
+      const arcLine = new THREE.Line(geometry, material);
+      arcsGroup.add(arcLine);
+    });
+  }
+
+  function focusOnDestination(dest, animate = true) {
+    selectedDestination = dest;
+    updateSelectedCard(dest);
+
+    const targetPos = latLonToVector3(dest.lat, dest.lon, GLOBE_RADIUS);
+    const camPos = targetPos.clone().normalize().multiplyScalar(280);
+
+    controls.autoRotate = false;
+
+    if (animate && typeof anime !== 'undefined') {
+      anime({
+        targets: camera.position,
+        x: camPos.x,
+        y: camPos.y + 40,
+        z: camPos.z,
+        duration: 1200,
+        easing: 'easeInOutCubic',
+        complete: () => {
+          setTimeout(() => { controls.autoRotate = true; }, 6000);
+        }
+      });
+    } else {
+      camera.position.set(camPos.x, camPos.y + 40, camPos.z);
+    }
+  }
+
+  const tooltip = document.getElementById('atlas-tooltip');
+  function onMouseMove(event) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(destinationMeshes);
+
+    if (intersects.length > 0) {
+      const dest = intersects[0].object.userData.destination;
+      if (dest) {
+        document.body.style.cursor = 'pointer';
+        tooltip.style.opacity = '1';
+        tooltip.style.left = `${event.clientX - rect.left + 15}px`;
+        tooltip.style.top = `${event.clientY - rect.top - 20}px`;
+        
+        document.getElementById('tooltip-code').textContent = dest.code;
+        document.getElementById('tooltip-country').textContent = currentLang === 'bn' ? dest.countryBn : dest.countryEn;
+        document.getElementById('tooltip-name').textContent = `${currentLang === 'bn' ? dest.bn : dest.en} (${dest.code})`;
+        return;
+      }
+    }
+    document.body.style.cursor = 'default';
+    tooltip.style.opacity = '0';
+  }
+
+  function onGlobeClick() {
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(destinationMeshes);
+    if (intersects.length > 0) {
+      const dest = intersects[0].object.userData.destination;
+      if (dest) focusOnDestination(dest, true);
+    }
+  }
+
+  function onWindowResize() {
+    const container = document.getElementById('atlas-canvas-container');
+    if (!container || !renderer || !camera) return;
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+  }
+
+  // GPU-Aware Animation Loop
+  function animate() {
+    requestAnimationFrame(animate);
+    if (isGlobeRenderingPaused) return; // HALT GPU DRAW CALLS
+    if (controls) controls.update();
+    if (renderer && scene && camera) {
+      renderer.render(scene, camera);
+    }
+  }
+
+
+  /* ==========================================================
+     7. HERO ORBIT CANVAS & ATLAS UI CONTROLS
+     ========================================================== */
+  function initHeroOrbitCanvas() {
+    const canvas = document.getElementById('sf-orbit-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = canvas.width = canvas.parentElement.offsetWidth;
+      height = canvas.height = canvas.parentElement.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const orbits = [
+      { radius: 180, speed: 0.0006, angle: 0, color: 'rgba(207, 181, 124, 0.25)' },
+      { radius: 300, speed: -0.0004, angle: Math.PI / 4, color: 'rgba(207, 181, 124, 0.18)' },
+      { radius: 440, speed: 0.0003, angle: Math.PI / 2, color: 'rgba(6, 43, 39, 0.4)' },
+      { radius: 600, speed: -0.0002, angle: Math.PI / 3, color: 'rgba(207, 181, 124, 0.12)' },
+    ];
+
+    const particles = [];
+    for (let i = 0; i < 36; i++) {
+      particles.push({
+        orbitIndex: i % orbits.length,
+        offsetAngle: Math.random() * Math.PI * 2,
+        size: Math.random() * 2 + 1,
+        speed: (Math.random() * 0.0005 + 0.0002) * (Math.random() > 0.5 ? 1 : -1)
+      });
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      const cx = width / 2;
+      const cy = height / 2;
+
+      orbits.forEach(orbit => {
+        ctx.beginPath();
+        ctx.arc(cx, cy, orbit.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = orbit.color;
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      });
+
+      particles.forEach(p => {
+        p.offsetAngle += p.speed;
+        const orbit = orbits[p.orbitIndex];
+        const px = cx + Math.cos(p.offsetAngle) * orbit.radius;
+        const py = cy + Math.sin(p.offsetAngle) * orbit.radius;
+
+        ctx.beginPath();
+        ctx.arc(px, py, p.size, 0, Math.PI * 2);
+        ctx.fillStyle = '#cfb57c';
+        ctx.shadowBlur = 6;
+        ctx.shadowColor = '#cfb57c';
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      });
+
+      requestAnimationFrame(draw);
+    }
+    draw();
+  }
+
+  function renderPills() {
+    const container = document.getElementById('destination-pills-container');
+    if (!container) return;
+    container.innerHTML = '';
+
+    ATLAS_DESTINATIONS.forEach(dest => {
+      const btn = document.createElement('button');
+      const isSelected = selectedDestination.code === dest.code;
+      btn.className = `px-3 py-1.5 rounded-full text-xs font-medium tracking-wide shrink-0 transition flex items-center gap-1.5 ${
+        isSelected ? 'bg-sf-gold text-sf-bg font-bold shadow-gold-glow' : 'glass-card border border-sf-line text-sf-ivory hover:border-sf-gold'
+      }`;
+      btn.innerHTML = `<span class="font-mono">${dest.code}</span> • <span>${currentLang === 'bn' ? dest.bn : dest.en}</span>`;
+      btn.onclick = () => {
+        focusOnDestination(dest, true);
+        renderPills();
+      };
+      container.appendChild(btn);
+    });
+  }
+
+  function updateSelectedCard(dest) {
+    document.getElementById('route-card-code').textContent = dest.code;
+    document.getElementById('route-card-city').textContent = currentLang === 'bn' ? dest.bn : dest.en;
+    document.getElementById('route-card-badge').textContent = currentLang === 'bn' ? dest.tagBn : dest.tagEn;
+    document.getElementById('route-card-desc').textContent = currentLang === 'bn' ? dest.descBn : dest.descEn;
+    document.getElementById('route-card-coords').textContent = `${dest.lat.toFixed(2)}° N, ${dest.lon.toFixed(2)}° E`;
+
+    const quickSelect = document.getElementById('quick-dest-select');
+    if (quickSelect) quickSelect.value = dest.code;
+  }
+
+  function render2DCards() {
+    const grid = document.getElementById('atlas-cards-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    ATLAS_DESTINATIONS.forEach(dest => {
+      const card = document.createElement('div');
+      card.className = 'glass-card p-4 rounded-2xl border border-sf-line hover:border-sf-gold transition flex flex-col justify-between';
+      card.innerHTML = `
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-mono font-bold text-sf-gold">${dest.code}</span>
+            <span class="text-[10px] text-sf-muted uppercase">${currentLang === 'bn' ? dest.countryBn : dest.countryEn}</span>
+          </div>
+          <h4 class="text-base font-bold text-sf-ivory mb-1">${currentLang === 'bn' ? dest.bn : dest.en}</h4>
+          <p class="text-[11px] text-sf-muted mb-3">${currentLang === 'bn' ? dest.descBn : dest.descEn}</p>
+        </div>
+        <button onclick="handleRouteCardSelect('${dest.code}')" class="w-full py-2 rounded-xl bg-sf-green border border-sf-gold/40 text-sf-gold text-xs font-semibold hover:bg-sf-gold hover:text-sf-bg transition">
+          ${currentLang === 'bn' ? 'কোটেশন প্রস্তুত করুন' : 'Select & Enquire'}
+        </button>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  window.handleRouteCardSelect = function(code) {
+    const dest = ATLAS_DESTINATIONS.find(d => d.code === code);
+    if (dest) {
+      toggleViewMode(false);
+      focusOnDestination(dest, true);
+      openEnquiryModal();
+    }
+  };
+
+  let is2DView = false;
+  const view2DContainer = document.getElementById('atlas-2d-view');
+  const viewModeLabel = document.getElementById('view-mode-label');
+
+  function toggleViewMode(forceState = null) {
+    is2DView = forceState !== null ? forceState : !is2DView;
+    if (is2DView) {
+      view2DContainer.classList.remove('hidden');
+      viewModeLabel.textContent = currentLang === 'bn' ? I18N.bn.view_mode_3d : I18N.en.view_mode_3d;
+    } else {
+      view2DContainer.classList.add('hidden');
+      viewModeLabel.textContent = currentLang === 'bn' ? I18N.bn.view_mode_2d : I18N.en.view_mode_2d;
+    }
+  }
+
+  document.getElementById('btn-toggle-view').addEventListener('click', () => toggleViewMode());
+  document.getElementById('btn-reset-camera').addEventListener('click', () => {
+    focusOnDestination(ATLAS_DESTINATIONS[0], true);
+  });
+
+  document.getElementById('btn-focus-globe').addEventListener('click', () => {
+    const selCode = document.getElementById('quick-dest-select').value;
+    const dest = ATLAS_DESTINATIONS.find(d => d.code === selCode) || ATLAS_DESTINATIONS[0];
+    document.getElementById('journey-atlas-section').scrollIntoView({ behavior: 'smooth' });
+    setTimeout(() => { focusOnDestination(dest, true); }, 500);
+  });
+
+
+  /* ==========================================================
+     8. QUICK ROUTE MODAL (3D ATLAS TRIGGER)
+     ========================================================== */
+  const modal = document.getElementById('enquiry-modal');
+  const modalCard = document.getElementById('enquiry-modal-card');
+  const modalRouteTitle = document.getElementById('modal-route-title');
+
+  function openEnquiryModal() {
+    isGlobeRenderingPaused = true;
+    modalRouteTitle.textContent = `Dhaka (DAC) ➔ ${selectedDestination.en} (${selectedDestination.code})`;
+    const categorySelect = document.getElementById('modal-category');
+    if (selectedDestination.category === 'saudi') categorySelect.value = 'Saudi Expat';
+    else if (selectedDestination.category === 'student') categorySelect.value = 'Student Fare';
+    else if (selectedDestination.category === 'premium') categorySelect.value = 'Premium Business';
+    else categorySelect.value = 'General Flight';
+
+    const nextTrip = new Date();
+    nextTrip.setDate(nextTrip.getDate() + 14);
+    document.getElementById('modal-date').value = nextTrip.toISOString().split('T')[0];
+
+    modal.classList.remove('pointer-events-none', 'opacity-0');
+    modalCard.classList.remove('scale-95');
+    modalCard.classList.add('scale-100');
+  }
+
+  function closeEnquiryModal() {
+    modal.classList.add('opacity-0', 'pointer-events-none');
+    modalCard.classList.remove('scale-100');
+    modalCard.classList.add('scale-95');
+    isGlobeRenderingPaused = false;
+  }
+
+  document.getElementById('btn-open-enquiry-modal').addEventListener('click', openEnquiryModal);
+  document.getElementById('btn-close-modal').addEventListener('click', closeEnquiryModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeEnquiryModal(); });
+
+  document.getElementById('atlas-enquiry-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const category = document.getElementById('modal-category').value;
+    const tripType = document.getElementById('modal-trip-type').value;
+    const date = document.getElementById('modal-date').value;
+    const pax = document.getElementById('modal-pax').value;
+    const name = document.getElementById('modal-name').value;
+    const phone = document.getElementById('modal-phone').value;
+    const notes = document.getElementById('modal-notes').value;
+
+    const message = `*SAFARIA Quick Atlas Quotation*\n` +
+      `• Route: Dhaka (DAC) ➔ ${selectedDestination.en} (${selectedDestination.code})\n` +
+      `• Category: ${category}\n` +
+      `• Trip Type: ${tripType}\n` +
+      `• Travel Date: ${date}\n` +
+      `• Passengers: ${pax}\n` +
+      `• Name: ${name}\n` +
+      `• Phone/WhatsApp: ${phone}\n` +
+      (notes ? `• Special Notes: ${notes}\n` : '') +
+      `Please provide verified flight quote under airline supplier rules.`;
+
+    window.open(`https://wa.me/8801674178437?text=${encodeURIComponent(message)}`, '_blank');
+    closeEnquiryModal();
+  });
+
+
+  /* ==========================================================
+     9. DOM READY INITIALIZATION
+     ========================================================== */
+  window.addEventListener('DOMContentLoaded', () => {
+    initHeroOrbitCanvas();
+    initJourneyAtlas();
+    renderBentoGrid('all');
+    renderPills();
+    render2DCards();
+    updateSelectedCard(ATLAS_DESTINATIONS[0]);
+    updateStudioStepLabels();
+    
+    // Set default departure date to +14 days in Studio
+    const defDate = new Date();
+    defDate.setDate(defDate.getDate() + 14);
+    document.getElementById('studio-departure').value = defDate.toISOString().split('T')[0];
+  });
+</script>
+</body>
+</html>

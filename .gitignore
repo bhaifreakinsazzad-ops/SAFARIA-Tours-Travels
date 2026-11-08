@@ -1,2 +1,9 @@
 ghl-block/test/site*.html
 ghl-block/test/ds/
+node_modules/
+.next/
+design-system/node_modules/
+design-system/.next/
+design-system/test-results/
+design-system/*.tsbuildinfo
+
