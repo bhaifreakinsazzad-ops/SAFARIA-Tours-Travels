@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
   try {
     const list = await enquiriesRepository.listAgencyApplications();
     // Never echo credential hashes back to any client, including the admin UI.
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sanitized = list.map(({ passwordHash, passwordSalt, ...rest }) => rest);
     return NextResponse.json({ success: true, count: sanitized.length, applications: sanitized });
   } catch (err: any) {
@@ -55,6 +56,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Agency not found" }, { status: 404 });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { passwordHash, passwordSalt, ...agency } = result.agency;
 
     return NextResponse.json({
