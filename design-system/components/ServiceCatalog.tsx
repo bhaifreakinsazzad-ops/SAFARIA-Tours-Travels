@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import {
   Plane,
   FileCheck,
@@ -13,7 +13,8 @@ import {
   ArrowRight,
   MessageSquare,
 } from "lucide-react";
-import { SITE_CONFIG } from "@/lib/config/siteConfig";
+import { SITE_CONFIG, ServiceItem } from "@/lib/config/siteConfig";
+import { GeneralEnquiryModal } from "./GeneralEnquiryModal";
 
 interface ServiceCatalogProps {
   lang: "bn" | "en";
@@ -32,6 +33,19 @@ const iconMap: Record<string, React.ReactNode> = {
 
 export function ServiceCatalog({ lang }: ServiceCatalogProps) {
   const isBn = lang === "bn";
+  const [selectedService, setSelectedService] = useState<ServiceItem | null>(null);
+
+  const handleInquire = (service: ServiceItem) => {
+    if (service.id === "air-ticketing") {
+      const el = document.getElementById("flight-quote");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } else if (service.id === "b2b-agency-desk") {
+      const el = document.getElementById("b2b-agency");
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    } else {
+      setSelectedService(service);
+    }
+  };
 
   return (
     <section id="services" className="bg-surface-0 py-16 sm:py-24 border-b border-safaria-line">
@@ -86,18 +100,15 @@ export function ServiceCatalog({ lang }: ServiceCatalogProps) {
 
               {/* Action Link */}
               <div className="pt-5 border-t border-safaria-line/40 mt-5 flex items-center justify-between">
-                <a
-                  href={`https://wa.me/${SITE_CONFIG.contact.whatsAppDirect.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(
-                    `Hello SAFARIA, I would like to inquire about your ${service.titleEn} service.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => handleInquire(service)}
                   className="flex items-center gap-1.5 text-xs font-semibold text-safaria-gold hover:underline"
                 >
                   <MessageSquare className="h-3.5 w-3.5" />
-                  <span>{isBn ? "পরামর্শ নিন" : "Inquire Now"}</span>
+                  <span>{isBn ? "পরামর্শ ও কোটেশন" : "Inquire Now"}</span>
                   <ArrowRight className="h-3 w-3" />
-                </a>
+                </button>
               </div>
             </div>
           ))}
@@ -112,6 +123,14 @@ export function ServiceCatalog({ lang }: ServiceCatalogProps) {
           </p>
         </div>
       </div>
+
+      {/* General Service Enquiry Modal */}
+      <GeneralEnquiryModal
+        isOpen={selectedService !== null}
+        onClose={() => setSelectedService(null)}
+        service={selectedService}
+        lang={lang}
+      />
     </section>
   );
 }

@@ -64,4 +64,23 @@ test.describe("SAFARIA Tours & Travels — Core User Flows", () => {
     await expect(page.getByText("Verified Workflow™").first()).toBeVisible();
     await expect(page.getByText("PartnerGrowth™").first()).toBeVisible();
   });
+
+  test("Track Quotation & Application modal opens and performs lookup", async ({ page }) => {
+    await page.goto("http://localhost:3000/");
+
+    // Click Track Ref button in header
+    const trackBtn = page.getByRole("button", { name: /ট্র্যাক রেফারেন্স/i }).first();
+    await trackBtn.click();
+
+    // Verify modal appears
+    await expect(page.getByText("কোটেশন ও আবেদন ট্র্যাকিং")).toBeVisible();
+    await expect(page.getByPlaceholder(/যেমন: SFR-/i)).toBeVisible();
+
+    // Fill an invalid ref and search
+    await page.getByPlaceholder(/যেমন: SFR-/i).fill("SFR-20261108-INVALID");
+    await page.getByRole("button", { name: /স্ট্যাটাস দেখুন/i }).click();
+
+    // Verify error notification
+    await expect(page.getByText("অনুসন্ধান ব্যর্থ হয়েছে")).toBeVisible();
+  });
 });

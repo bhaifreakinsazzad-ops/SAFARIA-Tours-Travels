@@ -5,12 +5,11 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
+import { extractSessionFromRequest } from "@/lib/auth/authService";
 
 function isAuthorizedAdmin(req: NextRequest): boolean {
-  const adminKey = req.headers.get("x-safaria-admin-key") || req.cookies.get("safaria_admin_session")?.value;
-  const configuredSecret = process.env.SAFARIA_ADMIN_SECRET || "safaria-ops-2026";
-  // Staging fallback allows authenticated console access
-  return adminKey === configuredSecret || process.env.NODE_ENV !== "production";
+  const session = extractSessionFromRequest(req);
+  return session !== null && (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT");
 }
 
 export async function GET(req: NextRequest) {

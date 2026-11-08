@@ -91,35 +91,81 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const enquiry = await enquiriesRepository.getFlightEnquiryByRef(ref);
+    const result = await enquiriesRepository.lookupAnyReference(ref);
 
-    if (!enquiry) {
+    if (!result) {
       return NextResponse.json(
-        { success: false, error: "No quotation record found for the provided reference number" },
+        { success: false, error: "No quotation or application record found for the provided reference number" },
         { status: 404 }
       );
     }
 
-    // Mask sensitive phone/email for public lookup
-    const maskedPhone = `${enquiry.phoneCountryCode} *** *** ${enquiry.phoneNumber.slice(-4)}`;
-    const maskedEmail = enquiry.email
-      ? enquiry.email.replace(/^(.)(.*)(@.*)$/, (_, a, b, c) => `${a}***${c}`)
-      : undefined;
+    const maskEmail = (email?: string) =>
+      email ? email.replace(/^(.)(.*)(@.*)$/, (_, a, b, c) => `${a}***${c}`) : undefined;
 
-    return NextResponse.json({
-      success: true,
-      record: {
-        referenceNo: enquiry.referenceNo,
-        tripType: enquiry.tripType,
-        cabinClass: enquiry.cabinClass,
-        passengers: enquiry.passengers,
-        legs: enquiry.legs,
-        status: enquiry.status,
-        createdAt: enquiry.createdAt,
-        maskedPhone,
-        maskedEmail,
-      },
-    });
+    if (result.type === "FLIGHT") {
+      const enquiry = result.record;
+      const maskedPhone = `${enquiry.phoneCountryCode} *** *** ${enquiry.phoneNumber.slice(-4)}`;
+      return NextResponse.json({
+        success: true,
+        type: "FLIGHT",
+        record: {
+          referenceNo: enquiry.referenceNo,
+          tripType: enquiry.tripType,
+          cabinClass: enquiry.cabinClass,
+          passengers: enquiry.passengers,
+          legs: enquiry.legs,
+          status: enquiry.status,
+          createdAt: enquiry.createdAt,
+          maskedPhone,
+          maskedEmail: maskEmail(enquiry.email),
+        },
+      });
+    }
+
+    if (result.type === "B2B_AGENCY") {
+      const agency = result.record;
+      const maskedPhone = `*** *** ${agency.phone.slice(-4)}`;
+      return NextResponse.json({
+        success: true,
+        type: "B2B_AGENCY",
+        record: {
+          referenceNo: agency.referenceNo,
+          agencyName: agency.agencyName,
+          city: agency.city,
+          monthlyTicketVolume: agency.monthlyTicketVolume,
+          status: agency.status,
+          trialExpiresAt: agency.trialExpiresAt,
+          createdAt: agency.createdAt,
+          maskedPhone,
+          maskedEmail: maskEmail(agency.email),
+        },
+      });
+    }
+
+    if (result.type === "GENERAL") {
+      const gen = result.record;
+      const maskedPhone = `*** *** ${gen.phone.slice(-4)}`;
+      return NextResponse.json({
+        success: true,
+        type: "GENERAL",
+        record: {
+          referenceNo: gen.referenceNo,
+          serviceType: gen.serviceType,
+          destinationOrCountry: gen.destinationOrCountry,
+          passengerOrPaxCount: gen.passengerOrPaxCount,
+          status: gen.status,
+          createdAt: gen.createdAt,
+          maskedPhone,
+          maskedEmail: maskEmail(gen.email),
+        },
+      });
+    }
+
+    return NextResponse.json(
+      { success: false, error: "Unknown record type" },
+      { status: 500 }
+    );
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

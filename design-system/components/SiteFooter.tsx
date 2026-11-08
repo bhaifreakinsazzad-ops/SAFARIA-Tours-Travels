@@ -1,15 +1,17 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
-import { Plane, Phone, Mail, MapPin, Clock, ShieldCheck, Lock } from "lucide-react";
+import { Plane, Phone, Mail, MapPin, Clock, ShieldCheck, Lock, Search } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/config/siteConfig";
+import { TrackEnquiryModal } from "@/components/TrackEnquiryModal";
 
 interface SiteFooterProps {
   lang: "bn" | "en";
 }
 
 export function SiteFooter({ lang }: SiteFooterProps) {
+  const [trackModalOpen, setTrackModalOpen] = useState(false);
   const isBn = lang === "bn";
 
   return (
@@ -74,6 +76,16 @@ export function SiteFooter({ lang }: SiteFooterProps) {
                 <a href="#b2b-agency" className="hover:text-safaria-gold transition-colors">
                   {isBn ? "এজেন্সি পার্টনারশিপ" : "B2B Agency"}
                 </a>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => setTrackModalOpen(true)}
+                  className="flex items-center gap-1.5 text-safaria-gold hover:text-safaria-goldHi transition-colors text-left"
+                >
+                  <Search className="h-3 w-3" />
+                  <span>{isBn ? "কোটেশন ও আবেদন ট্র্যাক" : "Track Quotation / Ref"}</span>
+                </button>
               </li>
             </ul>
           </div>
@@ -165,6 +177,13 @@ export function SiteFooter({ lang }: SiteFooterProps) {
           </p>
         </div>
       </div>
+
+      {/* Public Tracking Modal */}
+      <TrackEnquiryModal
+        isOpen={trackModalOpen}
+        onClose={() => setTrackModalOpen(false)}
+        lang={lang}
+      />
     </footer>
   );
 }

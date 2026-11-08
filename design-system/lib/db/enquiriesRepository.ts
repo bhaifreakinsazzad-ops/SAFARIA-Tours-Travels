@@ -72,16 +72,48 @@ export interface StoredOutboxEntry {
   updatedAt: string;
 }
 
+export interface StoredB2BDeskRecord {
+  id: string;
+  agencyId: string;
+  deskType: "FARE_DESK" | "BOOKING_DESK" | "CLEAR_MARGIN" | "AFTER_CARE" | "VERIFIED_WORKFLOW" | "PARTNER_GROWTH";
+  title: string;
+  priority: "LOW" | "NORMAL" | "HIGH" | "URGENT";
+  status: "OPEN" | "PENDING" | "RESOLVED" | "CLOSED";
+  payload: Record<string, unknown>;
+  internalNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StoredGeneralEnquiry {
+  id: string;
+  referenceNo: string;
+  serviceType: "VISA" | "CORPORATE" | "HOLIDAY" | "HOTEL" | "UMRAH" | "CUSTOM";
+  fullName: string;
+  phone: string;
+  email?: string;
+  message: string;
+  destinationOrCountry?: string;
+  passengerOrPaxCount: number;
+  status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "CLOSED";
+  createdAt: string;
+  updatedAt: string;
+}
+
 // In-Memory Durable Store for non-production / test runs
 class InMemoryStore {
   flightEnquiries: Map<string, StoredFlightEnquiry> = new Map();
   agencyApplications: Map<string, StoredAgencyApplication> = new Map();
   outboxEntries: Map<string, StoredOutboxEntry> = new Map();
+  b2bDeskRecords: Map<string, StoredB2BDeskRecord> = new Map();
+  generalEnquiries: Map<string, StoredGeneralEnquiry> = new Map();
 
   clear() {
     this.flightEnquiries.clear();
     this.agencyApplications.clear();
     this.outboxEntries.clear();
+    this.b2bDeskRecords.clear();
+    this.generalEnquiries.clear();
   }
 }
 
@@ -390,6 +422,106 @@ export const enquiriesRepository = {
   },
 
   /**
+   * Get single B2B Agency Application by reference code
+   */
+  async getAgencyApplicationByRef(ref: string): Promise<StoredAgencyApplication | null> {
+    const supabase = getSupabaseServiceClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .select("*")
+          .eq("reference_no", ref)
+          .single();
+
+        if (!error && data) {
+          return {
+            id: data.id,
+            referenceNo: data.reference_no,
+            agencyName: data.agency_name,
+            contactPerson: data.contact_person,
+            phone: data.phone,
+            email: data.email,
+            city: data.city,
+            tradeLicenseNumber: data.trade_license_number,
+            yearsInBusiness: data.years_in_business,
+            monthlyTicketVolume: data.monthly_ticket_volume,
+            status: data.status,
+            trialActivatedAt: data.trial_activated_at,
+            trialExpiresAt: data.trial_expires_at,
+            approvedBy: data.approved_by,
+            notes: data.internal_notes,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          };
+        }
+      } catch (err) {
+        console.warn("Supabase query agency by ref error:", err);
+      }
+    }
+
+    for (const record of memoryStore.agencyApplications.values()) {
+      if (record.referenceNo === ref) {
+        return record;
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Update B2B Agency status (e.g. approve 72-hour trial or mark partner active)
+   */
+  async updateAgencyStatus(
+    id: string,
+    status: StoredAgencyApplication["status"],
+    approvedBy?: string,
+    notes?: string
+  ): Promise<StoredAgencyApplication | null> {
+    const supabase = getSupabaseServiceClient();
+    const now = new Date();
+    const nowIso = now.toISOString();
+
+    let trialActivatedAt: string | null = null;
+    let trialExpiresAt: string | null = null;
+
+    if (status === "TRIAL_APPROVED") {
+      trialActivatedAt = nowIso;
+      const expDate = new Date(now.getTime() + 72 * 3600 * 1000);
+      trialExpiresAt = expDate.toISOString();
+    }
+
+    if (supabase) {
+      try {
+        await supabase
+          .from("agency_applications")
+          .update({
+            status,
+            trial_activated_at: trialActivatedAt,
+            trial_expires_at: trialExpiresAt,
+            approved_by: approvedBy,
+            internal_notes: notes,
+            updated_at: nowIso,
+          })
+          .eq("id", id);
+      } catch (err) {
+        console.warn("Supabase updateAgencyStatus error:", err);
+      }
+    }
+
+    const record = memoryStore.agencyApplications.get(id);
+    if (record) {
+      record.status = status;
+      if (trialActivatedAt) record.trialActivatedAt = trialActivatedAt;
+      if (trialExpiresAt) record.trialExpiresAt = trialExpiresAt;
+      if (approvedBy) record.approvedBy = approvedBy;
+      if (notes) record.notes = notes;
+      record.updatedAt = nowIso;
+      return record;
+    }
+    return null;
+  },
+
+  /**
    * Enqueue entry into durable integration outbox
    */
   async enqueueOutbox(
@@ -436,6 +568,264 @@ export const enquiriesRepository = {
 
     memoryStore.outboxEntries.set(id, entry);
     return entry;
+  },
+
+  /**
+   * List pending outbox entries ready for retry
+   */
+  async listPendingOutboxEntries(limit: number = 20): Promise<StoredOutboxEntry[]> {
+    const now = new Date().toISOString();
+    return Array.from(memoryStore.outboxEntries.values())
+      .filter((e) => (e.status === "PENDING" || e.status === "FAILED") && e.attempts < 5 && e.nextRetryAt <= now)
+      .slice(0, limit);
+  },
+
+  /**
+   * Update outbox delivery status
+   */
+  async updateOutboxStatus(
+    id: string,
+    status: StoredOutboxEntry["status"],
+    attempts: number,
+    lastError?: string,
+    nextRetryAt?: string
+  ): Promise<StoredOutboxEntry | null> {
+    const now = new Date().toISOString();
+    const entry = memoryStore.outboxEntries.get(id);
+    if (entry) {
+      entry.status = status;
+      entry.attempts = attempts;
+      if (lastError !== undefined) entry.lastError = lastError;
+      if (nextRetryAt !== undefined) entry.nextRetryAt = nextRetryAt;
+      entry.updatedAt = now;
+      return entry;
+    }
+    return null;
+  },
+
+  /**
+   * Create a persistent B2B Desk record (Fare, Booking, Ledger, AfterCare, etc.)
+   */
+  async createB2BDeskRecord(
+    deskType: StoredB2BDeskRecord["deskType"],
+    agencyId: string,
+    title: string,
+    payload: Record<string, unknown>,
+    priority: StoredB2BDeskRecord["priority"] = "NORMAL"
+  ): Promise<StoredB2BDeskRecord> {
+    const supabase = getSupabaseServiceClient();
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const record: StoredB2BDeskRecord = {
+      id,
+      agencyId,
+      deskType,
+      title,
+      priority,
+      status: "OPEN",
+      payload,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (supabase) {
+      try {
+        await supabase.from("b2b_desk_records").insert({
+          id,
+          agency_id: agencyId,
+          desk_type: deskType,
+          title,
+          priority,
+          status: "OPEN",
+          payload,
+          created_at: now,
+          updated_at: now,
+        });
+      } catch (err) {
+        console.warn("Supabase desk record insert fallback to memory:", err);
+      }
+    }
+
+    memoryStore.b2bDeskRecords.set(id, record);
+    return record;
+  },
+
+  /**
+   * List B2B Desk records with strict tenant isolation
+   * When agencyId is specified, partners can ONLY see their own records.
+   */
+  async listB2BDeskRecords(
+    deskType?: StoredB2BDeskRecord["deskType"],
+    agencyId?: string
+  ): Promise<StoredB2BDeskRecord[]> {
+    let records = Array.from(memoryStore.b2bDeskRecords.values());
+
+    if (agencyId) {
+      records = records.filter((r) => r.agencyId === agencyId);
+    }
+    if (deskType) {
+      records = records.filter((r) => r.deskType === deskType);
+    }
+
+    return records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  /**
+   * Update B2B Desk Record
+   */
+  async updateB2BDeskRecord(
+    id: string,
+    status: StoredB2BDeskRecord["status"],
+    internalNotes?: string
+  ): Promise<StoredB2BDeskRecord | null> {
+    const now = new Date().toISOString();
+    const record = memoryStore.b2bDeskRecords.get(id);
+    if (record) {
+      record.status = status;
+      if (internalNotes) record.internalNotes = internalNotes;
+      record.updatedAt = now;
+      return record;
+    }
+    return null;
+  },
+
+  /**
+   * Create and persist General Service Enquiry (Visa, Corporate, Umrah, Holiday)
+   */
+  async createGeneralEnquiry(input: GeneralEnquiryInput): Promise<StoredGeneralEnquiry> {
+    const supabase = getSupabaseServiceClient();
+    const referenceNo = generateReferenceCode("GEN");
+    const now = new Date().toISOString();
+    const id = crypto.randomUUID();
+
+    const record: StoredGeneralEnquiry = {
+      id,
+      referenceNo,
+      serviceType: input.serviceType,
+      fullName: input.fullName,
+      phone: input.phone,
+      email: input.email || undefined,
+      message: input.message,
+      destinationOrCountry: input.destinationOrCountry || "",
+      passengerOrPaxCount: input.passengerOrPaxCount || 1,
+      status: "NEW",
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    if (supabase) {
+      try {
+        await supabase.from("general_enquiries").insert({
+          id,
+          reference_no: referenceNo,
+          service_type: input.serviceType,
+          full_name: input.fullName,
+          phone: input.phone,
+          email: input.email,
+          details: {
+            message: input.message,
+            destinationOrCountry: input.destinationOrCountry,
+            passengerOrPaxCount: input.passengerOrPaxCount,
+          },
+          status: "NEW",
+          created_at: now,
+          updated_at: now,
+        });
+      } catch (err) {
+        console.warn("Supabase general enquiry insert fallback to memory:", err);
+      }
+    }
+
+    memoryStore.generalEnquiries.set(id, record);
+    return record;
+  },
+
+  /**
+   * List General Service Enquiries
+   */
+  async listGeneralEnquiries(serviceType?: StoredGeneralEnquiry["serviceType"]): Promise<StoredGeneralEnquiry[]> {
+    let records = Array.from(memoryStore.generalEnquiries.values());
+    if (serviceType) {
+      records = records.filter((r) => r.serviceType === serviceType);
+    }
+    return records.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  },
+
+  /**
+   * Get single General Service Enquiry by reference code
+   */
+  async getGeneralEnquiryByRef(ref: string): Promise<StoredGeneralEnquiry | null> {
+    const supabase = getSupabaseServiceClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("general_enquiries")
+          .select("*")
+          .eq("reference_no", ref)
+          .single();
+
+        if (!error && data) {
+          const details = data.details || {};
+          return {
+            id: data.id,
+            referenceNo: data.reference_no,
+            serviceType: data.service_type,
+            fullName: data.full_name,
+            phone: data.phone,
+            email: data.email,
+            message: details.message || "",
+            destinationOrCountry: details.destinationOrCountry,
+            passengerOrPaxCount: details.passengerOrPaxCount,
+            status: data.status,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          };
+        }
+      } catch (err) {
+        console.warn("Supabase query general enquiry by ref error:", err);
+      }
+    }
+
+    for (const record of memoryStore.generalEnquiries.values()) {
+      if (record.referenceNo === ref) {
+        return record;
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Unified lookup across all reference types (Flight, B2B, General)
+   */
+  async lookupAnyReference(ref: string): Promise<{
+    type: "FLIGHT" | "B2B_AGENCY" | "GENERAL";
+    record: any;
+  } | null> {
+    const trimmed = ref.trim().toUpperCase();
+
+    if (trimmed.startsWith("SFR")) {
+      const flight = await this.getFlightEnquiryByRef(trimmed);
+      if (flight) return { type: "FLIGHT", record: flight };
+    } else if (trimmed.startsWith("B2B")) {
+      const b2b = await this.getAgencyApplicationByRef(trimmed);
+      if (b2b) return { type: "B2B_AGENCY", record: b2b };
+    } else if (trimmed.startsWith("GEN")) {
+      const gen = await this.getGeneralEnquiryByRef(trimmed);
+      if (gen) return { type: "GENERAL", record: gen };
+    }
+
+    // Fallback: check all three in order
+    const flight = await this.getFlightEnquiryByRef(trimmed);
+    if (flight) return { type: "FLIGHT", record: flight };
+
+    const b2b = await this.getAgencyApplicationByRef(trimmed);
+    if (b2b) return { type: "B2B_AGENCY", record: b2b };
+
+    const gen = await this.getGeneralEnquiryByRef(trimmed);
+    if (gen) return { type: "GENERAL", record: gen };
+
+    return null;
   },
 
   /**

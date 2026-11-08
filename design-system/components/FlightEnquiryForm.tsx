@@ -13,8 +13,10 @@ import {
   ArrowRight,
   ShieldAlert,
   Loader2,
+  Search,
 } from "lucide-react";
 import { SITE_CONFIG, Airport } from "@/lib/config/siteConfig";
+import { TrackEnquiryModal } from "@/components/TrackEnquiryModal";
 
 interface FlightLegState {
   originIata: string;
@@ -92,6 +94,7 @@ export function FlightEnquiryForm({
     whatsAppUrl: string;
     enquiry: any;
   } | null>(null);
+  const [trackingModalOpen, setTrackingModalOpen] = useState<boolean>(false);
 
   // Handle Trip Type change
   const handleTripTypeChange = (type: "ONE_WAY" | "ROUND_TRIP" | "MULTI_CITY") => {
@@ -323,8 +326,8 @@ export function FlightEnquiryForm({
               </span>
             </div>
 
-            {/* Direct WhatsApp CTA */}
-            <div className="space-y-3 pt-2">
+            {/* Direct WhatsApp CTA & View Live Status */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <a
                 href={submittedData.whatsAppUrl}
                 target="_blank"
@@ -337,15 +340,24 @@ export function FlightEnquiryForm({
                 </span>
               </a>
 
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setSubmittedData(null)}
-                  className="text-xs text-safaria-inkMuted hover:text-safaria-gold underline"
-                >
-                  {isBn ? "আরেকটি ফ্লাইট কোটেশন চান?" : "Submit another flight quotation"}
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setTrackingModalOpen(true)}
+                className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-btn border border-safaria-gold/60 bg-surface-100 hover:bg-safaria-emerald/20 px-6 py-3.5 text-sm font-bold text-safaria-gold transition-all"
+              >
+                <Search className="h-4 w-4" />
+                <span>{isBn ? "লাইভ স্ট্যাটাস দেখুন" : "View Live Status"}</span>
+              </button>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setSubmittedData(null)}
+                className="text-xs text-safaria-inkMuted hover:text-safaria-gold underline"
+              >
+                {isBn ? "আরেকটি ফ্লাইট কোটেশন চান?" : "Submit another flight quotation"}
+              </button>
             </div>
           </div>
         ) : (
@@ -712,6 +724,14 @@ export function FlightEnquiryForm({
           </form>
         )}
       </div>
+
+      {/* Live Status Tracking Modal */}
+      <TrackEnquiryModal
+        isOpen={trackingModalOpen}
+        onClose={() => setTrackingModalOpen(false)}
+        lang={lang}
+        initialReference={submittedData?.referenceNo}
+      />
     </section>
   );
 }

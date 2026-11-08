@@ -2,8 +2,9 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { Plane, Menu, X, Phone, Globe, MessageSquare } from "lucide-react";
+import { Plane, Menu, X, Phone, Globe, MessageSquare, Search } from "lucide-react";
 import { SITE_CONFIG } from "@/lib/config/siteConfig";
+import { TrackEnquiryModal } from "@/components/TrackEnquiryModal";
 
 interface SiteHeaderProps {
   lang: "bn" | "en";
@@ -11,6 +12,7 @@ interface SiteHeaderProps {
 
 export function SiteHeader({ lang }: SiteHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [trackModalOpen, setTrackModalOpen] = useState(false);
   const isBn = lang === "bn";
 
   const navLinks = [
@@ -42,6 +44,17 @@ export function SiteHeader({ lang }: SiteHeaderProps) {
           </div>
 
           <div className="flex items-center gap-4">
+            <button
+              onClick={() => setTrackModalOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-safaria-gold hover:text-safaria-goldHi font-medium transition-colors cursor-pointer"
+              title={isBn ? "কোটেশন অথবা আবেদনের লাইভ স্ট্যাটাস দেখুন" : "Track quotation or application live status"}
+            >
+              <Search className="h-3 w-3" />
+              <span>{isBn ? "ট্র্যাক রেফারেন্স" : "Track Ref"}</span>
+            </button>
+
+            <span className="hidden sm:inline text-safaria-inkFaint">|</span>
+
             <a
               href={`tel:${SITE_CONFIG.contact.hotlinePrimary.replace(/[^0-9+]/g, "")}`}
               className="flex items-center gap-1.5 text-safaria-ink hover:text-safaria-gold transition-colors"
@@ -142,6 +155,17 @@ export function SiteHeader({ lang }: SiteHeaderProps) {
             ))}
           </nav>
           <div className="pt-2 border-t border-safaria-line/40 flex flex-col gap-2">
+            <button
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setTrackModalOpen(true);
+              }}
+              className="flex items-center justify-center gap-2 rounded-btn border border-safaria-line/80 py-2.5 text-xs font-semibold text-safaria-ink hover:text-safaria-gold hover:border-safaria-gold transition-all"
+            >
+              <Search className="h-4 w-4 text-safaria-gold" />
+              <span>{isBn ? "কোটেশন / আবেদন ট্র্যাক করুন" : "Track Quotation / Application"}</span>
+            </button>
+
             <a
               href="#flight-quote"
               onClick={() => setMobileMenuOpen(false)}
@@ -153,6 +177,13 @@ export function SiteHeader({ lang }: SiteHeaderProps) {
           </div>
         </div>
       )}
+
+      {/* Track Enquiry & Application Modal */}
+      <TrackEnquiryModal
+        isOpen={trackModalOpen}
+        onClose={() => setTrackModalOpen(false)}
+        lang={lang}
+      />
     </header>
   );
 }
