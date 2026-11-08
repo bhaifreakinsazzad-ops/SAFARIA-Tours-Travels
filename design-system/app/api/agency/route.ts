@@ -8,10 +8,11 @@ import { AgencyApplicationInputSchema } from "@/lib/validations/enquirySchemas";
 import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
 import { ghlAdapter } from "@/lib/crm/ghlAdapter";
 import { buildWhatsAppAgencyUrl } from "@/lib/utils/whatsAppFormatter";
+import { readJsonBodyGuarded, PayloadTooLargeError } from "@/lib/utils/requestGuards";
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await readJsonBodyGuarded(req);
     const parseResult = AgencyApplicationInputSchema.safeParse(body);
 
     if (!parseResult.success) {
@@ -53,6 +54,9 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err: any) {
+    if (err instanceof PayloadTooLargeError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 413 });
+    }
     console.error("Agency route error:", err);
     return NextResponse.json(
       { success: false, error: "Internal server error while processing B2B application" },

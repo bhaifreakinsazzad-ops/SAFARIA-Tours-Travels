@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { signSession } from "@/lib/auth/authService";
 import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
 import { checkRateLimit, recordFailure, recordSuccess } from "@/lib/auth/rateLimiter";
+import { readJsonBodyGuarded, PayloadTooLargeError } from "@/lib/utils/requestGuards";
 
 function clientIp(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
@@ -14,7 +15,11 @@ function clientIp(req: NextRequest): string {
 
 export async function POST(req: NextRequest) {
   try {
-    const { email, password, role } = await req.json();
+    const { email, password, role } = await readJsonBodyGuarded<{
+      email?: string;
+      password?: string;
+      role?: string;
+    }>(req, 2_000);
 
     if (!email || !password) {
       return NextResponse.json(
@@ -159,6 +164,9 @@ export async function POST(req: NextRequest) {
 
     return response;
   } catch (err: any) {
+    if (err instanceof PayloadTooLargeError) {
+      return NextResponse.json({ success: false, error: err.message }, { status: 413 });
+    }
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
