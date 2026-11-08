@@ -160,6 +160,18 @@ that's paid down (or until it's added as `continue-on-error`).
   explicitly labelled "Under Pilot Review") appear anywhere in source — the
   historically reported conflicts do not currently exist in code.
 
+## 7b. Test-infra fragility noticed while re-running (not fixed)
+
+`tests/integration/realPostgresServer.test.ts` binds the embedded Postgres
+to a **hardcoded port (54333)**, no dynamic allocation. If a prior run's
+`beforeAll` times out or crashes, Vitest can skip the matching `afterAll`,
+leaving an orphaned `postgres.exe` bound to that port — every subsequent
+run then hangs/times out until that process is killed manually. Hit this
+three times while verifying the timeout fix in §2 (each time traced to a
+leftover process from the previous run, not a real regression). Worth a
+follow-up to allocate a free port per run rather than a fixed one, so a bad
+run can't poison the next one.
+
 ## 8. Honest gap list — NOT done this session
 
 - Full Phase 2 red-team pass beyond the login fix (CSRF token/
