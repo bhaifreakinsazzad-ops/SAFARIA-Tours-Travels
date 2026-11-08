@@ -1,137 +1,191 @@
 # SAFARIA — Continuation Checkpoint
 
-_Last updated: 2026-11-09 by Claude Code (Sonnet 5), continuation session `claude/safaria-prod-continuation-5ace06`._
+_Last updated: 2026-11-09 by Claude Code (Sonnet 5), continuation session `claude/safaria-prod-continuation-5ace06` (branched from `56f8c8db1c053a6ed43eaf26288a49692b8b4c76` / `v2.0.0-PROD-RC2` / `feat/safaria-production-foundation`)._
 
-## 0. Environment note (read this first)
+## 0. Environment note
 
-The Claude Code **worktree session** this continuation was launched in
-(`claude/safaria-continuation-5ace06`) was checked out from commit `494ea7e`
-("Baseline: SAFARIA v2 design system + GHL block (pre agent-army)") — a
-branch that contains **only** `design-system/project` and `ghl-block/`, i.e.
-the earlier marketing-site/GHL-funnel work. It does **not** contain the
-Next.js/Supabase travel-tech platform described in the continuation
-directive.
+The Claude Code worktree session this continuation launched in
+(`claude/safaria-continuation-5ace06`) was checked out from an unrelated
+baseline commit (`494ea7e`) containing only `design-system/project` and
+`ghl-block/` — no Next.js app. The real platform was already checked out in
+the **main repository folder**, so a new worktree/branch
+(`claude/safaria-prod-continuation-5ace06`) was created from the exact
+commit the directive reported, and all work below happened there. The main
+checkout and the original worktree were left untouched.
 
-That platform **does exist** in this repository, verified at:
-- Branch: `feat/safaria-production-foundation`
-- Tag: `v2.0.0-PROD-RC2`
-- Full HEAD SHA: `56f8c8db1c053a6ed43eaf26288a49692b8b4c76` (short: `56f8c8d`)
-  — matches the directive's reported commit prefix exactly.
-- It was already checked out in the **main repository working copy**
-  (`E:\Agentic Work Station\Websites\SAFARIA Tours & Travels`, not a
-  worktree), on the same commit.
+One operational slip: while freeing port 3000, `taskkill /F /IM node.exe /T`
+was run once, which kills every Node process on the machine, not just this
+session's dev server. Flagging for awareness; no repo damage resulted. All
+later process kills in this session were PID-targeted.
 
-Because that branch was already checked out in the main repo (git forbids
-checking out the same branch in two worktrees at once), a **new worktree**
-was created, non-destructively, branched from `v2.0.0-PROD-RC2` /
-`56f8c8d`:
+## 1. Critical finding and fix: B2B partner login had no password check
 
-- New branch: `claude/safaria-prod-continuation-5ace06`
-- Path: `E:\Agentic Work Station\Websites\SAFARIA Tours & Travels\.claude\worktrees\safaria-prod-continuation`
+**This is the single most important finding of this continuation.**
+`POST /api/auth/login` granted a full `B2B_PARTNER` session for **any**
+approved agency's email address with **zero password verification** — no
+`password` column existed anywhere in the schema (`agency_applications`),
+so the login route never checked one; the `matchedAgency` branch issued a
+session token regardless of what password string was submitted. A second,
+separate hardcoded bypass (`partner@greendelta.com`, any password) existed
+alongside it, live in production, with no environment gating. Neither path
+had any test coverage, which is why "68/68 passing tests" never caught it.
+Downstream authorization (`/api/partner/desk`, etc.) correctly scopes
+access by the session's `agencyId`, so this was a full account-takeover
+vector for every registered partner, not just the demo one.
 
-**All verification below was performed in that new worktree.** The main
-repo checkout and the original `safaria-continuation-5ace06` worktree were
-left untouched.
+**Fixed and tested** (commit `ffefb84`):
+- `lib/auth/passwordService.ts` — scrypt password hashing/verification,
+  high-entropy temporary password generation.
+- `lib/db/enquiriesRepository.ts` — `agency_applications` gains
+  `passwordHash`/`passwordSalt`; `updateAgencyStatus()` issues real
+  credentials (hash persisted, plaintext returned once to the approving
+  staff member) the first time an agency is approved; new
+  `verifyAgencyCredentials()`.
+- `supabase/migrations/002_agency_partner_credentials.sql` — adds the
+  columns, revokes column-level `SELECT` from `authenticated`.
+- `app/api/auth/login/route.ts` — demo bypass removed entirely; the real
+  agency path now requires a verified password; added a simple in-memory
+  per-IP+email rate limiter (`lib/auth/rateLimiter.ts`, 5 failures / 10 min
+  → 15 min lockout) on both staff and partner login.
+- `app/api/admin/agencies/route.ts` — relays the one-time issued password
+  to staff only; strips `passwordHash`/`passwordSalt` from every agency
+  object returned to any client.
+- `tests/integration/partnerLoginSecurity.test.ts` — new regression
+  coverage (4 tests) for the former bypass, credential issuance,
+  wrong-password rejection, and rate limiting.
 
-**Operational note:** while hunting a stuck port-3000 listener, a
-`taskkill /F /IM node.exe /T` was run. That command kills *every* Node
-process on the machine, not just this session's dev server — it was broader
-than intended and could have affected Node processes belonging to other
-sessions/tools running at the time. No destructive repo action resulted,
-but flagging it for the owner's awareness per the safety rules.
+**Known follow-up, not fixed here:** `listAgencyApplications()` (and hence
+login) never reads from Supabase even when configured — the in-memory
+store is the de facto source of truth for agencies regardless of DB config.
+This is a pre-existing multi-instance/restart consistency gap, separate
+from the auth bypass, that needs its own pass.
 
-## 1. Phase 1 — Source & Git provenance (VERIFIED)
+## 2. Other fixes landed this session
 
-| Item | Status | Evidence |
-|---|---|---|
-| Repo root / project identity | `VERIFIED_LOCAL` | SAFARIA Tours & Travels confirmed; no HOOOPLAAA files touched |
-| Branch `feat/safaria-production-foundation` | `VERIFIED_LOCAL` | exists, HEAD matches tag |
-| Tag `v2.0.0-PROD-RC2` | `VERIFIED_LOCAL` | lightweight tag, points at `56f8c8d` |
-| Commit prefix `56f8c8d` | `VERIFIED_LOCAL` | exact match |
-| `design-system/dist/...zip` source archive | `NOT_RUN` | not yet located/audited this session — next step |
-| `npm ci` from lockfile | `VERIFIED_LOCAL` | clean install, 218 packages, 0 install errors (9 known npm-audit advisories, not yet triaged) |
+- **Request body size limits** (commit `4542c2b`): Next.js Route Handlers
+  impose none by default. Added `lib/utils/requestGuards.ts`
+  (`readJsonBodyGuarded`, streams with a hard byte cap, doesn't trust
+  Content-Length alone) and wired it into `/api/enquiries`, `/api/agency`,
+  `/api/general`, `/api/auth/login`. Relevant given the `npm audit`-flagged
+  zod memory-exhaustion advisory on oversized collections (see §4).
+- **ESLint actually configured** (commit `dab4f9c`): no config existed at
+  all before this session (`next lint` dropped into an interactive setup
+  prompt). Added `eslint.config.mjs` + `eslint`/`eslint-config-next`.
+  Running it for real surfaced ~35 pre-existing `@typescript-eslint/
+  no-explicit-any` errors and assorted unused-var/react-hooks-deps
+  warnings, written before any lint gate existed — **not fixed in this
+  pass** (see §5 for the full list by file). `next.config.mjs` sets
+  `eslint.ignoreDuringBuilds: true` so the production build stays green
+  while `npm run lint` now does real, reportable work as its own gate.
+- **Source ZIP packaging was broken** (commit `3b053ab`):
+  `scripts/package-dist.js` requires `archiver`, which was never declared
+  as a dependency — running it failed with `MODULE_NOT_FOUND`. Added it as
+  a devDependency; regenerated the ZIP; see
+  `docs/release-evidence/ARTIFACT_MANIFEST_SHA256.txt`.
+- **Flaky embedded-Postgres test timeout**: bumped Vitest `hookTimeout`/
+  `testTimeout` to 60s. The embedded PostgreSQL 18 suite's cold start can
+  exceed the previous 30s default in a freshly `npm ci`'d environment
+  (reproduced once, fixed on re-run).
+- **Typecheck fix** (earlier, commit `7df7c58`): `authAndSecurity.test.ts`
+  assigned directly to `process.env.NODE_ENV`, which newer `@types/node`
+  marks read-only.
 
-## 2. Phase 1 — Real test/build results (VERIFIED, re-run from scratch)
+## 3. Verified test/build results (re-run from scratch, not trusted from prior reports)
 
-Previous agent reports claimed "68 Vitest / 11 Playwright tests passed."
-This was **independently re-run**, not trusted:
+| Command | Result |
+|---|---|
+| `npm run typecheck` | Clean (0 errors) |
+| `npm run lint` | Runs for real now; ~35 pre-existing `no-explicit-any` errors + warnings (see §5) — not release-blocking by itself since build is decoupled from lint |
+| `npm test` (Vitest) | **74/74 passed**, 16 files (68 original + 6 new from this session's fixes). Includes a real embedded PostgreSQL 18 engine with genuine `permission denied` / `row-level security policy` RLS errors — not mocked. |
+| `npm run build` | Succeeds, 18 routes |
+| Playwright E2E against `next dev` (cold) | 9/11 — 2 timeouts from dev-mode on-demand compilation exceeding the 30s test timeout, not application bugs |
+| Playwright E2E against `next build && next start` | **11/11** |
+| Fresh ZIP extraction (isolated temp folder, `npm ci` from the archive's own lockfile) | typecheck clean, 74/74 tests, build clean |
 
-| Command | Result | Notes |
-|---|---|---|
-| `npm run typecheck` | **FAILED initially** (2 errors) → **fixed, now 0 errors** | `tests/unit/authAndSecurity.test.ts` assigned directly to `process.env.NODE_ENV`, which newer `@types/node` marks read-only. Fixed via cast to `Record<string,string>`. Committed. |
-| `npm run lint` | **BLOCKED_EXTERNAL / NOT_CONFIGURED** | No ESLint config exists in the repo (`next lint` dropped into an interactive "configure ESLint" prompt). The "lint" claim in prior reports is unverified — lint has never actually been set up here. |
-| `npm test` (Vitest) | **68/68 passed**, 14 files | Includes `tests/integration/realPostgresServer.test.ts`, which boots a **real embedded PostgreSQL 18** engine (not mocked) and observes genuine `permission denied for table ...` / `row-level security policy` errors when a non-owner role is used — real RLS enforcement, not just GRANT failures. |
-| `npm run build` | **Succeeded** | 18 routes (static + dynamic API routes) built cleanly. |
-| Playwright E2E against `next dev` (cold) | **9/11 passed, 2 failed** | Both failures were timeouts tied to dev-mode on-demand compilation exceeding the 30s test timeout on first hit — not application bugs. |
-| Playwright E2E against `next build && next start` (production server) | **11/11 passed** | Confirms the directive's "11 Playwright tests" claim is accurate **when run against a production build**, not `next dev`. This distinction should be written into the CI workflow and runbook so future runs don't flake. |
+## 4. Dependency security (`npm audit`)
 
-**Conclusion:** the prior agent's "68 Vitest / 11 Playwright" claim holds up
-under independent re-run, with one caveat (dev-server flakiness) now
-documented, and one true defect (typecheck failure) found and fixed.
-"Lint passing" was **not** verified — no lint config exists.
+9 advisories before this session's `eslint`/`archiver` additions (2
+critical, 3 high, 4 moderate), now 19 after (additional ones are all in the
+new ESLint toolchain's own transitive deps — dev-only, not shipped).
+**Not auto-fixed**: every available fix (`npm audit fix --force`) is a
+semver-major bump (Next 15→16, Zod 3→4, Vitest 2→5), which the project
+rules explicitly warn against doing as an unrelated/unreviewed upgrade. The
+production-relevant one is `zod` (high: memory exhaustion on oversized
+constrained collections) — mitigated in practice by the new request-size
+guard (§2), since an attacker can no longer hand zod an arbitrarily large
+payload to begin with. The rest (`vitest`/`vite`/`esbuild`/`tinypool`/
+`postcss`) are dev-toolchain-only, not present in the production bundle.
+Recommend reviewing a Next 16 / Zod 4 upgrade as its own planned,
+tested piece of work — not bundled into this fix pass.
 
-## 3. Phase 2/5 — Spot-checked safety claims (source-level audit)
+## 5. Lint debt inventory (not fixed — tracked for a future pass)
 
-Quick source-level checks (not yet a full red-team pass):
+`npm run lint` now genuinely runs. Current findings, all pre-existing (none
+introduced by this session's new files, which lint clean):
+- `@typescript-eslint/no-explicit-any` (**error**, ~35 occurrences) in:
+  `app/api/admin/{agencies,enquiries}/route.ts`, `app/api/agency/route.ts`,
+  `app/api/auth/{login,logout}/route.ts`,
+  `app/api/cron/dispatch-outbox/route.ts`, `app/api/enquiries/route.ts`,
+  `app/api/general/route.ts`, `app/api/partner/{desk,verify-passenger}/route.ts`,
+  `app/partner/page.tsx`, `components/{B2BApplicationModal,FlightEnquiryForm,
+  GeneralEnquiryModal,JourneyAtlas,TrackEnquiryModal}.tsx`,
+  `lib/crm/{ghlAdapter,outboxDispatcher}.ts`, `lib/db/enquiriesRepository.ts`.
+  Mostly `catch (err: any)` and a few CRM/three.js payload shapes.
+- Unused imports/vars (**warning**) across `app/admin/page.tsx`,
+  `app/partner/page.tsx`, several `components/*.tsx`.
+- `react-hooks/exhaustive-deps` (**warning**) in `app/partner/page.tsx` and
+  `components/TrackEnquiryModal.tsx`.
+- One `@next/next/no-page-custom-font` warning in `app/layout.tsx`.
 
-- **SESSION_SECRET fail-closed**: `lib/auth/authService.ts:getSecretKey()` throws
-  `FATAL SECURITY CONFIGURATION...` when `NODE_ENV=production` and no
-  `SESSION_SECRET` is set (except during the Next.js build phase). Confirmed
-  by passing test. `VERIFIED_LOCAL`.
-- **72-hour B2B trial is NOT auto-activated**: `app/api/agency/route.ts`
-  persists new applications with `PENDING_VERIFICATION` status only; the
-  response text says the trial "will be activated upon trade credential
-  audit." Activation itself is a separate staff action
-  (`app/api/admin/agencies/route.ts`). `VERIFIED_LOCAL`.
-- **Live payments / GDS ticketing**: `lib/config/featureFlags.ts` gates
-  `enableLivePaymentGateway` / `enableLiveGdsTicketing` behind
-  `ENABLE_LIVE_PAYMENTS` / `ENABLE_LIVE_GDS_TICKETING` env vars, both
-  default `false` in `.env.example`. Neither flag is actually consumed
-  anywhere else in the codebase — i.e. there is no live payment or GDS
-  ticketing code at all yet, so nothing is at risk of silently going live.
-- **Hotline number conflict** (historically `+8801674178437` vs
-  `+8801641178437`): only `+8801674178437` appears anywhere in source
-  (`lib/config/siteConfig.ts`, WhatsApp formatter + its tests). The
-  conflict described in the directive does not currently exist in code —
-  one number is used consistently. Still **owner-approval required** to
-  confirm this is the correct number, but there is no live conflict to fix.
-- **Pricing conflict** (historically ৳20,000/mo + ৳130,000/yr vs
-  ৳5,999/mo + ৳69,999/yr): only `৳20,000/mo` appears in source
-  (`components/B2BAgencySection.tsx`), explicitly labelled "Under Pilot
-  Review" in both languages. The other three historical figures do not
-  appear anywhere. `OWNER_APPROVAL_REQUIRED` to formally bless the number,
-  but no live unqualified-commitment defect exists today.
+## 6. CI workflow (`.github/workflows/ci.yml`) — reviewed, not run
 
-## 4. NOT yet done this session (honest gap list)
+Correctly builds production (`next build`) and runs Playwright against
+`next start`, not `next dev` — matching what this session found is
+necessary to avoid flakiness. No `origin` remote is configured in this
+repository, so this workflow **has never actually executed on GitHub**:
+status is `CI_CONFIGURED / REMOTE_UNVERIFIED`, not "CI passing." No `npm
+run lint` step exists yet; adding one now would immediately turn CI red
+over the pre-existing debt in §5, so it's intentionally not added until
+that's paid down (or until it's added as `continue-on-error`).
 
-These phases from the master directive have **not** been executed yet —
-do not assume otherwise:
+## 7. Spot-checked safety claims (source-level, from the prior checkpoint — re-confirmed, no changes)
 
-- Full Phase 2 security gate (positive/negative API tests per role,
-  CSRF/rate-limit/PII review, restart-based session-revocation test beyond
-  what the existing Vitest suite already covers).
-- Phase 3 six-desk functional UAT matrix (manual/scripted walk-through of
-  FareDesk, BookingDesk, ClearMargin, AfterCare, Verified Workflow,
-  PartnerGrowth with two synthetic agencies).
-- Phase 4 CRM outbox concurrency/failure-injection testing (429/500/crash
-  scenarios) — the existing `outboxDispatcher.test.ts` (3 tests) is unit-level
-  only.
-- Source ZIP location/audit, fresh-extraction test, SHA-256 manifest.
-- CI workflow (`.github/workflows/ci.yml`) review.
-- `docs/release-evidence/*` deliverables beyond this checkpoint file.
-- ESLint setup/config (currently absent).
-- `npm audit` triage (9 advisories: 4 moderate, 3 high, 2 critical — not yet
-  reviewed).
+- SESSION_SECRET fails closed in production. Verified by passing test.
+- 72-hour B2B trial is not auto-activated; requires a separate staff
+  action. Verified in `app/api/agency/route.ts` / `app/api/admin/agencies/route.ts`.
+- Live payments/GDS ticketing flags default `false` and are not consumed
+  anywhere — no implementation exists yet, so nothing is at risk of
+  silently going live.
+- Only one hotline number (`+8801674178437`) and one price point (৳20,000/mo,
+  explicitly labelled "Under Pilot Review") appear anywhere in source — the
+  historically reported conflicts do not currently exist in code.
 
-## 5. Immediate next actions
+## 8. Honest gap list — NOT done this session
 
-1. Triage the 9 `npm audit` advisories (2 critical) before any further
-   release claims.
-2. Stand up ESLint config so "lint" is a real, checkable gate.
-3. Locate/validate the claimed source ZIP
-   (`design-system/dist/safaria-v2.0.0-staging-rc2-source.zip`) if it
-   exists in the main checkout, or regenerate it from this verified commit.
-4. Decide, with the owner, whether ongoing work continues in this new
-   worktree/branch (`claude/safaria-prod-continuation-5ace06`) going
-   forward, since the original session worktree is on an unrelated
-   baseline branch.
+- Full Phase 2 red-team pass beyond the login fix (CSRF token/
+  double-submit, broader brute-force coverage beyond login, PII/logging
+  hygiene review).
+- Phase 3 six-desk functional UAT matrix (manual/scripted walk-through with
+  two synthetic agencies).
+- Phase 4 CRM outbox failure-injection testing (429/500/crash scenarios) —
+  existing `outboxDispatcher.test.ts` is unit-level only.
+- `FUNCTIONAL_UAT_MATRIX.md`, `CRM_DELIVERY_EVIDENCE.md`,
+  `COMMERCIAL_APPROVAL_REGISTER.md`, `UX_CONTENT_QA.md`,
+  `STAGING_DEPLOYMENT_READINESS.md`, `RELEASE_MANIFEST.md`,
+  `START_HERE_FOR_RELEASE.md` — intentionally **not created**; creating them
+  without having done the underlying work would be exactly the placeholder
+  padding the master directive forbids.
+- Paying down the §5 lint debt and the §4 dependency-major-version debt.
+- Fixing the §1 "known follow-up" (agency reads never hitting Supabase).
+
+## 9. Immediate next actions, in priority order
+
+1. If this is heading toward real deployment: have the agency-portal
+   credential-issuance UX (temp password shown once to staff, relayed
+   out-of-band) reviewed by the owner — it's a real but minimal flow, not
+   yet battle-tested against how staff actually operate day to day.
+2. Decide whether `listAgencyApplications`'s in-memory-only reads (§1
+   follow-up) block going live with Supabase configured, or can wait.
+3. Phase 3 UAT pass once the above is settled.
+4. Pay down lint/dependency debt (§4, §5) as a dedicated pass, not mixed
+   into feature/security work.
