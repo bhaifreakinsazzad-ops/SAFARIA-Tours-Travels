@@ -1,5 +1,5 @@
 # SAFARIA Tours & Travels — Feature Readiness Matrix
-**Document ID:** FRM-20261108-03  
+**Document ID:** FRM-20261108-04  
 **Status Values:** `NOT_STARTED` | `IN_PROGRESS` | `IMPLEMENTED` | `TESTED` | `BLOCKED` | `PRODUCTION_VERIFIED`  
 **Date of Record:** 2026-11-08  
 **Verification Branch:** `feat/safaria-production-foundation`
@@ -26,7 +26,7 @@
 | **Supabase Core Schema & Strict RLS Audit** | **PRODUCTION_VERIFIED** | `supabase/migrations/001_safaria_core_schema.sql` | 5 unit tests passed verifying 6 tables, cascades, RLS | v2.0.0-PROD |
 | **3D Journey Atlas with SVG Fallback** | **PRODUCTION_VERIFIED** | Three.js WebGL canvas + reduced-motion fallback | Clean lifecycle disposal + 8 route prefill triggers | v2.0.0-PROD |
 | **33 Airport Destination Grid** | **PRODUCTION_VERIFIED** | `components/DestinationGrid.tsx` | 8 domestic BD + 25 global hubs; category filters | v2.0.0-PROD |
-| **Bilingual Parity (Bangla / English)** | **PRODUCTION_VERIFIED** | `/` (Bengali canonical) & `/en` (English) | Playwright E2E verified; 100% copy parity | v2.0.0-PROD |
+| **Bilingual Parity & Accessibility (a11y)** | **PRODUCTION_VERIFIED** | `/` (Bengali) & `/en` (English) + WCAG labels & modal traps | Playwright a11y tests passed (lang attributes, mobile layout) | v2.0.0-PROD |
 | **Live Aircraft Telemetry (Radar)** | **BLOCKED (DISCLAIMED)** | `components/FlightRadarCard.tsx` | Honest status note: ADS-B in regulatory review | Post-Launch |
 | **Live GDS Ticketing & PNR Issuance** | **BLOCKED (FEATURE_FLAGGED)** | `lib/config/featureFlags.ts` | Server flag OFF by default; zero false ticketing | Post-Launch |
 | **Online Payment Gateway Collection** | **BLOCKED (FEATURE_FLAGGED)** | `lib/config/featureFlags.ts` | Server flag OFF by default; no client charging | Post-Launch |
@@ -38,9 +38,10 @@
 - **B2B Agency Portal & Operational Desks:** **GREEN (Production Verified with Tenant Scoping)**
 - **CRM Integration & Outbox Queue:** **GREEN (Production Verified with Retry Dispatcher)**
 - **Customer Reference Tracking & Masked Lookup:** **GREEN (Production Verified)**
+- **Accessibility & Bilingual Standards:** **GREEN (Production Verified, WCAG form labels & dialog roles)**
 - **Transactional Issuance & Payments:** **SAFETY LOCKED (Strictly disabled behind server feature flags until user accreditation)**
-- **Automated Tests:** **43/43 Unit & Integration Tests Passed (Vitest)**
-- **End-to-End Tests:** **6/6 Playwright Browser Tests Passed**
+- **Automated Tests:** **43/43 Unit & Integration Tests Passed (Vitest across 11 suites)**
+- **End-to-End Tests:** **10/10 Playwright Browser Tests Passed (Flows + Accessibility)**
 - **Typecheck & Production Build:** **0 Errors, 17/17 Next.js App Router Pages & APIs Compiled**
 - **Visual Parity:** **5 High-Resolution Screenshots Captured (Desktop, Mobile, Partner, Admin, Tracking Modal)**
 - **Deployment Documentation:** **Deployment Runbook Approved ([`docs/DEPLOYMENT_RUNBOOK.md`](file:///E:/Agentic%20Work%20Station/Websites/SAFARIA%20Tours%20&%20Travels/design-system/docs/DEPLOYMENT_RUNBOOK.md))**

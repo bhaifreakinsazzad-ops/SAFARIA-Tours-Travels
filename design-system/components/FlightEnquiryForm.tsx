@@ -574,10 +574,11 @@ export function FlightEnquiryForm({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Lead Name */}
                 <div className="space-y-1">
-                  <label className="text-xs text-safaria-inkMuted block">
+                  <label htmlFor="lead-passenger-name" className="text-xs text-safaria-inkMuted block">
                     {isBn ? "প্রধান যাত্রীর পুরো নাম (পাসপোর্ট অনুযায়ী)" : "Lead Passenger Full Name"} *
                   </label>
                   <input
+                    id="lead-passenger-name"
                     type="text"
                     required
                     placeholder="e.g. Tanvir Ahmed"
@@ -589,11 +590,13 @@ export function FlightEnquiryForm({
 
                 {/* Phone */}
                 <div className="space-y-1">
-                  <label className="text-xs text-safaria-inkMuted block">
+                  <label htmlFor="phone-number" className="text-xs text-safaria-inkMuted block">
                     {isBn ? "মোবাইল / হোয়াটসঅ্যাপ নম্বর" : "Mobile / WhatsApp Number"} *
                   </label>
                   <div className="flex gap-2">
                     <select
+                      id="phone-country-code"
+                      aria-label="Phone country code"
                       value={phoneCountryCode}
                       onChange={(e) => setPhoneCountryCode(e.target.value)}
                       className="w-24 rounded-lg border border-safaria-line bg-surface-input px-2 py-2 text-sm text-safaria-ink focus:border-safaria-gold focus:outline-none"
@@ -608,6 +611,7 @@ export function FlightEnquiryForm({
                       <option value="+66">+66 (TH)</option>
                     </select>
                     <input
+                      id="phone-number"
                       type="tel"
                       required
                       placeholder="1711223344"
@@ -620,10 +624,11 @@ export function FlightEnquiryForm({
 
                 {/* Email */}
                 <div className="space-y-1">
-                  <label className="text-xs text-safaria-inkMuted block">
+                  <label htmlFor="passenger-email" className="text-xs text-safaria-inkMuted block">
                     {isBn ? "ইমেইল ঠিকানা (ঐচ্ছিক)" : "Email Address (Optional)"}
                   </label>
                   <input
+                    id="passenger-email"
                     type="email"
                     placeholder="tanvir@example.com"
                     value={email}
@@ -634,10 +639,11 @@ export function FlightEnquiryForm({
 
                 {/* Preferred Carrier */}
                 <div className="space-y-1">
-                  <label className="text-xs text-safaria-inkMuted block">
+                  <label htmlFor="preferred-carrier" className="text-xs text-safaria-inkMuted block">
                     {isBn ? "পছন্দের এয়ারলাইন্স (ঐচ্ছিক)" : "Preferred Carrier (Optional)"}
                   </label>
                   <input
+                    id="preferred-carrier"
                     type="text"
                     placeholder="e.g. Emirates, Biman, Qatar, Singapore Airlines"
                     value={preferredCarrier}
@@ -649,10 +655,11 @@ export function FlightEnquiryForm({
 
               {/* Special Instructions */}
               <div className="space-y-1">
-                <label className="text-xs text-safaria-inkMuted block">
+                <label htmlFor="special-notes" className="text-xs text-safaria-inkMuted block">
                   {isBn ? "বিশেষ নির্দেশনা বা অনুরোধ (ঐচ্ছিক)" : "Special Requests / Notes"}
                 </label>
                 <textarea
+                  id="special-notes"
                   rows={2}
                   placeholder={
                     isBn

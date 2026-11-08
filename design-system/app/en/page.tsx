@@ -16,6 +16,13 @@ export default function EnglishHomePage() {
   const [selectedOrigin, setSelectedOrigin] = useState<string>("DAC");
   const [selectedDestination, setSelectedDestination] = useState<string>("DXB");
 
+  React.useEffect(() => {
+    document.documentElement.lang = "en";
+    return () => {
+      document.documentElement.lang = "bn";
+    };
+  }, []);
+
   const handleRouteSelect = (route: AtlasRoute) => {
     setSelectedOrigin(route.originIata);
     setSelectedDestination(route.destIata);
