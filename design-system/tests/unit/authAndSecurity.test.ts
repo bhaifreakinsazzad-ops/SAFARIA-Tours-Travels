@@ -175,7 +175,7 @@ describe("Auth & Session Security Service", () => {
 
     try {
       // In production without SESSION_SECRET
-      process.env.NODE_ENV = "production";
+      (process.env as Record<string, string>).NODE_ENV = "production";
       delete process.env.SESSION_SECRET;
       delete process.env.NEXT_PHASE;
 
@@ -187,7 +187,7 @@ describe("Auth & Session Security Service", () => {
       process.env.SESSION_SECRET = "production-cryptographic-secret-key-1234567890";
       expect(getSecretKey()).toBe("production-cryptographic-secret-key-1234567890");
     } finally {
-      process.env.NODE_ENV = originalEnv;
+      (process.env as Record<string, string>).NODE_ENV = originalEnv as string;
       if (originalSecret) {
         process.env.SESSION_SECRET = originalSecret;
       } else {
