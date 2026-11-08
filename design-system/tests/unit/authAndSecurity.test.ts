@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { signSession, verifySession } from "@/lib/auth/authService";
+import { signSession, verifySession, revokeSession, isSessionRevoked } from "@/lib/auth/authService";
 
 describe("Auth & Session Security Service", () => {
   it("should generate cryptographically verifiable HMAC-SHA256 session token", () => {
@@ -48,5 +48,42 @@ describe("Auth & Session Security Service", () => {
 
     const verified = verifySession(expiredToken);
     expect(verified).toBeNull();
+  });
+
+  it("should immediately invalidate and revoke a session by its token ID (jti)", () => {
+    const token = signSession({
+      userId: "user_789",
+      email: "agent@greendelta.com",
+      role: "B2B_PARTNER",
+      agencyId: "agency-greendelta-01",
+    });
+
+    const activeSession = verifySession(token);
+    expect(activeSession).not.toBeNull();
+    expect(activeSession?.jti).toBeDefined();
+
+    // Revoke the session
+    revokeSession(activeSession!.jti);
+
+    expect(isSessionRevoked(activeSession!.jti)).toBe(true);
+
+    // Verified must now return null
+    const revokedSession = verifySession(token);
+    expect(revokedSession).toBeNull();
+  });
+
+  it("should gracefully handle signature length tampering without throwing exceptions", () => {
+    const token = signSession({
+      userId: "user_test",
+      email: "test@safaria.world",
+      role: "OPS_AGENT",
+    });
+
+    const parts = token.split(".");
+    // Truncate signature to different byte length
+    const shortSigToken = `${parts[0]}.${parts[1]}.${parts[2].substring(0, 10)}`;
+
+    expect(() => verifySession(shortSigToken)).not.toThrow();
+    expect(verifySession(shortSigToken)).toBeNull();
   });
 });

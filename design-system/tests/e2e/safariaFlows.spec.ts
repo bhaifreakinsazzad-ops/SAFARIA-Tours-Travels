@@ -83,4 +83,20 @@ test.describe("SAFARIA Tours & Travels — Core User Flows", () => {
     // Verify error notification
     await expect(page.getByText("অনুসন্ধান ব্যর্থ হয়েছে")).toBeVisible();
   });
+
+  test("Journey Atlas corridor selection triggers route prefill into flight quote form", async ({ page }) => {
+    await page.goto("http://localhost:3000/");
+
+    // Click DAC-LHR route button on Journey Atlas
+    const lhrBtn = page.getByRole("button", { name: "DAC–LHR" });
+    await lhrBtn.click();
+
+    // Click request quote for route button
+    const quoteBtn = page.getByRole("button", { name: /এই রুটের জন্য কোটেশন নিন/i });
+    await quoteBtn.click();
+
+    // Verify Destination select in form updated to LHR
+    const toSelect = page.locator("#flight-quote select").nth(1);
+    await expect(toSelect).toHaveValue("LHR");
+  });
 });

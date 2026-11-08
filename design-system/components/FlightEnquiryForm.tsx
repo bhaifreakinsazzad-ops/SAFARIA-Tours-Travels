@@ -96,6 +96,36 @@ export function FlightEnquiryForm({
   } | null>(null);
   const [trackingModalOpen, setTrackingModalOpen] = useState<boolean>(false);
 
+  // Sync initialOrigin / initialDestination prop updates from Journey Atlas or Destination Grid
+  React.useEffect(() => {
+    if (initialOrigin && initialDestination) {
+      setLegs((prevLegs) => {
+        const originCity = SITE_CONFIG.airports.find((a) => a.iata === initialOrigin)?.cityEn || "Dhaka";
+        const destCity = SITE_CONFIG.airports.find((a) => a.iata === initialDestination)?.cityEn || "Dubai";
+        const updated = [...prevLegs];
+        if (updated[0]) {
+          updated[0] = {
+            ...updated[0],
+            originIata: initialOrigin,
+            originCity,
+            destinationIata: initialDestination,
+            destinationCity: destCity,
+          };
+        }
+        if (updated[1] && tripType === "ROUND_TRIP") {
+          updated[1] = {
+            ...updated[1],
+            originIata: initialDestination,
+            originCity: destCity,
+            destinationIata: initialOrigin,
+            destinationCity: originCity,
+          };
+        }
+        return updated;
+      });
+    }
+  }, [initialOrigin, initialDestination, tripType]);
+
   // Handle Trip Type change
   const handleTripTypeChange = (type: "ONE_WAY" | "ROUND_TRIP" | "MULTI_CITY") => {
     setTripType(type);

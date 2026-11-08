@@ -19,10 +19,23 @@ describe("GoHighLevel Outbox Dispatcher & Failure Monitor", () => {
     expect(summary.processed).toBe(1);
     expect(summary.delivered).toBe(1);
     expect(summary.failed).toBe(0);
+    expect(summary.providerMode).toBe("STAGING_MOCK_DISPATCHER");
+    expect(summary.skippedDueToConcurrency).toBe(false);
 
     // Verify status in repository
     const pendingRemaining = await enquiriesRepository.listPendingOutboxEntries(10);
     expect(pendingRemaining.length).toBe(0);
+  });
+
+  it("should prevent race conditions via concurrency lock", async () => {
+    // Simulate concurrent runner
+    const p1 = outboxDispatcher.processPendingQueue(10);
+    const p2 = outboxDispatcher.processPendingQueue(10);
+
+    const [res1, res2] = await Promise.all([p1, p2]);
+
+    // One of them should succeed normally and the concurrent one should be guarded
+    expect(res1.skippedDueToConcurrency || res2.skippedDueToConcurrency).toBe(true);
   });
 
   it("should mark outbox entry as FAILED when max retry limit (5) is exceeded", async () => {

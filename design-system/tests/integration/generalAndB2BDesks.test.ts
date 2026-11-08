@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { POST as generalPost } from "@/app/api/general/route";
-import { POST as deskPost, GET as deskGet } from "@/app/api/partner/desk/route";
+import { POST as deskPost, GET as deskGet, PATCH as deskPatch } from "@/app/api/partner/desk/route";
 import { NextRequest } from "next/server";
 import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
 import { signSession } from "@/lib/auth/authService";
@@ -108,5 +108,55 @@ describe("General Enquiries & Cross-Tenant B2B Desks Integration", () => {
     const adminRes = await deskGet(adminReq);
     const adminData = await adminRes.json();
     expect(adminData.count).toBe(1);
+  });
+
+  it("PATCH /api/partner/desk updates record status and appends audit trail with cross-tenant check", async () => {
+    // 1. Create a record for Agency A
+    const record = await enquiriesRepository.createB2BDeskRecord(
+      "BOOKING_DESK",
+      "agency-A",
+      "PNR Split Ticket Case",
+      { pnr: "ABC123XYZ", passengerCount: 3 },
+      "HIGH"
+    );
+
+    // 2. Agency B attempts to modify Agency A's record -> MUST RETURN 403 FORBIDDEN
+    const tamperReq = new NextRequest("http://localhost:3000/api/partner/desk", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${agencyBToken}`,
+      },
+      body: JSON.stringify({
+        id: record.id,
+        status: "RESOLVED",
+        internalNotes: "Unauthorized modification by rival agency",
+      }),
+    });
+
+    const tamperRes = await deskPatch(tamperReq);
+    expect(tamperRes.status).toBe(403);
+
+    // 3. Agency A updates their own record -> SUCCESS
+    const updateReq = new NextRequest("http://localhost:3000/api/partner/desk", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${agencyAToken}`,
+      },
+      body: JSON.stringify({
+        id: record.id,
+        status: "RESOLVED",
+        internalNotes: "Carrier split approved and confirmed with airline helpdesk.",
+      }),
+    });
+
+    const updateRes = await deskPatch(updateReq);
+    expect(updateRes.status).toBe(200);
+    const updateData = await updateRes.json();
+    expect(updateData.success).toBe(true);
+    expect(updateData.record.status).toBe("RESOLVED");
+    expect(updateData.record.internalNotes).toContain("partner@agency-a.com");
+    expect(updateData.record.internalNotes).toContain("Carrier split approved");
   });
 });

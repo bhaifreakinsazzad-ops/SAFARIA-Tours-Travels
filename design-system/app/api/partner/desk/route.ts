@@ -81,3 +81,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
+
+export async function PATCH(req: NextRequest) {
+  const session = extractSessionFromRequest(req);
+  if (!session) {
+    return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
+  }
+
+  try {
+    const { id, status, internalNotes } = await req.json();
+    if (!id || !status) {
+      return NextResponse.json(
+        { success: false, error: "Missing required fields: id, status" },
+        { status: 400 }
+      );
+    }
+
+    // Tenant authorization check
+    const records = await enquiriesRepository.listB2BDeskRecords(undefined, undefined);
+    const targetRecord = records.find((r) => r.id === id);
+
+    if (!targetRecord) {
+      return NextResponse.json({ success: false, error: "Record not found" }, { status: 404 });
+    }
+
+    if (session.role === "B2B_PARTNER" && targetRecord.agencyId !== session.agencyId) {
+      return NextResponse.json(
+        { success: false, error: "Access denied: Cannot modify another agency's desk record" },
+        { status: 403 }
+      );
+    }
+
+    const auditTrailNote = internalNotes
+      ? `[${new Date().toISOString()} by ${session.email}]: ${internalNotes}`
+      : undefined;
+
+    const updated = await enquiriesRepository.updateB2BDeskRecord(id, status, auditTrailNote);
+
+    return NextResponse.json({
+      success: true,
+      record: updated,
+      message: "Desk record status transition and audit trail updated successfully",
+    });
+  } catch (err: any) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}

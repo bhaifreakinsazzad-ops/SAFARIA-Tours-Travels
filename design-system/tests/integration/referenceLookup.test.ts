@@ -27,6 +27,7 @@ describe("Public Reference Tracking & Masked Lookup API", () => {
             departureDate: "2026-12-01",
           },
         ],
+        consentAgreed: true,
       },
       { ip: "127.0.0.1", userAgent: "Vitest" }
     );
@@ -59,7 +60,8 @@ describe("Public Reference Tracking & Masked Lookup API", () => {
       city: "Dhaka",
       tradeLicenseNumber: "TRAD/DSCC/019283/2025",
       yearsInBusiness: 5,
-      monthlyTicketVolume: "100-300",
+      monthlyTicketVolume: "OVER_100",
+      consentAgreed: true,
     });
 
     const req = new NextRequest(`http://localhost:3000/api/enquiries?ref=${b2bRecord.referenceNo}`);
