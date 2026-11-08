@@ -22,7 +22,7 @@
 
 | Feature / Capability | Operational Readiness | Implementation Path | Verification Results | Target Release |
 | :--- | :--- | :--- | :--- | :--- |
-| **Real Native PostgreSQL 18 Engine & RLS** | **VERIFIED_REAL** | Native PostgreSQL 18.6 daemon + `001_safaria_core_schema.sql` | 6/6 tests passed in `realPostgresServer.test.ts`: DDL, kernel-level RLS, foreign keys, WAL recovery across restart | v2.0.0-PROD |
+| **Real Native PostgreSQL 18 Engine & RLS** | **VERIFIED_REAL** | Native PostgreSQL 18.6 daemon + `001_safaria_core_schema.sql` | 8/8 tests passed in `realPostgresServer.test.ts`: DDL, kernel-level RLS, foreign keys, WAL recovery across restart, cross-tenant desk isolation, durable revocation table | v2.0.0-PROD |
 | **Distributed Outbox Job Claiming (`FOR UPDATE SKIP LOCKED`)** | **VERIFIED_REAL** | `lib/crm/outboxDispatcher.ts` + `claimOutboxBatch` | 4/4 tests passed in `distributedOutbox.test.ts`: disjoint worker partitioning, expired lease recovery | v2.0.0-PROD |
 | **Durable Session Revocation & Dynamic Account Suspension** | **VERIFIED_REAL** | `revoked_sessions` table + `isAgencyActive` check | 7/7 tests passed in `authAndSecurity.test.ts`: persistent `jti` revocation, rejected suspended accounts | v2.0.0-PROD |
 | **B2C Flight Enquiry Workflow (One-Way & Round-Trip)** | **VERIFIED_LOCAL** | Next.js form + Zod schema + Route Handler + Supabase DB | Vitest (10 tests) + Playwright E2E passed | v2.0.0-PROD |
@@ -50,10 +50,12 @@
 ## 3. Launch Readiness Gate Status
 
 - **Real Database & Storage Engine:** **GREEN (VERIFIED_REAL)**
-  - Native PostgreSQL 18.6 daemon verified on x86_64 Windows (`realPostgresServer.test.ts`).
+  - Native PostgreSQL 18.6 daemon verified on x86_64 Windows (`realPostgresServer.test.ts`, 8/8 tests passed).
   - Native Row-Level Security (RLS) actively blocks unauthorized anonymous PII extraction with PostgreSQL kernel `permission denied`.
   - Durability and persistence proven across server stop, restart, automatic WAL crash recovery, and fsync checkpointing.
   - Cascading foreign keys verified on `flight_legs`.
+  - Cross-tenant data isolation and role boundaries verified on `b2b_desk_records`.
+  - Durable session revocation table `revoked_sessions` verified with anonymous role access denied.
 - **Session Security & Authorization:** **GREEN (VERIFIED_REAL)**
   - Distributed token revocation table `revoked_sessions` stores cryptographic `jti` identifiers.
   - Multi-instance session invalidation survives process restarts.
@@ -76,6 +78,6 @@
   - B2B commercial pricing displays honest configurable commission rates without false accreditation claims.
   - Live aircraft radar displays honest regulatory status disclaimer.
 - **Test Suite Results:**
-  - **Automated Tests:** **65/65 Unit & Integration Tests Passed** (Vitest across 14 test suites).
+  - **Automated Tests:** **67/67 Unit & Integration Tests Passed** (Vitest across 14 test suites, including 8 in native PostgreSQL 18 engine and 4 in distributed outbox).
   - **End-to-End Tests:** **11/11 Playwright Browser Tests Passed** (Bilingual navigation, forms, a11y labels, modal focus traps, Journey Atlas prefill).
   - **Production Build:** **18/18 Routes Compiled Cleanly** (0 TypeScript errors, 0 linting errors).

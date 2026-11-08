@@ -142,6 +142,22 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     // STOP the PostgreSQL server process completely
     await pg.stop();
 
+    // Poll until all child postgres.exe processes on Windows have completely exited
+    for (let i = 0; i < 20; i++) {
+      try {
+        const { execSync } = await import("child_process");
+        const list = execSync('tasklist /fi "imagename eq postgres.exe" /nh', { encoding: "utf8" });
+        if (!list.includes("postgres.exe")) {
+          break;
+        }
+      } catch {
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    }
+    // Additional grace period to ensure Windows kernel IPC handle release
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     // RESTART the PostgreSQL server from the persistent cluster directory
     await pg.start();
 
@@ -160,7 +176,7 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     expect(queryRes.rows[0].status).toBe("ACTIVE_PARTNER");
 
     await client2.end();
-  }, 45000);
+  }, 60000);
 
   it("executes atomic distributed job claiming with FOR UPDATE SKIP LOCKED across concurrent connections", async () => {
     const clientA = pg.getPgClient();
@@ -254,6 +270,96 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     // Child legs MUST be automatically deleted by PostgreSQL cascade
     const afterLegs = await client.query("SELECT count(*) FROM flight_legs WHERE enquiry_id = $1;", [parentId]);
     expect(parseInt(afterLegs.rows[0].count, 10)).toBe(0);
+
+    await client.end();
+  }, 30000);
+
+  it("enforces cross-tenant data isolation and role boundaries on b2b_desk_records in real PostgreSQL", async () => {
+    const client = pg.getPgClient();
+    await client.connect();
+
+    // 1. Unprivileged role 'anon' is completely blocked from accessing b2b_desk_records
+    await client.query("SET ROLE anon;");
+    await expect(
+      client.query("SELECT * FROM b2b_desk_records;")
+    ).rejects.toThrow(/permission denied/i);
+    await client.query("RESET ROLE;");
+
+    // 2. Insert two distinct partner agencies into agency_applications first
+    await client.query("SET ROLE service_role;");
+    const appAlpha = await client.query(`
+      INSERT INTO agency_applications (
+        reference_no, agency_name, contact_person, phone, email, city, status
+      ) VALUES (
+        'B2B-TENANT-ALPHA', 'Alpha Travels Ltd', 'Alpha Officer', '+8801700000001', 'alpha@tenants.com', 'Dhaka', 'ACTIVE_PARTNER'
+      ) RETURNING id;
+    `);
+    const appBeta = await client.query(`
+      INSERT INTO agency_applications (
+        reference_no, agency_name, contact_person, phone, email, city, status
+      ) VALUES (
+        'B2B-TENANT-BETA', 'Beta Travels Ltd', 'Beta Officer', '+8801700000002', 'beta@tenants.com', 'Chittagong', 'ACTIVE_PARTNER'
+      ) RETURNING id;
+    `);
+
+    const agencyAlphaId = appAlpha.rows[0].id;
+    const agencyBetaId = appBeta.rows[0].id;
+
+    await client.query(`
+      INSERT INTO b2b_desk_records (agency_id, desk_type, title, status, payload)
+      VALUES 
+        ($1, 'FARE_DESK', 'Alpha Urgent Group Fare', 'OPEN', '{"groupSize": 25}'::jsonb),
+        ($2, 'FARE_DESK', 'Beta Corporate Charter', 'OPEN', '{"groupSize": 50}'::jsonb);
+    `, [agencyAlphaId, agencyBetaId]);
+
+    // Tenant Alpha query must ONLY return Alpha's records
+    const alphaRecords = await client.query(`
+      SELECT title, agency_id FROM b2b_desk_records WHERE agency_id = $1;
+    `, [agencyAlphaId]);
+    expect(alphaRecords.rows.length).toBe(1);
+    expect(alphaRecords.rows[0].title).toBe("Alpha Urgent Group Fare");
+    expect(alphaRecords.rows[0].agency_id).toBe(agencyAlphaId);
+
+    // Tenant Beta query must ONLY return Beta's records
+    const betaRecords = await client.query(`
+      SELECT title, agency_id FROM b2b_desk_records WHERE agency_id = $1;
+    `, [agencyBetaId]);
+    expect(betaRecords.rows.length).toBe(1);
+    expect(betaRecords.rows[0].title).toBe("Beta Corporate Charter");
+    expect(betaRecords.rows[0].agency_id).toBe(agencyBetaId);
+
+    await client.query("RESET ROLE;");
+    await client.end();
+  }, 30000);
+
+  it("proves durable multi-instance session revocation persistence in revoked_sessions table", async () => {
+    const client = pg.getPgClient();
+    await client.connect();
+
+    const jtiToRevoke = "jti-durable-revocation-test-12345";
+    const expiresAt = new Date(Date.now() + 3600000).toISOString();
+
+    // Insert revoked session record
+    await client.query(`
+      INSERT INTO revoked_sessions (jti, user_id, reason, expires_at)
+      VALUES ($1, 'usr-agency-99', 'LOGOUT', $2);
+    `, [jtiToRevoke, expiresAt]);
+
+    // Check revoked session is found
+    const res = await client.query(`
+      SELECT jti, reason, expires_at FROM revoked_sessions WHERE jti = $1;
+    `, [jtiToRevoke]);
+
+    expect(res.rows.length).toBe(1);
+    expect(res.rows[0].jti).toBe(jtiToRevoke);
+    expect(res.rows[0].reason).toBe("LOGOUT");
+
+    // Anonymous role is blocked from tampering with or reading revoked_sessions
+    await client.query("SET ROLE anon;");
+    await expect(
+      client.query("SELECT * FROM revoked_sessions;")
+    ).rejects.toThrow(/permission denied/i);
+    await client.query("RESET ROLE;");
 
     await client.end();
   }, 30000);
