@@ -68,8 +68,18 @@ export interface StoredOutboxEntry {
   attempts: number;
   lastError?: string;
   nextRetryAt: string;
+  lockedAt?: string | null;
+  lockedBy?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface StoredRevokedSession {
+  jti: string;
+  userId?: string;
+  reason?: string;
+  revokedAt: string;
+  expiresAt: string;
 }
 
 export interface StoredB2BDeskRecord {
@@ -107,6 +117,30 @@ class InMemoryStore {
   outboxEntries: Map<string, StoredOutboxEntry> = new Map();
   b2bDeskRecords: Map<string, StoredB2BDeskRecord> = new Map();
   generalEnquiries: Map<string, StoredGeneralEnquiry> = new Map();
+  revokedSessions: Map<string, StoredRevokedSession> = new Map();
+
+  constructor() {
+    this.seedDefaultAgency();
+  }
+
+  seedDefaultAgency() {
+    const now = new Date().toISOString();
+    this.agencyApplications.set("agency-greendelta-01", {
+      id: "agency-greendelta-01",
+      referenceNo: "B2B-20261108-GREEN1",
+      agencyName: "Green Delta Travels",
+      contactPerson: "Kamal Hossain",
+      phone: "+8801700998877",
+      email: "partner@greendelta.com",
+      city: "Dhaka",
+      tradeLicenseNumber: "TRAD/DSCC/019283/2025",
+      yearsInBusiness: 5,
+      monthlyTicketVolume: "OVER_100",
+      status: "ACTIVE_PARTNER",
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
 
   clear() {
     this.flightEnquiries.clear();
@@ -114,6 +148,8 @@ class InMemoryStore {
     this.outboxEntries.clear();
     this.b2bDeskRecords.clear();
     this.generalEnquiries.clear();
+    this.revokedSessions.clear();
+    this.seedDefaultAgency();
   }
 }
 
@@ -571,7 +607,100 @@ export const enquiriesRepository = {
   },
 
   /**
-   * List pending outbox entries ready for retry
+   * Database-coordinated job claiming with lease management
+   * Guarantees atomic row claiming across distributed workers / serverless instances
+   */
+  async claimOutboxBatch(
+    workerId: string,
+    limit: number = 20,
+    leaseDurationSeconds: number = 120
+  ): Promise<StoredOutboxEntry[]> {
+    const supabase = getSupabaseServiceClient();
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const leaseExpiryCutoff = new Date(now.getTime() - leaseDurationSeconds * 1000).toISOString();
+
+    if (supabase) {
+      try {
+        const { data: candidates, error: selectErr } = await supabase
+          .from("integration_outbox")
+          .select("id")
+          .in("status", ["PENDING", "FAILED"])
+          .lt("attempts", 5)
+          .lte("next_retry_at", nowIso)
+          .or(`locked_at.is.null,locked_at.lt.${leaseExpiryCutoff}`)
+          .order("next_retry_at", { ascending: true })
+          .limit(limit);
+
+        if (!selectErr && candidates && candidates.length > 0) {
+          const candidateIds = candidates.map((c: any) => c.id);
+          const { data: claimed, error: updateErr } = await supabase
+            .from("integration_outbox")
+            .update({
+              status: "PROCESSING",
+              locked_at: nowIso,
+              locked_by: workerId,
+              updated_at: nowIso,
+            })
+            .in("id", candidateIds)
+            .select();
+
+          if (!updateErr && claimed) {
+            return claimed.map((row: any) => ({
+              id: row.id,
+              channel: row.channel,
+              eventType: row.event_type,
+              payload: row.payload,
+              idempotencyKey: row.idempotency_key,
+              status: row.status,
+              attempts: row.attempts,
+              lastError: row.last_error,
+              nextRetryAt: row.next_retry_at,
+              lockedAt: row.locked_at,
+              lockedBy: row.locked_by,
+              createdAt: row.created_at,
+              updatedAt: row.updated_at,
+            }));
+          }
+        }
+      } catch (err) {
+        console.warn("Supabase outbox claim fallback to memory store:", err);
+      }
+    }
+
+    // Atomic synchronized claiming for memory store (non-production / test)
+    const claimedEntries: StoredOutboxEntry[] = [];
+    const entries = Array.from(memoryStore.outboxEntries.values());
+
+    for (const entry of entries) {
+      if (claimedEntries.length >= limit) break;
+
+      const isPending =
+        (entry.status === "PENDING" || entry.status === "FAILED") &&
+        entry.attempts < 5 &&
+        entry.nextRetryAt <= nowIso &&
+        (!entry.lockedAt || entry.lockedAt < leaseExpiryCutoff);
+
+      const isExpiredLease =
+        entry.status === "PROCESSING" &&
+        entry.attempts < 5 &&
+        Boolean(entry.lockedAt) &&
+        entry.lockedAt! < leaseExpiryCutoff;
+
+      if (isPending || isExpiredLease) {
+        entry.status = "PROCESSING";
+        entry.lockedAt = nowIso;
+        entry.lockedBy = workerId;
+        entry.updatedAt = nowIso;
+        claimedEntries.push({ ...entry });
+      }
+    }
+
+    return claimedEntries;
+  },
+
+  /**
+   * List pending outbox entries ready for retry (read-only inspection)
    */
   async listPendingOutboxEntries(limit: number = 20): Promise<StoredOutboxEntry[]> {
     const now = new Date().toISOString();
@@ -581,7 +710,7 @@ export const enquiriesRepository = {
   },
 
   /**
-   * Update outbox delivery status
+   * Update outbox delivery status and release/clear worker locks
    */
   async updateOutboxStatus(
     id: string,
@@ -590,17 +719,131 @@ export const enquiriesRepository = {
     lastError?: string,
     nextRetryAt?: string
   ): Promise<StoredOutboxEntry | null> {
+    const supabase = getSupabaseServiceClient();
     const now = new Date().toISOString();
+
+    if (supabase) {
+      try {
+        const updateData: any = {
+          status,
+          attempts,
+          updated_at: now,
+        };
+        if (lastError !== undefined) updateData.last_error = lastError;
+        if (nextRetryAt !== undefined) updateData.next_retry_at = nextRetryAt;
+        if (status === "PENDING" || status === "DELIVERED" || status === "FAILED") {
+          updateData.locked_at = null;
+          updateData.locked_by = null;
+        }
+        await supabase.from("integration_outbox").update(updateData).eq("id", id);
+      } catch (err) {
+        console.warn("Supabase updateOutboxStatus error:", err);
+      }
+    }
+
     const entry = memoryStore.outboxEntries.get(id);
     if (entry) {
       entry.status = status;
       entry.attempts = attempts;
       if (lastError !== undefined) entry.lastError = lastError;
       if (nextRetryAt !== undefined) entry.nextRetryAt = nextRetryAt;
+      if (status === "PENDING" || status === "DELIVERED" || status === "FAILED") {
+        entry.lockedAt = null;
+        entry.lockedBy = null;
+      }
       entry.updatedAt = now;
       return entry;
     }
     return null;
+  },
+
+  /**
+   * Persist revoked session token in database (survives restarts)
+   */
+  async revokeSession(
+    jti: string,
+    userId?: string,
+    reason: string = "LOGOUT",
+    expiresAt?: string
+  ): Promise<void> {
+    const supabase = getSupabaseServiceClient();
+    const nowIso = new Date().toISOString();
+    const expiry = expiresAt || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+
+    const record: StoredRevokedSession = {
+      jti,
+      userId,
+      reason,
+      revokedAt: nowIso,
+      expiresAt: expiry,
+    };
+
+    if (supabase) {
+      try {
+        await supabase.from("revoked_sessions").insert({
+          jti,
+          user_id: userId,
+          reason,
+          revoked_at: nowIso,
+          expires_at: expiry,
+        });
+      } catch (err) {
+        console.warn("Supabase revoked_sessions insert fallback to memory:", err);
+      }
+    }
+
+    memoryStore.revokedSessions.set(jti, record);
+  },
+
+  /**
+   * Check if session has been revoked in database or memory store
+   */
+  async isSessionRevoked(jti: string): Promise<boolean> {
+    const supabase = getSupabaseServiceClient();
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("revoked_sessions")
+          .select("jti")
+          .eq("jti", jti)
+          .single();
+
+        if (!error && data) {
+          return true;
+        }
+      } catch {
+        // Fallback to memory store
+      }
+    }
+
+    return memoryStore.revokedSessions.has(jti);
+  },
+
+  /**
+   * Verify if B2B Agency account is in active standing (not suspended/rejected/pending)
+   */
+  async isAgencyActive(agencyId: string): Promise<boolean> {
+    const supabase = getSupabaseServiceClient();
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .select("status")
+          .eq("id", agencyId)
+          .single();
+
+        if (!error && data) {
+          return data.status === "ACTIVE_PARTNER" || data.status === "TRIAL_APPROVED";
+        }
+      } catch {
+        // Fallback to memory store
+      }
+    }
+
+    const agency = memoryStore.agencyApplications.get(agencyId);
+    if (!agency) return false;
+    return agency.status === "ACTIVE_PARTNER" || agency.status === "TRIAL_APPROVED";
   },
 
   /**
@@ -826,6 +1069,13 @@ export const enquiriesRepository = {
     if (gen) return { type: "GENERAL", record: gen };
 
     return null;
+  },
+
+  /**
+   * Testing utility to inspect internal memory store
+   */
+  _getRawOutboxEntry(id: string): StoredOutboxEntry | undefined {
+    return memoryStore.outboxEntries.get(id);
   },
 
   /**

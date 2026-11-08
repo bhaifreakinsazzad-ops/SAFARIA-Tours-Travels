@@ -3,12 +3,26 @@
 -- Migration: 001_safaria_core_schema.sql
 -- ==============================================================================
 
--- Enable UUID extension
+-- Enable UUID extension if available
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
+-- Ensure standard Supabase/PostgreSQL security roles exist
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN 
+        CREATE ROLE anon; 
+    END IF;
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN 
+        CREATE ROLE authenticated; 
+    END IF;
+    IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'service_role') THEN 
+        CREATE ROLE service_role; 
+    END IF;
+END $$;
 
 -- 1. FLIGHT ENQUIRIES
 CREATE TABLE IF NOT EXISTS flight_enquiries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reference_no VARCHAR(32) UNIQUE NOT NULL,
     trip_type VARCHAR(16) NOT NULL CHECK (trip_type IN ('ONE_WAY', 'ROUND_TRIP', 'MULTI_CITY')),
     cabin_class VARCHAR(16) NOT NULL DEFAULT 'ECONOMY' CHECK (cabin_class IN ('ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST')),
@@ -30,7 +44,7 @@ CREATE TABLE IF NOT EXISTS flight_enquiries (
 
 -- 2. FLIGHT LEGS (Supports 1 leg for One-Way, 2 legs for Round-Trip, up to 6 legs for Multi-City)
 CREATE TABLE IF NOT EXISTS flight_legs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     enquiry_id UUID NOT NULL REFERENCES flight_enquiries(id) ON DELETE CASCADE,
     leg_index SMALLINT NOT NULL CHECK (leg_index >= 0 AND leg_index < 6),
     origin_iata VARCHAR(3) NOT NULL,
@@ -47,7 +61,7 @@ CREATE INDEX IF NOT EXISTS idx_flight_enquiries_ref ON flight_enquiries(referenc
 
 -- 3. B2B AGENCY APPLICATIONS
 CREATE TABLE IF NOT EXISTS agency_applications (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reference_no VARCHAR(32) UNIQUE NOT NULL,
     agency_name VARCHAR(128) NOT NULL,
     contact_person VARCHAR(128) NOT NULL,
@@ -73,7 +87,7 @@ CREATE INDEX IF NOT EXISTS idx_agency_ref ON agency_applications(reference_no);
 
 -- 4. GENERAL SERVICE ENQUIRIES (Corporate, Visa, Umrah, Holiday, Hotel)
 CREATE TABLE IF NOT EXISTS general_enquiries (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     reference_no VARCHAR(32) UNIQUE NOT NULL,
     service_type VARCHAR(32) NOT NULL CHECK (
         service_type IN ('VISA', 'CORPORATE', 'HOLIDAY', 'HOTEL', 'UMRAH', 'CUSTOM')
@@ -91,7 +105,7 @@ CREATE TABLE IF NOT EXISTS general_enquiries (
 
 -- 5. B2B OPERATIONAL DESK RECORDS (The 6 Desks)
 CREATE TABLE IF NOT EXISTS b2b_desk_records (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     agency_id UUID REFERENCES agency_applications(id) ON DELETE SET NULL,
     desk_type VARCHAR(32) NOT NULL CHECK (
         desk_type IN ('FARE_DESK', 'BOOKING_DESK', 'CLEAR_MARGIN', 'AFTER_CARE', 'VERIFIED_WORKFLOW', 'PARTNER_GROWTH')
@@ -108,9 +122,9 @@ CREATE TABLE IF NOT EXISTS b2b_desk_records (
 CREATE INDEX IF NOT EXISTS idx_b2b_desk_agency ON b2b_desk_records(agency_id);
 CREATE INDEX IF NOT EXISTS idx_b2b_desk_type ON b2b_desk_records(desk_type);
 
--- 6. INTEGRATION OUTBOX (Reliable GoHighLevel CRM & Webhook Queue)
+-- 6. INTEGRATION OUTBOX (Distributed Reliable Queue with Worker Locking)
 CREATE TABLE IF NOT EXISTS integration_outbox (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     channel VARCHAR(32) NOT NULL CHECK (channel IN ('GHL_CRM', 'WHATSAPP_HOOK', 'EMAIL_NOTIFICATION')),
     event_type VARCHAR(64) NOT NULL,
     payload JSONB NOT NULL,
@@ -119,11 +133,25 @@ CREATE TABLE IF NOT EXISTS integration_outbox (
     attempts SMALLINT NOT NULL DEFAULT 0,
     last_error TEXT,
     next_retry_at TIMESTAMPTZ DEFAULT NOW(),
+    locked_at TIMESTAMPTZ,
+    locked_by VARCHAR(64),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX IF NOT EXISTS idx_outbox_pending ON integration_outbox(status, next_retry_at);
+CREATE INDEX IF NOT EXISTS idx_outbox_claim ON integration_outbox(status, next_retry_at, locked_at);
+
+-- 7. DURABLE SESSION REVOCATION (Survives server restarts and multi-instance deployments)
+CREATE TABLE IF NOT EXISTS revoked_sessions (
+    jti VARCHAR(64) PRIMARY KEY,
+    user_id VARCHAR(64),
+    reason VARCHAR(64) DEFAULT 'LOGOUT',
+    revoked_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_revoked_sessions_expires_at ON revoked_sessions(expires_at);
 
 -- ==============================================================================
 -- STRICT ROW-LEVEL SECURITY (RLS) POLICIES
@@ -136,6 +164,11 @@ ALTER TABLE agency_applications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE general_enquiries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE b2b_desk_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE integration_outbox ENABLE ROW LEVEL SECURITY;
+ALTER TABLE revoked_sessions ENABLE ROW LEVEL SECURITY;
+
+-- Grant minimal necessary table privileges to standard roles
+GRANT INSERT ON flight_enquiries, flight_legs, agency_applications, general_enquiries TO anon, authenticated;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO service_role;
 
 -- Anonymous public users may ONLY insert enquiries and applications (write-only)
 CREATE POLICY "Public anonymous insert for flight enquiries" 
@@ -151,7 +184,7 @@ CREATE POLICY "Public anonymous insert for general enquiries"
     ON general_enquiries FOR INSERT TO anon, authenticated WITH CHECK (true);
 
 -- NO PUBLIC READ FOR CUSTOMER DATA (Prevents PII scraping)
--- Only service_role or authenticated staff with 'admin' / 'agent' role can select/update
+-- Only service_role or authenticated staff with privileged role can select/update
 CREATE POLICY "Privileged service read all flight enquiries"
     ON flight_enquiries FOR ALL TO service_role USING (true) WITH CHECK (true);
 
@@ -169,3 +202,6 @@ CREATE POLICY "Privileged service access to desk records"
 
 CREATE POLICY "Privileged service access to integration outbox"
     ON integration_outbox FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Privileged service access to revoked sessions"
+    ON revoked_sessions FOR ALL TO service_role USING (true) WITH CHECK (true);

@@ -12,16 +12,25 @@ describe("Real PostgreSQL Schema Execution & Data Durability (pg-mem engine)", (
   function initDbWithSchema(): IMemoryDb {
     const memDb = newDb();
 
-    // Register PostgreSQL uuid_generate_v4 function in public schema (impure: true ensures unique generation per row)
+    // Register PostgreSQL uuid functions in public schema (impure: true ensures unique generation per row)
     memDb.public.registerFunction({
       name: "uuid_generate_v4",
       returns: memDb.public.getType("uuid" as any),
       impure: true,
       implementation: () => crypto.randomUUID(),
     });
+    memDb.public.registerFunction({
+      name: "gen_random_uuid",
+      returns: memDb.public.getType("uuid" as any),
+      impure: true,
+      implementation: () => crypto.randomUUID(),
+    });
 
-    // Strip comments, then extract statements
-    const cleanSql = fullSql.replace(/--.*$/gm, "");
+    // Strip comments and procedural PL/pgSQL blocks for pg-mem's AST parser
+    const cleanSql = fullSql
+      .replace(/--.*$/gm, "")
+      .replace(/DO \$\$[\s\S]*?END \$\$;/gi, "");
+
     const statements = cleanSql
       .split(";")
       .map((s) => s.trim())
@@ -29,8 +38,15 @@ describe("Real PostgreSQL Schema Execution & Data Durability (pg-mem engine)", (
 
     for (const stmt of statements) {
       if (stmt.startsWith("CREATE EXTENSION")) continue;
-      // Skip RLS and POLICY in pg-mem parser since it's an in-memory execution engine
-      if (stmt.includes("ROW LEVEL SECURITY") || stmt.startsWith("CREATE POLICY")) continue;
+      // Skip RLS, POLICY, DO procedural blocks, and GRANTs in pg-mem parser since it's an in-memory SQL parser
+      if (
+        stmt.includes("ROW LEVEL SECURITY") ||
+        stmt.startsWith("CREATE POLICY") ||
+        stmt.startsWith("DO $$") ||
+        stmt.startsWith("GRANT")
+      ) {
+        continue;
+      }
       memDb.public.none(stmt);
     }
 

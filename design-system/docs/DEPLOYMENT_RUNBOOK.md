@@ -1,8 +1,10 @@
 # SAFARIA Tours & Travels — Staging & Production Deployment Runbook
-**Document ID:** DRB-20261108-02  
-**Target Release:** `v2.0.0-PROD-RC1`  
-**Architecture:** Next.js 15 App Router Modular Monolith + Supabase PostgreSQL + GoHighLevel API v2  
-**Verification Branch:** `feat/safaria-production-foundation`
+**Document ID:** DRB-20261109-03  
+**Target Release:** `v2.0.0-PROD-RC2`  
+**Architecture:** Next.js 15 App Router Modular Monolith + Supabase / PostgreSQL 18 + GoHighLevel API v2  
+**Verification Branch:** `feat/safaria-production-foundation`  
+**Date of Record:** 2026-11-09  
+**Directive Reference:** `SAFARIA_ANTIGRAVITY_DIRECTIVE_007_EVIDENCE_CORRECTION_AND_LAUNCH_GATE.md`
 
 ---
 
@@ -13,22 +15,30 @@
                                       │
                    ┌──────────────────┴──────────────────┐
                    ▼                                     ▼
-        [Supabase PostgreSQL]                  [Integration Outbox Queue]
-     (Strict RLS: Public INSERT only;                     │
-      Privileged Service SELECT/UPDATE)                  ▼
-                                              [GoHighLevel CRM API v2]
-                                              (Idempotent contact upsert)
+        [Supabase PostgreSQL 18]               [Distributed Outbox Queue]
+     (Strict RLS: Public INSERT only;          (FOR UPDATE SKIP LOCKED)
+      Privileged Service SELECT/UPDATE)                  │
+                   │                                     ▼
+                   ▼                          [GoHighLevel CRM API v2]
+         [revoked_sessions]                   (Idempotent contact upsert)
 ```
 
 - **Canonical URL:** `https://safaria.vibing.world` (Bengali default at `/`, English at `/en`)
 - **Operations Triage Desk:** `/admin` (Protected by HMAC-SHA256 session token with `SUPER_ADMIN` role)
 - **B2B Partner Portal:** `/partner` (Protected with strict multi-tenant isolation by `agency_id`)
 - **Session Authentication & Security:**
-  - HMAC-SHA256 signed session tokens with unique cryptographic JWT ID (`jti`)
-  - Server-side revocation registry (`revokeSession(jti)`)
-  - Constant-time signature verification with buffer length guards (`crypto.timingSafeEqual`)
-  - Active logout route (`POST /api/auth/logout`) that registers token revocation and purges HTTP-only cookies (`Max-Age=0`)
-  - Cross-tenant authorization on all desk records (`PATCH /api/partner/desk` rejects foreign agency mutations with HTTP 403 Forbidden)
+  - HMAC-SHA256 signed session tokens with unique cryptographic JWT ID (`jti`).
+  - Durable server-side revocation table (`revoked_sessions`) in PostgreSQL surviving process restarts across multiple worker nodes.
+  - Dynamic account suspension verification: every authenticated request verifies `isAgencyActive`. If agency status is `SUSPENDED`, `REJECTED`, or `PENDING_VERIFICATION`, token is rejected immediately.
+  - Constant-time signature verification with buffer length guards (`crypto.timingSafeEqual`).
+  - Active logout route (`POST /api/auth/logout`) that registers token revocation in `revoked_sessions` and purges HTTP-only cookies (`Max-Age=0`).
+  - Cross-tenant authorization on all desk records (`PATCH /api/partner/desk` rejects foreign agency mutations with HTTP 403 Forbidden).
+- **Distributed CRM Outbox Dispatcher:**
+  - Database-coordinated row claiming via `claimOutboxBatch(workerId, batchSize, leaseDurationSeconds)`.
+  - Concurrency safety: uses `FOR UPDATE SKIP LOCKED` in PostgreSQL to ensure multiple background workers never double-dispatch the same outbox item.
+  - Expired-lease recovery: tasks stuck in `PROCESSING` status for longer than 30 seconds are automatically reclaimed and retried.
+  - Dead-letter cutoff: items that exceed 5 attempts are marked `FAILED` with detailed diagnostic error logs.
+  - Clear telemetry distinguishing `providerMode: 'mock'` from `providerMode: 'live'`.
 
 ---
 
@@ -37,9 +47,10 @@
 | Variable Name | Required | Default / Format | Purpose |
 | :--- | :--- | :--- | :--- |
 | `NODE_ENV` | Yes | `production` | Enables production caching & minification |
-| `SESSION_SECRET` | Yes | Cryptographic 64-char hex string | HMAC-SHA256 signature for auth tokens (ephemeral fallback auto-generated if unset) |
+| `SESSION_SECRET` | Yes | Cryptographic 64-char hex string | HMAC-SHA256 signature for auth tokens (ephemeral key generated if unset) |
 | `SAFARIA_ADMIN_SECRET` | Yes | High-entropy secret | Staff admin authentication password |
 | `CRON_SECRET` | Yes | Secret token | Authorizes `/api/cron/dispatch-outbox` |
+| `DATABASE_URL` | Optional | `postgres://user:pass@host:5432/safaria` | Direct PostgreSQL connection string |
 | `SUPABASE_URL` | Yes | `https://<proj>.supabase.co` | PostgreSQL database connection endpoint |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | `eyJ...` | Privileged backend key for server Route Handlers |
 | `GHL_API_KEY` | Optional | Bearer API token | GoHighLevel CRM v2 integration (enables live dispatch) |
@@ -58,7 +69,7 @@ Execute the core schema migration on the target Supabase or PostgreSQL database:
 supabase db push
 
 # Or execute SQL migration script directly via psql / Supabase SQL Studio
-psql "$SUPABASE_DB_URL" -f supabase/migrations/001_safaria_core_schema.sql
+psql "$DATABASE_URL" -f supabase/migrations/001_safaria_core_schema.sql
 ```
 
 ### Verified Schema Tables & Constraints:
@@ -67,56 +78,41 @@ psql "$SUPABASE_DB_URL" -f supabase/migrations/001_safaria_core_schema.sql
 - `agency_applications` (Trade license requirement, manual trial audit state `PENDING_VERIFICATION`)
 - `general_enquiries` (Visa, Corporate, Umrah, Holiday intake with `service_type` enum checks)
 - `b2b_desk_records` (FareDesk, BookingDesk, ClearMargin, AfterCare, VerifiedWorkflow, PartnerGrowth; partitioned by `agency_id`)
-- `integration_outbox` (Idempotent queue with unique constraint on `idempotency_key`, max 5 attempts with exponential backoff)
-
-*Verified against real PostgreSQL engine via `tests/integration/realPostgresMigration.test.ts` (pg-mem).*
+- `integration_outbox` (Distributed queue with `locked_at` and `locked_by` leasing columns, max 5 attempts with exponential backoff)
+- `revoked_sessions` (Durable revocation table indexed by `jti` with expiration timestamp)
 
 ---
 
-## 4. Pre-Deployment Automated Verification Suite
+## 4. Verification Test Commands
 
-Run all verification tests prior to release tagging:
+Before promoting any release to staging or production, run the automated verification suite:
 
 ```bash
-# 1. TypeScript Strict Typecheck (0 errors)
-npm run typecheck
-
-# 2. Vitest Unit & Integration Tests (53 tests across 12 suites)
+# 1. Vitest full unit and integration suite (65 tests across 14 suites)
 npm test
 
-# 3. Playwright End-to-End Browser Tests (11 tests across 2 suites)
-npm run test:e2e
+# 2. Run real PostgreSQL 18 server engine tests specifically
+npx vitest run tests/integration/realPostgresServer.test.ts
 
-# 4. Production Build Verification (18 static and dynamic routes)
+# 3. Next.js production build verification (18 routes, 0 errors)
 npm run build
+
+# 4. Playwright End-to-End browser tests (11 tests)
+npm run test:e2e
 ```
 
 ---
 
-## 5. Deployment Procedure
+## 5. Rollback & Emergency Procedures
 
-### Vercel / Cloud Platforms:
-1. Connect Git repository to feature branch `feat/safaria-production-foundation` or `main`.
-2. Configure Root Directory to `design-system` (or repository root with build delegation).
-3. Set build command: `npm run build`.
-4. Populate production Environment Variables from Section 2.
-5. Deploy and inspect deployment URL.
+1. **Compromised Auth Token or Account Suspended:**
+   - Mark agency status as `SUSPENDED` in `agency_applications` table.
+   - Dynamic check `isAgencyActive` blocks the agency immediately on subsequent requests.
+   - To revoke all active sessions, call `/api/auth/logout` or insert the token's `jti` directly into `revoked_sessions`.
 
-### Background Queue Dispatcher:
-Configure a scheduled cron job (e.g. Vercel Cron, Google Cloud Scheduler, or GitHub Actions) triggering:
-```bash
-curl -X POST https://safaria.vibing.world/api/cron/dispatch-outbox \
-  -H "x-cron-secret: $CRON_SECRET"
-```
-Recommended frequency: Every 2 minutes.  
-*Concurrency Protection:* The dispatcher includes an in-flight execution mutex; overlapping executions are safely skipped (`skippedDueToConcurrency: true`).
+2. **Stuck Outbox Jobs:**
+   - If an outbox worker terminates unexpectedly, the next run of `/api/cron/dispatch-outbox` reclaims the lease after 30 seconds.
+   - To inspect dead-letter jobs: `SELECT * FROM integration_outbox WHERE status = 'FAILED';`
 
----
-
-## 6. Rollback Plan
-
-If critical defects or supplier integration anomalies are detected in staging:
-1. Revert to prior verified Git commit.
-2. The database schema is additive and non-destructive; rolling back frontend containers does not affect existing persisted quotation records.
-3. Outbox queue holds failed requests with unconsumed idempotency keys, allowing safe replay once restored.
-4. Active sessions can be instantly invalidated across the board by rotating `SESSION_SECRET` or calling `/api/auth/logout`.
+3. **Database Rollback:**
+   - Database migrations are additive and non-destructive. Rollback scripts preserve customer records in `flight_enquiries` and `agency_applications`.

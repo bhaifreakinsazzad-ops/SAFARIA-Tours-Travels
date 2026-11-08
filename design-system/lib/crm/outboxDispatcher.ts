@@ -10,102 +10,83 @@ export interface DispatchSummary {
   delivered: number;
   retried: number;
   failed: number;
+  workerId?: string;
   skippedDueToConcurrency?: boolean;
   providerMode: "LIVE_GHL_API" | "STAGING_MOCK_DISPATCHER";
   timestamp: string;
 }
 
-// In-process concurrency lock to prevent overlapping cron runs
-let isCurrentlyDispatching = false;
-
 export const outboxDispatcher = {
   /**
-   * Process all pending outbox entries ready for retry with concurrency protection
+   * Process pending outbox entries using atomic database-coordinated job claiming
+   * Prevents duplicate deliveries across distributed workers and recovers expired leases
    */
-  async processPendingQueue(batchSize: number = 20): Promise<DispatchSummary> {
+  async processPendingQueue(
+    batchSize: number = 20,
+    workerId: string = `worker-${crypto.randomUUID()}`
+  ): Promise<DispatchSummary> {
     const isLive = Boolean(process.env.GHL_API_KEY && process.env.GHL_LOCATION_ID);
     const providerMode: "LIVE_GHL_API" | "STAGING_MOCK_DISPATCHER" = isLive
       ? "LIVE_GHL_API"
       : "STAGING_MOCK_DISPATCHER";
 
-    // Concurrency guard: prevent race conditions from overlapping cron schedules
-    if (isCurrentlyDispatching) {
-      return {
-        processed: 0,
-        delivered: 0,
-        retried: 0,
-        failed: 0,
-        skippedDueToConcurrency: true,
-        providerMode,
-        timestamp: new Date().toISOString(),
-      };
-    }
+    // Atomically claim pending entries with 120-second lease timeout
+    const claimedEntries = await enquiriesRepository.claimOutboxBatch(workerId, batchSize, 120);
 
-    isCurrentlyDispatching = true;
+    let delivered = 0;
+    let retried = 0;
+    let failed = 0;
 
-    try {
-      const pendingEntries = await enquiriesRepository.listPendingOutboxEntries(batchSize);
+    for (const entry of claimedEntries) {
+      const attempts = entry.attempts + 1;
 
-      let delivered = 0;
-      let retried = 0;
-      let failed = 0;
-
-      for (const entry of pendingEntries) {
-        // Mark as PROCESSING in flight
-        await enquiriesRepository.updateOutboxStatus(entry.id, "PROCESSING", entry.attempts);
-
-        const attempts = entry.attempts + 1;
-
-        // Check max attempts cutoff
-        if (attempts >= 5) {
-          await enquiriesRepository.updateOutboxStatus(
-            entry.id,
-            "FAILED",
-            attempts,
-            "Permanent failure: Exceeded 5 retry attempts."
-          );
-          failed++;
-          continue;
-        }
-
-        try {
-          // Attempt delivery
-          const success = await this.deliverEntry(entry);
-
-          if (success) {
-            await enquiriesRepository.updateOutboxStatus(entry.id, "DELIVERED", attempts);
-            delivered++;
-          } else {
-            throw new Error("Target service unacknowledged");
-          }
-        } catch (err: any) {
-          // Exponential backoff: 2^attempts * 2 seconds
-          const backoffSeconds = Math.pow(2, attempts) * 2;
-          const nextRetry = new Date(Date.now() + backoffSeconds * 1000).toISOString();
-
-          await enquiriesRepository.updateOutboxStatus(
-            entry.id,
-            "PENDING",
-            attempts,
-            err.message || "Delivery error",
-            nextRetry
-          );
-          retried++;
-        }
+      // Check max attempts cutoff (5 attempts)
+      if (attempts >= 5) {
+        await enquiriesRepository.updateOutboxStatus(
+          entry.id,
+          "FAILED",
+          attempts,
+          "Permanent failure: Exceeded 5 retry attempts."
+        );
+        failed++;
+        continue;
       }
 
-      return {
-        processed: pendingEntries.length,
-        delivered,
-        retried,
-        failed,
-        skippedDueToConcurrency: false,
-        providerMode,
-        timestamp: new Date().toISOString(),
-      };
-    } finally {
-      isCurrentlyDispatching = false;
+      try {
+        // Attempt delivery (Live GHL or honest Staging Mock)
+        const success = await this.deliverEntry(entry);
+
+        if (success) {
+          await enquiriesRepository.updateOutboxStatus(entry.id, "DELIVERED", attempts);
+          delivered++;
+        } else {
+          throw new Error("Target service unacknowledged");
+        }
+      } catch (err: any) {
+        // Exponential backoff: 2^attempts * 2 seconds
+        const backoffSeconds = Math.pow(2, attempts) * 2;
+        const nextRetry = new Date(Date.now() + backoffSeconds * 1000).toISOString();
+
+        await enquiriesRepository.updateOutboxStatus(
+          entry.id,
+          "PENDING",
+          attempts,
+          err.message || "Delivery error",
+          nextRetry
+        );
+        retried++;
+      }
     }
+
+    return {
+      processed: claimedEntries.length,
+      delivered,
+      retried,
+      failed,
+      workerId,
+      providerMode,
+      timestamp: new Date().toISOString(),
+    };
   },
 
   /**

@@ -1,7 +1,21 @@
-import { describe, it, expect } from "vitest";
-import { signSession, verifySession, revokeSession, isSessionRevoked } from "@/lib/auth/authService";
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  signSession,
+  verifySession,
+  revokeSession,
+  revokeSessionDurable,
+  isSessionRevoked,
+  isSessionRevokedDurable,
+  verifySessionDurable,
+  _resetRevocationRegistry,
+} from "@/lib/auth/authService";
+import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
 
 describe("Auth & Session Security Service", () => {
+  beforeEach(() => {
+    _resetRevocationRegistry();
+    enquiriesRepository._resetStore();
+  });
   it("should generate cryptographically verifiable HMAC-SHA256 session token", () => {
     const token = signSession({
       userId: "user_123",
@@ -85,5 +99,71 @@ describe("Auth & Session Security Service", () => {
 
     expect(() => verifySession(shortSigToken)).not.toThrow();
     expect(verifySession(shortSigToken)).toBeNull();
+  });
+
+  it("should persist session revocation durably and survive process-local cache clears", async () => {
+    const token = signSession({
+      userId: "user_durable",
+      email: "agent@partner.com",
+      role: "B2B_PARTNER",
+      agencyId: "agency-greendelta-01",
+    });
+
+    const active = verifySession(token);
+    expect(active).not.toBeNull();
+    const jti = active!.jti;
+
+    // Revoke durably
+    await revokeSessionDurable(jti, "user_durable", "STAFF_INITIATED");
+
+    // Clear process-local memory Set to simulate a restart / different serverless worker
+    _resetRevocationRegistry();
+
+    // Durable check must still confirm revocation
+    const isRevokedInDb = await isSessionRevokedDurable(jti);
+    expect(isRevokedInDb).toBe(true);
+
+    // Durable verification must reject the token
+    const verifiedDurable = await verifySessionDurable(token);
+    expect(verifiedDurable).toBeNull();
+  });
+
+  it("should dynamically reject sessions when agency application is suspended or rejected", async () => {
+    // 1. Create an active agency application
+    const agency = await enquiriesRepository.createAgencyApplication({
+      agencyName: "Dynamic Test Agency",
+      contactPerson: "Rahim Ali",
+      phone: "+8801999888777",
+      email: "rahim@dynamictest.com",
+      city: "Dhaka",
+      tradeLicenseNumber: "TRAD/TEST/001",
+      yearsInBusiness: 3,
+      monthlyTicketVolume: "20_TO_50",
+      consentAgreed: true,
+    });
+
+    // Mark as active
+    await enquiriesRepository.updateAgencyStatus(agency.id, "ACTIVE_PARTNER");
+
+    // Sign session
+    const token = signSession({
+      userId: "partner_rahim",
+      email: "rahim@dynamictest.com",
+      role: "B2B_PARTNER",
+      agencyId: agency.id,
+      agencyName: "Dynamic Test Agency",
+    });
+
+    // Verified initially
+    const active = await verifySessionDurable(token);
+    expect(active).not.toBeNull();
+    expect(active?.agencyId).toBe(agency.id);
+
+    // 2. Staff suspends/rejects the agency
+    await enquiriesRepository.updateAgencyStatus(agency.id, "REJECTED", "admin_ops", "Trade audit failed");
+
+    // Dynamic verification must now immediately reject the session
+    const suspended = await verifySessionDurable(token);
+    expect(suspended).toBeNull();
   });
 });

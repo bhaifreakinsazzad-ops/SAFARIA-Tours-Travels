@@ -4,14 +4,14 @@
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { extractSessionFromRequest, revokeSession } from "@/lib/auth/authService";
+import { extractSessionFromRequest, revokeSessionDurable } from "@/lib/auth/authService";
 
 export async function POST(req: NextRequest) {
   try {
     const session = extractSessionFromRequest(req);
 
     if (session && session.jti) {
-      revokeSession(session.jti);
+      await revokeSessionDurable(session.jti, session.userId, "USER_LOGOUT");
     }
 
     const response = NextResponse.json({

@@ -5,6 +5,7 @@
 
 import crypto from "crypto";
 import { NextRequest } from "next/server";
+import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
 
 export type UserRole = "SUPER_ADMIN" | "OPS_AGENT" | "B2B_PARTNER" | "ANONYMOUS";
 
@@ -24,8 +25,21 @@ const revokedSessions = new Set<string>();
 /**
  * Revoke a specific session by its cryptographic token ID (jti)
  */
-export function revokeSession(jti: string): void {
+export function revokeSession(jti: string, userId?: string, reason: string = "LOGOUT"): void {
   revokedSessions.add(jti);
+  enquiriesRepository.revokeSession(jti, userId, reason).catch(() => {});
+}
+
+/**
+ * Durable session revocation that waits for database persistence
+ */
+export async function revokeSessionDurable(
+  jti: string,
+  userId?: string,
+  reason: string = "LOGOUT"
+): Promise<void> {
+  revokedSessions.add(jti);
+  await enquiriesRepository.revokeSession(jti, userId, reason);
 }
 
 /**
@@ -33,6 +47,16 @@ export function revokeSession(jti: string): void {
  */
 export function isSessionRevoked(jti: string): boolean {
   return revokedSessions.has(jti);
+}
+
+/**
+ * Asynchronously check whether a session token has been revoked in database
+ */
+export async function isSessionRevokedDurable(jti: string): Promise<boolean> {
+  if (revokedSessions.has(jti)) return true;
+  const isRevoked = await enquiriesRepository.isSessionRevoked(jti);
+  if (isRevoked) revokedSessions.add(jti);
+  return isRevoked;
 }
 
 /**
@@ -112,6 +136,50 @@ export function verifySession(token: string): SessionPayload | null {
   } catch (err) {
     return null;
   }
+}
+
+/**
+ * Durable session verification checking database revocation and account status
+ */
+export async function verifySessionDurable(token: string): Promise<SessionPayload | null> {
+  const session = verifySession(token);
+  if (!session) return null;
+
+  // 1. Verify against durable revocation table in database
+  if (session.jti && (await isSessionRevokedDurable(session.jti))) {
+    return null;
+  }
+
+  // 2. Dynamic account suspension check for B2B Partners
+  if (session.role === "B2B_PARTNER" && session.agencyId) {
+    const isActive = await enquiriesRepository.isAgencyActive(session.agencyId);
+    if (!isActive) {
+      return null;
+    }
+  }
+
+  return session;
+}
+
+/**
+ * Asynchronously extract session from request with durable verification
+ */
+export async function extractSessionFromRequestAsync(req: NextRequest): Promise<SessionPayload | null> {
+  const syncSession = extractSessionFromRequest(req);
+  if (!syncSession) return null;
+
+  if (syncSession.jti && (await isSessionRevokedDurable(syncSession.jti))) {
+    return null;
+  }
+
+  if (syncSession.role === "B2B_PARTNER" && syncSession.agencyId) {
+    const isActive = await enquiriesRepository.isAgencyActive(syncSession.agencyId);
+    if (!isActive) {
+      return null;
+    }
+  }
+
+  return syncSession;
 }
 
 /**
