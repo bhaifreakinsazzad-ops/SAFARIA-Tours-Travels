@@ -19,7 +19,9 @@ export async function GET(req: NextRequest) {
 
   try {
     const list = await enquiriesRepository.listAgencyApplications();
-    return NextResponse.json({ success: true, count: list.length, applications: list });
+    // Never echo credential hashes back to any client, including the admin UI.
+    const sanitized = list.map(({ passwordHash, passwordSalt, ...rest }) => rest);
+    return NextResponse.json({ success: true, count: sanitized.length, applications: sanitized });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
@@ -42,18 +44,31 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    const updated = await enquiriesRepository.updateAgencyStatus(
+    const result = await enquiriesRepository.updateAgencyStatus(
       id,
       status,
       session.email,
       notes
     );
 
-    if (!updated) {
+    if (!result) {
       return NextResponse.json({ success: false, error: "Agency not found" }, { status: 404 });
     }
 
-    return NextResponse.json({ success: true, agency: updated });
+    const { passwordHash, passwordSalt, ...agency } = result.agency;
+
+    return NextResponse.json({
+      success: true,
+      agency,
+      // Shown once, to the approving staff member only, so they can relay it
+      // to the partner out-of-band (e.g. WhatsApp/phone) — never persisted
+      // or retrievable again after this response.
+      issuedPassword: result.issuedPassword,
+      ...(result.issuedPassword && {
+        message:
+          "Partner login credentials issued. Relay this password to the agency out-of-band now — it cannot be retrieved again.",
+      }),
+    });
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }

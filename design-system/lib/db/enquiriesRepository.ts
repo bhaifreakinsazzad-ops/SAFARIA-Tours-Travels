@@ -6,6 +6,7 @@
 import { getSupabaseServiceClient } from "./supabaseClient";
 import { generateReferenceCode } from "@/lib/utils/referenceGenerator";
 import { FlightEnquiryInput, AgencyApplicationInput, GeneralEnquiryInput } from "@/lib/validations/enquirySchemas";
+import { generateTemporaryPassword, hashPassword, verifyPassword } from "@/lib/auth/passwordService";
 
 export interface StoredFlightLeg {
   id: string;
@@ -54,6 +55,8 @@ export interface StoredAgencyApplication {
   trialExpiresAt?: string | null;
   approvedBy?: string | null;
   notes?: string;
+  passwordHash?: string | null;
+  passwordSalt?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -512,7 +515,7 @@ export const enquiriesRepository = {
     status: StoredAgencyApplication["status"],
     approvedBy?: string,
     notes?: string
-  ): Promise<StoredAgencyApplication | null> {
+  ): Promise<{ agency: StoredAgencyApplication; issuedPassword?: string } | null> {
     const supabase = getSupabaseServiceClient();
     const now = new Date();
     const nowIso = now.toISOString();
@@ -526,19 +529,35 @@ export const enquiriesRepository = {
       trialExpiresAt = expDate.toISOString();
     }
 
+    const existing = memoryStore.agencyApplications.get(id);
+    const grantsLoginAccess = status === "TRIAL_APPROVED" || status === "ACTIVE_PARTNER";
+    const needsFirstCredentials = grantsLoginAccess && existing && !existing.passwordHash;
+
+    let issuedPassword: string | undefined;
+    let passwordHash: string | undefined;
+    let passwordSalt: string | undefined;
+    if (needsFirstCredentials) {
+      issuedPassword = generateTemporaryPassword();
+      const hashed = hashPassword(issuedPassword);
+      passwordHash = hashed.hash;
+      passwordSalt = hashed.salt;
+    }
+
     if (supabase) {
       try {
-        await supabase
-          .from("agency_applications")
-          .update({
-            status,
-            trial_activated_at: trialActivatedAt,
-            trial_expires_at: trialExpiresAt,
-            approved_by: approvedBy,
-            internal_notes: notes,
-            updated_at: nowIso,
-          })
-          .eq("id", id);
+        const updatePayload: Record<string, unknown> = {
+          status,
+          trial_activated_at: trialActivatedAt,
+          trial_expires_at: trialExpiresAt,
+          approved_by: approvedBy,
+          internal_notes: notes,
+          updated_at: nowIso,
+        };
+        if (passwordHash) {
+          updatePayload.password_hash = passwordHash;
+          updatePayload.password_salt = passwordSalt;
+        }
+        await supabase.from("agency_applications").update(updatePayload).eq("id", id);
       } catch (err) {
         console.warn("Supabase updateAgencyStatus error:", err);
       }
@@ -551,10 +570,36 @@ export const enquiriesRepository = {
       if (trialExpiresAt) record.trialExpiresAt = trialExpiresAt;
       if (approvedBy) record.approvedBy = approvedBy;
       if (notes) record.notes = notes;
+      if (passwordHash) {
+        record.passwordHash = passwordHash;
+        record.passwordSalt = passwordSalt;
+      }
       record.updatedAt = nowIso;
-      return record;
+      return { agency: record, issuedPassword };
     }
     return null;
+  },
+
+  /**
+   * Verify B2B partner login credentials against the stored scrypt hash.
+   * Returns the agency only on an exact password match for an agency that
+   * has been granted login access (TRIAL_APPROVED / ACTIVE_PARTNER) and has
+   * had credentials issued. Never returns the hash/salt to the caller.
+   */
+  async verifyAgencyCredentials(
+    email: string,
+    password: string
+  ): Promise<StoredAgencyApplication | null> {
+    const agencies = await this.listAgencyApplications();
+    const cleanEmail = email.trim().toLowerCase();
+    const matched = agencies.find((a) => a.email.toLowerCase() === cleanEmail);
+
+    if (!matched) return null;
+    if (matched.status !== "TRIAL_APPROVED" && matched.status !== "ACTIVE_PARTNER") return null;
+    if (!matched.passwordHash || !matched.passwordSalt) return null;
+    if (!verifyPassword(password, matched.passwordHash, matched.passwordSalt)) return null;
+
+    return matched;
   },
 
   /**

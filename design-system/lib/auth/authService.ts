@@ -85,6 +85,8 @@ export function getSecretKey(): string {
   return "safaria-jwt-secret-emerald-gold-2026-production";
 }
 
+export { generateTemporaryPassword, hashPassword, verifyPassword } from "./passwordService";
+
 /**
  * Sign session payload into tamper-evident base64url token
  */

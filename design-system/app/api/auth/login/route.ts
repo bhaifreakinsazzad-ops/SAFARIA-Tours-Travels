@@ -6,6 +6,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { signSession } from "@/lib/auth/authService";
 import { enquiriesRepository } from "@/lib/db/enquiriesRepository";
+import { checkRateLimit, recordFailure, recordSuccess } from "@/lib/auth/rateLimiter";
+
+function clientIp(req: NextRequest): string {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -19,16 +24,29 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
+    const rateLimitKey = `${clientIp(req)}:${cleanEmail}`;
+    const lockedForSeconds = checkRateLimit(rateLimitKey);
+    if (lockedForSeconds > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Too many failed login attempts. Try again in ${lockedForSeconds} seconds.`,
+        },
+        { status: 429 }
+      );
+    }
 
     // 1. Staff Admin Authentication
     if (role === "ADMIN" || cleanEmail.endsWith("@safaria.vibing.world")) {
       const staffPassword = process.env.SAFARIA_ADMIN_SECRET || "safaria-ops-2026";
       if (password !== staffPassword) {
+        recordFailure(rateLimitKey);
         return NextResponse.json(
           { success: false, error: "Invalid staff credentials" },
           { status: 401 }
         );
       }
+      recordSuccess(rateLimitKey);
 
       const token = signSession({
         userId: "staff_001",
@@ -59,35 +77,6 @@ export async function POST(req: NextRequest) {
     const agencies = await enquiriesRepository.listAgencyApplications();
     const matchedAgency = agencies.find((a) => a.email.toLowerCase() === cleanEmail);
 
-    // Staging test account fallback for demo & automated testing
-    if (cleanEmail === "partner@greendelta.com") {
-      const token = signSession({
-        userId: "partner_user_greendelta",
-        email: cleanEmail,
-        role: "B2B_PARTNER",
-        agencyId: "agency-greendelta-01",
-        agencyName: "Green Delta Travels",
-      });
-
-      const response = NextResponse.json({
-        success: true,
-        role: "B2B_PARTNER",
-        agencyId: "agency-greendelta-01",
-        agencyName: "Green Delta Travels",
-        token,
-      });
-
-      response.cookies.set("safaria_session", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 86400,
-      });
-
-      return response;
-    }
-
     if (!matchedAgency) {
       return NextResponse.json(
         {
@@ -99,7 +88,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Verify whether trial/partner status is approved
-    if (matchedAgency.status === "PENDING_VERIFICATION") {
+    if (matchedAgency.status === "PENDING_VERIFICATION" || matchedAgency.status === "IN_REVIEW") {
       return NextResponse.json(
         {
           success: false,
@@ -110,7 +99,40 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // For approved agency
+    if (matchedAgency.status === "REJECTED") {
+      return NextResponse.json(
+        { success: false, error: "Invalid partner credentials" },
+        { status: 401 }
+      );
+    }
+
+    if (!matchedAgency.passwordHash || !matchedAgency.passwordSalt) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "Partner login credentials have not been issued yet. Contact SAFARIA operations to receive your access password.",
+        },
+        { status: 403 }
+      );
+    }
+
+    // Mandatory password verification — approved status alone never grants access
+    const verifiedAgency = await enquiriesRepository.verifyAgencyCredentials(
+      cleanEmail,
+      String(password)
+    );
+
+    if (!verifiedAgency) {
+      recordFailure(rateLimitKey);
+      return NextResponse.json(
+        { success: false, error: "Invalid partner credentials" },
+        { status: 401 }
+      );
+    }
+    recordSuccess(rateLimitKey);
+
+    // For verified, approved agency
     const token = signSession({
       userId: `partner_user_${matchedAgency.id}`,
       email: matchedAgency.email,
