@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   DollarSign,
@@ -14,6 +15,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   RefreshCw,
+  LogOut,
 } from "lucide-react";
 import { SITE_CONFIG } from "@server/config/siteConfig";
 import type { StoredB2BDeskRecord } from "@server/db/enquiriesRepository";
@@ -22,18 +24,22 @@ import type { PassengerAuditResult } from "@/app/api/partner/verify-passenger/ro
 type AuditResultState = (PassengerAuditResult & { penaltyRiskLevel: string }) | null;
 
 export default function PartnerWorkspacePage() {
+  const router = useRouter();
   const [activeDesk, setActiveDesk] = useState<
     "FARE_DESK" | "BOOKING_DESK" | "CLEAR_MARGIN" | "AFTER_CARE" | "VERIFIED_WORKFLOW" | "PARTNER_GROWTH"
   >("FARE_DESK");
 
-  // Authentication session state
-  // TODO: not yet wired to a real login session — see the "known follow-up"
-  // note in docs/release-evidence/CONTINUATION_CHECKPOINT.md.
-  const [agencyId] = useState<string>("agency-greendelta-01");
-  const [agencyName] = useState<string>("Green Delta Travels");
+  // Authentication session state — populated from the real /api/auth/me
+  // session check below; the signed-in agency cannot be chosen by the client.
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  const [agencyId, setAgencyId] = useState<string>("");
+  const [agencyName, setAgencyName] = useState<string>("");
 
   // Desk Data State
   const [deskRecords, setDeskRecords] = useState<StoredB2BDeskRecord[]>([]);
+  // All of this agency's desk records across every desk type — used to compute
+  // the ClearMargin ledger and PartnerGrowth volume tier from real data.
+  const [allDeskRecords, setAllDeskRecords] = useState<StoredB2BDeskRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // FareDesk form state
@@ -62,16 +68,18 @@ export default function PartnerWorkspacePage() {
   const [auditResult, setAuditResult] = useState<AuditResultState>(null);
   const [isAuditing, setIsAuditing] = useState(false);
 
-  // Fetch desk records for this agency
+  // Fetch desk records for this agency (session cookie identifies the agency —
+  // the client never supplies its own agencyId to the server).
   const fetchDeskData = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(`/api/partner/desk?deskType=${activeDesk}&agencyId=${agencyId}`, {
-        headers: {
-          "x-safaria-session": "staging-token",
-          Authorization: `Bearer mock-token`,
-        },
+      const res = await fetch(`/api/partner/desk?deskType=${activeDesk}`, {
+        credentials: "include",
       });
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setDeskRecords(data.records || []);
@@ -83,13 +91,63 @@ export default function PartnerWorkspacePage() {
     }
   };
 
+  // Fetch every desk record for this agency, across all desk types — feeds
+  // the ClearMargin ledger and PartnerGrowth tier computation with real data.
+  const fetchAllDeskData = async () => {
+    try {
+      const res = await fetch("/api/partner/desk", { credentials: "include" });
+      const data = await res.json();
+      if (data.success) {
+        setAllDeskRecords(data.records || []);
+      }
+    } catch (e) {
+      console.warn("Failed to load agency ledger data:", e);
+    }
+  };
+
+  useEffect(() => {
+    // One-time auth check on mount: redirects to /login if the session is
+    // missing or not a B2B_PARTNER, otherwise records the real agency identity
+    // the server reports (never client-chosen). router/fetchAllDeskData are
+    // stable here and intentionally excluded to avoid re-running this check.
+    (async () => {
+      const meRes = await fetch("/api/auth/me", { credentials: "include" });
+      const meData = await meRes.json();
+      if (!meData.authenticated || meData.user?.role !== "B2B_PARTNER") {
+        router.push("/login");
+        return;
+      }
+      setAgencyId(meData.user.agencyId || "");
+      setAgencyName(meData.user.agencyName || "Partner Agency");
+      setCheckingAuth(false);
+      fetchAllDeskData();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     // Re-fetch on desk change: fetchDeskData internally calls setState as its
     // async fetch resolves, not synchronously within this effect body.
+    if (checkingAuth) return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDeskData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeDesk]);
+  }, [activeDesk, checkingAuth]);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    router.push("/login");
+  };
+
+  // Real ClearMargin ledger derived from this agency's own FareDesk/BookingDesk
+  // records — no static/hardcoded figures.
+  const clearMarginTotalBdt = allDeskRecords
+    .filter((r) => r.deskType === "FARE_DESK" || r.deskType === "BOOKING_DESK")
+    .reduce((sum, r) => {
+      const margin = Number((r.payload as { subAgentMarginBdt?: number })?.subAgentMarginBdt) || 0;
+      return sum + margin;
+    }, 0);
+  const loggedBookingCount = allDeskRecords.filter((r) => r.deskType === "BOOKING_DESK").length;
 
   // FareDesk submit handler
   const handleRequestFare = async (carrier: string, netPrice: number, margin: number) => {
@@ -97,10 +155,8 @@ export default function PartnerWorkspacePage() {
     try {
       const res = await fetch("/api/partner/desk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-safaria-admin-key": "safaria-ops-2026",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           deskType: "FARE_DESK",
           title: `Wholesale Fare Request: ${fareOrigin} ➔ ${fareDest} (${carrier})`,
@@ -117,10 +173,15 @@ export default function PartnerWorkspacePage() {
         }),
       });
 
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setFareSubmitted(true);
         fetchDeskData();
+        fetchAllDeskData();
       }
     } catch (e) {
       console.error(e);
@@ -138,10 +199,8 @@ export default function PartnerWorkspacePage() {
     try {
       const res = await fetch("/api/partner/desk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-safaria-admin-key": "safaria-ops-2026",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           deskType: "BOOKING_DESK",
           title: `PNR Hold / Issuance: ${pnrInput.toUpperCase()} (${pnrRoute})`,
@@ -157,12 +216,17 @@ export default function PartnerWorkspacePage() {
         }),
       });
 
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setBookingMessage(`PNR ${pnrInput.toUpperCase()} logged in agency queue.`);
         setPnrInput("");
         setPnrPassenger("");
         fetchDeskData();
+        fetchAllDeskData();
       }
     } catch (e) {
       console.error(e);
@@ -180,10 +244,8 @@ export default function PartnerWorkspacePage() {
     try {
       const res = await fetch("/api/partner/desk", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-safaria-admin-key": "safaria-ops-2026",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           deskType: "AFTER_CARE",
           title: `Re-issue Request: ${casePnr ? `PNR ${casePnr.toUpperCase()}` : "Flight Disruption"}`,
@@ -197,6 +259,10 @@ export default function PartnerWorkspacePage() {
         }),
       });
 
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setCaseSuccessMsg("Urgent re-issue case logged with 24/7 AfterCare desk.");
@@ -218,10 +284,8 @@ export default function PartnerWorkspacePage() {
     try {
       const res = await fetch("/api/partner/verify-passenger", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-safaria-admin-key": "safaria-ops-2026",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           surname,
           givenNames,
@@ -229,6 +293,10 @@ export default function PartnerWorkspacePage() {
           passportExpiry,
         }),
       });
+      if (res.status === 401 || res.status === 403) {
+        router.push("/login");
+        return;
+      }
       const data = await res.json();
       if (data.success) {
         setAuditResult(data.audit);
@@ -239,6 +307,14 @@ export default function PartnerWorkspacePage() {
       setIsAuditing(false);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-surface-0 text-safaria-ink flex items-center justify-center text-sm text-safaria-inkMuted">
+        Verifying session…
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-surface-0 text-safaria-ink">
@@ -260,7 +336,7 @@ export default function PartnerWorkspacePage() {
               SAFARIA Partner Portal (B2B Workspace)
             </h1>
             <span className="text-[10px] text-safaria-inkMuted font-mono">
-              Partner Agency: {agencyName} (Verified Trial Active)
+              Partner Agency: {agencyName} ({agencyId})
             </span>
           </div>
         </div>
@@ -275,8 +351,15 @@ export default function PartnerWorkspacePage() {
           </button>
           <div className="rounded bg-surface-0 px-3 py-1.5 border border-safaria-line/40">
             <span className="text-safaria-inkMuted">Sub-Agent Margin: </span>
-            <span className="text-safaria-gold font-bold">৳14,250 BDT</span>
+            <span className="text-safaria-gold font-bold">৳{clearMarginTotalBdt.toLocaleString()} BDT</span>
           </div>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 rounded bg-surface-200 border border-safaria-line px-2.5 py-1 text-safaria-ink hover:text-red-400"
+          >
+            <LogOut className="h-3 w-3" />
+            <span>Sign Out</span>
+          </button>
         </div>
       </header>
 
@@ -333,7 +416,8 @@ export default function PartnerWorkspacePage() {
                   FareDesk™ — Wholesale Inventory Sourcing
                 </h2>
                 <p className="text-xs text-safaria-inkMuted">
-                  Live GDS and consolidated contract fares with real-time sub-agent margin allocations.
+                  Manual fare-request workflow — a specialist sources and confirms wholesale net
+                  pricing after you submit a request. Not a live GDS/consolidator search.
                 </p>
               </div>
 
@@ -391,7 +475,7 @@ export default function PartnerWorkspacePage() {
               {/* Sample Wholesale Fares with Persist Button */}
               <div className="space-y-3 pt-2">
                 <span className="text-xs font-semibold text-safaria-inkMuted">
-                  Available Wholesale Allocations:
+                  Sample Indicative Fares (manual request only — not live inventory):
                 </span>
 
                 <div className="rounded-xl border border-safaria-line bg-surface-200 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -543,32 +627,41 @@ export default function PartnerWorkspacePage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="rounded-xl border border-safaria-line bg-surface-200 p-4">
                   <span className="text-xs text-safaria-inkMuted block">Current Balance</span>
-                  <strong className="text-2xl font-mono text-safaria-gold">৳14,250 BDT</strong>
+                  <strong className="text-2xl font-mono text-safaria-gold">৳{clearMarginTotalBdt.toLocaleString()} BDT</strong>
                 </div>
                 <div className="rounded-xl border border-safaria-line bg-surface-200 p-4">
                   <span className="text-xs text-safaria-inkMuted block">Logged Bookings</span>
-                  <strong className="text-2xl font-mono text-safaria-ink">34 Tickets</strong>
+                  <strong className="text-2xl font-mono text-safaria-ink">{loggedBookingCount} Tickets</strong>
                 </div>
                 <div className="rounded-xl border border-safaria-line bg-surface-200 p-4">
-                  <span className="text-xs text-safaria-inkMuted block">Weekly Settlement</span>
-                  <strong className="text-2xl font-mono text-safaria-success">Thursday</strong>
+                  <span className="text-xs text-safaria-inkMuted block">Settlement</span>
+                  <strong className="text-lg font-mono text-safaria-success">Manual (contact Ops)</strong>
                 </div>
               </div>
 
               <div className="rounded-xl border border-safaria-line bg-surface-input p-4 space-y-2 text-xs">
-                <span className="font-semibold text-safaria-ink block">Recent ClearMargin Transactions:</span>
-                <div className="flex justify-between py-1.5 border-b border-safaria-line/30 font-mono">
-                  <span>EK583 · DAC-DXB (2 Pax)</span>
-                  <span className="text-safaria-success">+ ৳4,800 BDT</span>
-                </div>
-                <div className="flex justify-between py-1.5 border-b border-safaria-line/30 font-mono">
-                  <span>BG584 · DAC-JED (1 Pax)</span>
-                  <span className="text-safaria-success">+ ৳2,200 BDT</span>
-                </div>
-                <div className="flex justify-between py-1.5 font-mono">
-                  <span>Weekly Bank Wire Payout</span>
-                  <span className="text-safaria-gold">Paid (Trx: #W20261102)</span>
-                </div>
+                <span className="font-semibold text-safaria-ink block">
+                  FareDesk / BookingDesk Transactions Feeding This Ledger:
+                </span>
+                {allDeskRecords.filter((r) => r.deskType === "FARE_DESK" || r.deskType === "BOOKING_DESK").length === 0 ? (
+                  <p className="text-safaria-inkFaint py-1.5">
+                    No margin-bearing transactions logged yet. Submit a FareDesk or BookingDesk request to populate this ledger.
+                  </p>
+                ) : (
+                  allDeskRecords
+                    .filter((r) => r.deskType === "FARE_DESK" || r.deskType === "BOOKING_DESK")
+                    .map((r) => (
+                      <div key={r.id} className="flex justify-between py-1.5 border-b border-safaria-line/30 font-mono last:border-0">
+                        <span>{r.title}</span>
+                        <span className="text-safaria-success">
+                          + ৳{(Number((r.payload as { subAgentMarginBdt?: number })?.subAgentMarginBdt) || 0).toLocaleString()} BDT
+                        </span>
+                      </div>
+                    ))
+                )}
+                <p className="text-[10px] text-safaria-inkFaint pt-1">
+                  Payout settlement is processed manually by SAFARIA Operations; this ledger reflects logged margin, not a live wallet balance.
+                </p>
               </div>
             </div>
           )}
@@ -776,29 +869,52 @@ export default function PartnerWorkspacePage() {
                 </p>
               </div>
 
-              <div className="space-y-3 text-xs">
-                <div className="rounded-xl border border-safaria-gold bg-safaria-gold/15 p-5 flex items-center justify-between">
-                  <div>
-                    <strong className="text-safaria-gold text-base block">Silver Tier (Active Agency Status)</strong>
-                    <span className="text-safaria-inkMuted">
-                      Volume: 20–50 tickets / mo · ৳350 bonus rebate per ticket
-                    </span>
-                  </div>
-                  <span className="rounded-full bg-safaria-gold text-safaria-onGold px-3 py-1 font-bold text-xs">
-                    Current Level
-                  </span>
-                </div>
+              {(() => {
+                const TIERS = [
+                  { name: "Bronze", min: 0, max: 19, rebate: 150 },
+                  { name: "Silver", min: 20, max: 50, rebate: 350 },
+                  { name: "Gold", min: 51, max: 100, rebate: 600 },
+                  { name: "Platinum", min: 101, max: Infinity, rebate: 900 },
+                ];
+                const count = loggedBookingCount;
+                const currentIdx = TIERS.findIndex((t) => count >= t.min && count <= t.max);
+                const current = TIERS[currentIdx] ?? TIERS[0];
+                const next = TIERS[currentIdx + 1];
 
-                <div className="rounded-xl border border-safaria-line bg-surface-200 p-5 flex items-center justify-between opacity-80">
-                  <div>
-                    <strong className="text-safaria-ink text-base block">Gold Tier (Next Milestone)</strong>
-                    <span className="text-safaria-inkMuted">
-                      Volume: 51–100 tickets / mo · ৳600 bonus rebate + Dedicated VIP Desk Phone
-                    </span>
+                return (
+                  <div className="space-y-3 text-xs">
+                    <p className="text-safaria-inkMuted">
+                      Tier is computed from this agency&apos;s {count} logged BookingDesk ticket{count === 1 ? "" : "s"} this month.
+                    </p>
+                    <div className="rounded-xl border border-safaria-gold bg-safaria-gold/15 p-5 flex items-center justify-between">
+                      <div>
+                        <strong className="text-safaria-gold text-base block">{current.name} Tier (Active Agency Status)</strong>
+                        <span className="text-safaria-inkMuted">
+                          Volume: {current.min}
+                          {current.max === Infinity ? "+" : `–${current.max}`} tickets / mo · ৳{current.rebate} bonus rebate per ticket
+                        </span>
+                      </div>
+                      <span className="rounded-full bg-safaria-gold text-safaria-onGold px-3 py-1 font-bold text-xs">
+                        Current Level
+                      </span>
+                    </div>
+
+                    {next && (
+                      <div className="rounded-xl border border-safaria-line bg-surface-200 p-5 flex items-center justify-between opacity-80">
+                        <div>
+                          <strong className="text-safaria-ink text-base block">{next.name} Tier (Next Milestone)</strong>
+                          <span className="text-safaria-inkMuted">
+                            Volume: {next.min}+ tickets / mo · ৳{next.rebate} bonus rebate
+                          </span>
+                        </div>
+                        <span className="text-safaria-inkMuted font-mono">
+                          {Math.max(next.min - count, 0)} more ticket{next.min - count === 1 ? "" : "s"} to unlock
+                        </span>
+                      </div>
+                    )}
                   </div>
-                  <span className="text-safaria-inkMuted font-mono">16 more tickets to unlock</span>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           )}
         </main>

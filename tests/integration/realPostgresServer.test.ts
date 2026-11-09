@@ -9,6 +9,8 @@ import EmbeddedPostgres from "embedded-postgres";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import { enquiriesRepository } from "@server/db/enquiriesRepository";
+import { _closeScopedPoolForTests } from "@server/db/scopedPgClient";
 
 describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
   let pg: EmbeddedPostgres;
@@ -392,5 +394,81 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     await client.query("RESET ROLE;");
 
     await client.end();
+  }, 30000);
+
+  it("closes the audited gap: enquiriesRepository's B2B desk functions themselves are RLS-enforced, not just raw SQL", async () => {
+    // Prior coverage above proves RLS policies work via raw SQL. This proves
+    // the actual application code path (server/db/scopedPgClient.ts, wired
+    // into enquiriesRepository.*) is genuinely DB-enforced end to end —
+    // service-role Supabase client, which bypasses RLS, is never used here.
+    const originalDatabaseUrl = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = `postgres://postgres:password@localhost:${port}/postgres`;
+
+    try {
+      const client = pg.getPgClient();
+      await client.connect();
+      await client.query("SET ROLE service_role;");
+      const appGamma = await client.query(`
+        INSERT INTO agency_applications (reference_no, agency_name, contact_person, phone, email, city, status)
+        VALUES ('B2B-TENANT-GAMMA', 'Gamma Travels Ltd', 'Gamma Officer', '+8801700000003', 'gamma@tenants.com', 'Dhaka', 'ACTIVE_PARTNER')
+        RETURNING id;
+      `);
+      const appDelta = await client.query(`
+        INSERT INTO agency_applications (reference_no, agency_name, contact_person, phone, email, city, status)
+        VALUES ('B2B-TENANT-DELTA', 'Delta Travels Ltd', 'Delta Officer', '+8801700000004', 'delta@tenants.com', 'Chittagong', 'ACTIVE_PARTNER')
+        RETURNING id;
+      `);
+      const agencyGammaId = appGamma.rows[0].id;
+      const agencyDeltaId = appDelta.rows[0].id;
+      await client.query("RESET ROLE;");
+      await client.end();
+
+      // Create through the repository (scoped path) for both agencies.
+      const gammaRecord = await enquiriesRepository.createB2BDeskRecord(
+        "FARE_DESK",
+        agencyGammaId,
+        "Gamma Scoped Fare Request",
+        { note: "gamma" }
+      );
+      const deltaRecord = await enquiriesRepository.createB2BDeskRecord(
+        "FARE_DESK",
+        agencyDeltaId,
+        "Delta Scoped Fare Request",
+        { note: "delta" }
+      );
+
+      // Gamma's scoped list must see ONLY its own record, even with no
+      // deskType/agency WHERE clause written in the SQL — RLS is doing it.
+      const gammaView = await enquiriesRepository.listB2BDeskRecords(undefined, agencyGammaId);
+      expect(gammaView.some((r) => r.id === gammaRecord.id)).toBe(true);
+      expect(gammaView.some((r) => r.id === deltaRecord.id)).toBe(false);
+
+      const deltaView = await enquiriesRepository.listB2BDeskRecords(undefined, agencyDeltaId);
+      expect(deltaView.some((r) => r.id === deltaRecord.id)).toBe(true);
+      expect(deltaView.some((r) => r.id === gammaRecord.id)).toBe(false);
+
+      // Gamma attempting to update Delta's record by ID is rejected by RLS
+      // (the row simply isn't visible/updatable under Gamma's scope), not by
+      // an application-code ownership check.
+      const crossTenantUpdate = await enquiriesRepository.updateB2BDeskRecord(
+        deltaRecord.id,
+        "RESOLVED",
+        "attempted cross-tenant update",
+        agencyGammaId
+      );
+      expect(crossTenantUpdate).toBeNull();
+
+      // Delta updating its own record succeeds through the same scoped path.
+      const ownUpdate = await enquiriesRepository.updateB2BDeskRecord(
+        deltaRecord.id,
+        "RESOLVED",
+        "legitimate update",
+        agencyDeltaId
+      );
+      expect(ownUpdate?.status).toBe("RESOLVED");
+    } finally {
+      await _closeScopedPoolForTests();
+      process.env.DATABASE_URL = originalDatabaseUrl;
+    }
   }, 30000);
 });

@@ -9,9 +9,19 @@ import { enquiriesRepository } from "@server/db/enquiriesRepository";
 import { SITE_CONFIG } from "@server/config/siteConfig";
 import { readJsonBodyGuarded, PayloadTooLargeError } from "@server/utils/requestGuards";
 import { getErrorMessage } from "@server/utils/errorMessage";
+import { checkSubmissionRateLimit, buildSubmissionFingerprint, isDuplicateSubmission } from "@server/utils/abuseGuard";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    const lockedForSeconds = checkSubmissionRateLimit(ip);
+    if (lockedForSeconds > 0) {
+      return NextResponse.json(
+        { success: false, error: `Too many submissions. Please try again in ${lockedForSeconds} seconds.` },
+        { status: 429 }
+      );
+    }
+
     const body = await readJsonBodyGuarded(req);
     const parseResult = GeneralEnquiryInputSchema.safeParse(body);
 
@@ -27,6 +37,18 @@ export async function POST(req: NextRequest) {
     }
 
     const input = parseResult.data;
+
+    const fingerprint = buildSubmissionFingerprint([input.phone, input.serviceType, input.message]);
+    if (isDuplicateSubmission(fingerprint)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "An identical travel enquiry was just submitted. Please check your reference number or wait a few minutes before resubmitting.",
+        },
+        { status: 409 }
+      );
+    }
+
     const record = await enquiriesRepository.createGeneralEnquiry(input);
 
     // Formatted follow-up WhatsApp link
