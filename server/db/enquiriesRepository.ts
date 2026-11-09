@@ -4,6 +4,7 @@
 // ==============================================================================
 
 import { getSupabaseServiceClient } from "./supabaseClient";
+import { isScopedConnectionConfigured, withAgencyScope } from "./scopedPgClient";
 import { generateReferenceCode } from "@server/utils/referenceGenerator";
 import { FlightEnquiryInput, AgencyApplicationInput, GeneralEnquiryInput } from "@server/validations/enquirySchemas";
 import { generateTemporaryPassword, hashPassword, verifyPassword } from "@server/auth/passwordService";
@@ -633,7 +634,7 @@ export const enquiriesRepository = {
 
     if (supabase) {
       try {
-        await supabase.from("integration_outbox").insert({
+        const { error } = await supabase.from("integration_outbox").insert({
           id,
           channel,
           event_type: eventType,
@@ -645,6 +646,13 @@ export const enquiriesRepository = {
           created_at: now,
           updated_at: now,
         });
+        if (!error) {
+          // Durably persisted — do not also create a memory-store mirror, or a
+          // legitimate idempotency-key collision rejected by Supabase's unique
+          // constraint would still produce a duplicate entry in memory.
+          return entry;
+        }
+        console.warn("Supabase outbox insert failed, falling back to memory:", error);
       } catch (err) {
         console.warn("Supabase outbox insert fallback to memory:", err);
       }
@@ -680,7 +688,15 @@ export const enquiriesRepository = {
           .order("next_retry_at", { ascending: true })
           .limit(limit);
 
-        if (!selectErr && candidates && candidates.length > 0) {
+        if (!selectErr) {
+          // Configured Supabase answered successfully — this IS the answer,
+          // even when it's zero rows. Never fall through to the in-memory
+          // store below, which could otherwise claim stray memory-mirror
+          // entries alongside (or instead of) real DB rows.
+          if (!candidates || candidates.length === 0) {
+            return [];
+          }
+
           // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
           const candidateIds = candidates.map((c: any) => c.id);
           const { data: claimed, error: updateErr } = await supabase
@@ -692,11 +708,17 @@ export const enquiriesRepository = {
               updated_at: nowIso,
             })
             .in("id", candidateIds)
+            // Re-assert the claimable status on the UPDATE itself (not just the
+            // earlier SELECT) so two workers racing on the same candidate set
+            // cannot both flip the same row to PROCESSING: whichever worker's
+            // UPDATE commits first wins, and the loser's WHERE no longer
+            // matches that row, so .select() only returns what it actually claimed.
+            .in("status", ["PENDING", "FAILED"])
             .select();
 
-          if (!updateErr && claimed) {
+          if (!updateErr) {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
-            return claimed.map((row: any) => ({
+            return (claimed || []).map((row: any) => ({
               id: row.id,
               channel: row.channel,
               eventType: row.event_type,
@@ -712,13 +734,17 @@ export const enquiriesRepository = {
               updatedAt: row.updated_at,
             }));
           }
+          console.warn("Supabase outbox claim update failed, falling back to memory store:", updateErr);
+        } else {
+          console.warn("Supabase outbox claim select failed, falling back to memory store:", selectErr);
         }
       } catch (err) {
         console.warn("Supabase outbox claim fallback to memory store:", err);
       }
     }
 
-    // Atomic synchronized claiming for memory store (non-production / test)
+    // Atomic synchronized claiming for memory store (non-production / test,
+    // or genuine Supabase connection failure above)
     const claimedEntries: StoredOutboxEntry[] = [];
     const entries = Array.from(memoryStore.outboxEntries.values());
 
@@ -923,6 +949,26 @@ export const enquiriesRepository = {
       updatedAt: now,
     };
 
+    // Prefer a genuinely RLS-enforced insert (authenticated role + app.current_agency_id)
+    // over the service-role Supabase client when a direct Postgres connection is
+    // configured — this makes the database itself reject a mismatched agencyId,
+    // not just application code. See server/db/scopedPgClient.ts.
+    if (isScopedConnectionConfigured()) {
+      try {
+        await withAgencyScope(agencyId, async (client) => {
+          await client.query(
+            `INSERT INTO b2b_desk_records (id, agency_id, desk_type, title, priority, status, payload, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, 'OPEN', $6, $7, $8)`,
+            [id, agencyId, deskType, title, priority, payload, now, now]
+          );
+        });
+        memoryStore.b2bDeskRecords.set(id, record);
+        return record;
+      } catch (err) {
+        console.warn("Scoped RLS desk record insert failed, falling back:", err);
+      }
+    }
+
     if (supabase) {
       try {
         await supabase.from("b2b_desk_records").insert({
@@ -953,8 +999,66 @@ export const enquiriesRepository = {
     deskType?: StoredB2BDeskRecord["deskType"],
     agencyId?: string
   ): Promise<StoredB2BDeskRecord[]> {
-    let records = Array.from(memoryStore.b2bDeskRecords.values());
+    // Agency-scoped reads go through the real RLS boundary when available —
+    // see the insert-path comment above for why this matters.
+    if (agencyId && isScopedConnectionConfigured()) {
+      try {
+        return await withAgencyScope(agencyId, async (client) => {
+          const params: unknown[] = [];
+          let sql = "SELECT * FROM b2b_desk_records";
+          if (deskType) {
+            params.push(deskType);
+            sql += ` WHERE desk_type = $${params.length}`;
+          }
+          sql += " ORDER BY created_at DESC";
+          const { rows } = await client.query(sql, params);
+          return rows.map((d) => ({
+            id: d.id,
+            agencyId: d.agency_id,
+            deskType: d.desk_type,
+            title: d.title,
+            priority: d.priority,
+            status: d.status,
+            payload: d.payload || {},
+            internalNotes: d.internal_notes ?? undefined,
+            createdAt: d.created_at instanceof Date ? d.created_at.toISOString() : d.created_at,
+            updatedAt: d.updated_at instanceof Date ? d.updated_at.toISOString() : d.updated_at,
+          }));
+        });
+      } catch (err) {
+        console.warn("Scoped RLS desk record list failed, falling back:", err);
+      }
+    }
 
+    const supabase = getSupabaseServiceClient();
+    if (supabase) {
+      try {
+        let query = supabase.from("b2b_desk_records").select("*").order("created_at", { ascending: false });
+        if (agencyId) query = query.eq("agency_id", agencyId);
+        if (deskType) query = query.eq("desk_type", deskType);
+
+        const { data, error } = await query;
+        if (!error && data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+          return data.map((d: any) => ({
+            id: d.id,
+            agencyId: d.agency_id,
+            deskType: d.desk_type,
+            title: d.title,
+            priority: d.priority,
+            status: d.status,
+            payload: d.payload || {},
+            internalNotes: d.internal_notes ?? undefined,
+            createdAt: d.created_at,
+            updatedAt: d.updated_at,
+          }));
+        }
+      } catch (err) {
+        console.warn("Supabase desk record list fallback to memory:", err);
+      }
+    }
+
+    let records = Array.from(memoryStore.b2bDeskRecords.values());
     if (agencyId) {
       records = records.filter((r) => r.agencyId === agencyId);
     }
@@ -966,18 +1070,118 @@ export const enquiriesRepository = {
   },
 
   /**
-   * Update B2B Desk Record
+   * Update B2B Desk Record status + append-only audit trail.
+   * `scopeAgencyId`, when supplied by a B2B_PARTNER caller, routes the update
+   * through the real RLS boundary (see the insert-path comment above) so the
+   * database — not just the route handler's prior ownership check — rejects a
+   * write against another agency's record. Staff/admin callers omit it since
+   * they legitimately act across every agency.
    */
   async updateB2BDeskRecord(
     id: string,
     status: StoredB2BDeskRecord["status"],
-    internalNotes?: string
+    internalNotes?: string,
+    scopeAgencyId?: string
   ): Promise<StoredB2BDeskRecord | null> {
     const now = new Date().toISOString();
+
+    if (scopeAgencyId && isScopedConnectionConfigured()) {
+      try {
+        const updated = await withAgencyScope(scopeAgencyId, async (client) => {
+          const { rows: existingRows } = await client.query(
+            "SELECT internal_notes FROM b2b_desk_records WHERE id = $1",
+            [id]
+          );
+          if (existingRows.length === 0) return null;
+
+          const mergedNotes = internalNotes
+            ? [existingRows[0].internal_notes, internalNotes].filter(Boolean).join("\n")
+            : existingRows[0].internal_notes;
+
+          const { rows } = await client.query(
+            `UPDATE b2b_desk_records SET status = $1, internal_notes = $2, updated_at = $3
+             WHERE id = $4 RETURNING *`,
+            [status, mergedNotes, now, id]
+          );
+          if (rows.length === 0) return null; // RLS silently excluded a cross-tenant id
+
+          const d = rows[0];
+          return {
+            id: d.id,
+            agencyId: d.agency_id,
+            deskType: d.desk_type,
+            title: d.title,
+            priority: d.priority,
+            status: d.status,
+            payload: d.payload || {},
+            internalNotes: d.internal_notes ?? undefined,
+            createdAt: d.created_at instanceof Date ? d.created_at.toISOString() : d.created_at,
+            updatedAt: d.updated_at instanceof Date ? d.updated_at.toISOString() : d.updated_at,
+          } as StoredB2BDeskRecord;
+        });
+
+        if (updated) {
+          memoryStore.b2bDeskRecords.set(id, updated);
+          return updated;
+        }
+        // RLS excluded the row (cross-tenant attempt) — do not fall back to
+        // the service-role path, which would silently bypass that rejection.
+        return null;
+      } catch (err) {
+        console.warn("Scoped RLS desk record update failed, falling back:", err);
+      }
+    }
+
+    const supabase = getSupabaseServiceClient();
+
+    if (supabase) {
+      try {
+        const { data: existing, error: fetchError } = await supabase
+          .from("b2b_desk_records")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (!fetchError && existing) {
+          const mergedNotes = internalNotes
+            ? [existing.internal_notes, internalNotes].filter(Boolean).join("\n")
+            : existing.internal_notes;
+
+          const { data: updated, error: updateError } = await supabase
+            .from("b2b_desk_records")
+            .update({ status, internal_notes: mergedNotes, updated_at: now })
+            .eq("id", id)
+            .select("*")
+            .single();
+
+          if (!updateError && updated) {
+            const record: StoredB2BDeskRecord = {
+              id: updated.id,
+              agencyId: updated.agency_id,
+              deskType: updated.desk_type,
+              title: updated.title,
+              priority: updated.priority,
+              status: updated.status,
+              payload: updated.payload || {},
+              internalNotes: updated.internal_notes ?? undefined,
+              createdAt: updated.created_at,
+              updatedAt: updated.updated_at,
+            };
+            memoryStore.b2bDeskRecords.set(id, record);
+            return record;
+          }
+        }
+      } catch (err) {
+        console.warn("Supabase desk record update fallback to memory:", err);
+      }
+    }
+
     const record = memoryStore.b2bDeskRecords.get(id);
     if (record) {
       record.status = status;
-      if (internalNotes) record.internalNotes = internalNotes;
+      if (internalNotes) {
+        record.internalNotes = [record.internalNotes, internalNotes].filter(Boolean).join("\n");
+      }
       record.updatedAt = now;
       return record;
     }

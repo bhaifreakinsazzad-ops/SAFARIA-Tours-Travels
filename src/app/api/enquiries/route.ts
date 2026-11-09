@@ -10,9 +10,19 @@ import { ghlAdapter } from "@server/crm/ghlAdapter";
 import { buildWhatsAppQuotationUrl } from "@server/utils/whatsAppFormatter";
 import { readJsonBodyGuarded, PayloadTooLargeError } from "@server/utils/requestGuards";
 import { getErrorMessage } from "@server/utils/errorMessage";
+import { checkSubmissionRateLimit, buildSubmissionFingerprint, isDuplicateSubmission } from "@server/utils/abuseGuard";
 
 export async function POST(req: NextRequest) {
   try {
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
+    const lockedForSeconds = checkSubmissionRateLimit(ip);
+    if (lockedForSeconds > 0) {
+      return NextResponse.json(
+        { success: false, error: `Too many submissions. Please try again in ${lockedForSeconds} seconds.` },
+        { status: 429 }
+      );
+    }
+
     const body = await readJsonBodyGuarded(req);
     const parseResult = FlightEnquiryInputSchema.safeParse(body);
 
@@ -28,8 +38,23 @@ export async function POST(req: NextRequest) {
     }
 
     const input = parseResult.data;
-    const ip = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip") || "unknown";
     const userAgent = req.headers.get("user-agent") || "unknown";
+
+    const fingerprint = buildSubmissionFingerprint([
+      input.phoneCountryCode,
+      input.phoneNumber,
+      input.tripType,
+      input.legs.map((l) => `${l.originIata}-${l.destinationIata}-${l.departureDate}`).join(","),
+    ]);
+    if (isDuplicateSubmission(fingerprint)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "An identical flight quotation request was just submitted. Please check your reference number or wait a few minutes before resubmitting.",
+        },
+        { status: 409 }
+      );
+    }
 
     // 1. Durable database persistence (Supabase / In-Memory Store)
     const storedRecord = await enquiriesRepository.createFlightEnquiry(input, {

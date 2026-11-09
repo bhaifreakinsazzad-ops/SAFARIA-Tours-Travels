@@ -9,8 +9,55 @@ import { getErrorMessage } from "../utils/errorMessage";
 export interface GhlSyncResult {
   success: boolean;
   contactId?: string;
+  opportunityId?: string;
   queued: boolean;
   message: string;
+}
+
+/**
+ * Creates a GHL opportunity against a contact that was just upserted. Requires
+ * GHL_PIPELINE_ID and GHL_PIPELINE_STAGE_ID in addition to the base GHL
+ * credentials — neither is configured anywhere in this repo (no owner-supplied
+ * pipeline exists yet), so this silently no-ops until the business owner
+ * provisions a real GHL pipeline and supplies those two IDs. Failures never
+ * throw past this function — a missing/broken opportunity call must not fail
+ * the contact sync it's attached to.
+ */
+async function tryCreateOpportunity(params: {
+  apiKey: string;
+  locationId: string;
+  contactId: string | undefined;
+  name: string;
+  monetaryValue?: number;
+}): Promise<string | undefined> {
+  const pipelineId = process.env.GHL_PIPELINE_ID;
+  const pipelineStageId = process.env.GHL_PIPELINE_STAGE_ID;
+  if (!pipelineId || !pipelineStageId || !params.contactId) return undefined;
+
+  try {
+    const response = await fetch("https://services.leadconnectorhq.com/opportunities/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${params.apiKey}`,
+        Version: "2021-07-28",
+      },
+      body: JSON.stringify({
+        locationId: params.locationId,
+        pipelineId,
+        pipelineStageId,
+        contactId: params.contactId,
+        name: params.name,
+        status: "open",
+        monetaryValue: params.monetaryValue,
+      }),
+    });
+    if (!response.ok) return undefined;
+    const data = await response.json();
+    return data?.opportunity?.id;
+  } catch {
+    return undefined;
+  }
 }
 
 export const ghlAdapter = {
@@ -72,9 +119,18 @@ export const ghlAdapter = {
       }
 
       const data = await response.json();
+      const contactId = data?.contact?.id;
+      const opportunityId = await tryCreateOpportunity({
+        apiKey,
+        locationId,
+        contactId,
+        name: `Flight Quotation ${enquiry.referenceNo}`,
+      });
+
       return {
         success: true,
-        contactId: data?.contact?.id,
+        contactId,
+        opportunityId,
         queued: false,
         message: "Successfully synchronized with GoHighLevel CRM",
       };
@@ -148,9 +204,18 @@ export const ghlAdapter = {
       }
 
       const data = await response.json();
+      const contactId = data?.contact?.id;
+      const opportunityId = await tryCreateOpportunity({
+        apiKey,
+        locationId,
+        contactId,
+        name: `B2B Agency Application ${app.referenceNo}`,
+      });
+
       return {
         success: true,
-        contactId: data?.contact?.id,
+        contactId,
+        opportunityId,
         queued: false,
         message: "Agency synced to GoHighLevel CRM",
       };

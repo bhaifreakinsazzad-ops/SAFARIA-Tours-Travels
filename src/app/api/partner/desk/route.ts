@@ -117,7 +117,11 @@ export async function PATCH(req: NextRequest) {
       ? `[${new Date().toISOString()} by ${session.email}]: ${internalNotes}`
       : undefined;
 
-    const updated = await enquiriesRepository.updateB2BDeskRecord(id, status, auditTrailNote);
+    // Scope staff/admin updates (who legitimately act across every agency)
+    // to the service-role path; scope a partner's own update through the
+    // real RLS boundary so the database — not just the check above — enforces it.
+    const scopeAgencyId = session.role === "B2B_PARTNER" ? session.agencyId : undefined;
+    const updated = await enquiriesRepository.updateB2BDeskRecord(id, status, auditTrailNote, scopeAgencyId);
 
     return NextResponse.json({
       success: true,

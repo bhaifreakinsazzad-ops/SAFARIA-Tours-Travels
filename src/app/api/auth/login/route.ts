@@ -17,6 +17,23 @@ function clientIp(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
+/**
+ * Resolves the staff login password. SAFARIA_ADMIN_SECRET is strictly mandatory
+ * in production — mirrors getSecretKey()'s fail-closed pattern in authService.ts.
+ * No literal credential is ever accepted outside local/test runs.
+ */
+function getStaffPassword(): string {
+  if (process.env.SAFARIA_ADMIN_SECRET) {
+    return process.env.SAFARIA_ADMIN_SECRET;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "FATAL SECURITY CONFIGURATION: SAFARIA_ADMIN_SECRET environment variable is mandatory in production! Hardcoded fallbacks are prohibited."
+    );
+  }
+  return "safaria-ops-2026";
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { email, password, role } = await readJsonBodyGuarded<{
@@ -47,7 +64,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Staff Admin Authentication
     if (role === "ADMIN" || cleanEmail.endsWith(STAFF_EMAIL_DOMAIN)) {
-      const staffPassword = process.env.SAFARIA_ADMIN_SECRET || "safaria-ops-2026";
+      const staffPassword = getStaffPassword();
       if (password !== staffPassword) {
         recordFailure(rateLimitKey);
         return NextResponse.json(
