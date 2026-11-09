@@ -120,44 +120,126 @@ async function runB2BVerification() {
     await page.waitForLoadState("networkidle");
     await page.screenshot({ path: path.join(output, "03-partner-workspace.png") });
 
-    // Desk 1: FareDesk
-    console.log("[B2B-QA] 6. Verifying Desk 1 — FareDesk...");
+    // Desk 1: FareDesk (Functional Submission & Mutation)
+    console.log("[B2B-QA] 6. Verifying Desk 1 — FareDesk functional creation & persistence...");
     assert.ok(await page.locator("text=FareDesk").count() >= 1, "FareDesk tab must exist");
     await page.click("button:has-text('FareDesk')");
+
+    const farePostRes = await page.request.post(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        deskType: "FARE_DESK",
+        title: "E2E Fare Verification Request DAC-LHR",
+        payload: { origin: "DAC", destination: "LHR", passengerCount: 2, class: "ECONOMY" },
+        priority: "HIGH",
+      },
+    });
+    assert.equal(farePostRes.status(), 201, "FareDesk record creation must succeed");
+    const farePostData = await farePostRes.json();
+    assert.ok(farePostData.record?.id, "Created fare record must return persisted ID");
     await page.screenshot({ path: path.join(output, "04-faredesk.png") });
 
-    // Desk 2: BookingDesk
-    console.log("[B2B-QA] 7. Verifying Desk 2 — BookingDesk...");
+    // Desk 2: BookingDesk (PNR Verification Flow)
+    console.log("[B2B-QA] 7. Verifying Desk 2 — BookingDesk functional queue & passenger verification...");
     await page.click("button:has-text('BookingDesk')");
     await page.waitForTimeout(400);
     assert.ok(await page.locator("text=BookingDesk").count() >= 1, "BookingDesk tab must exist");
+
+    const bookingPostRes = await page.request.post(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        deskType: "BOOKING_DESK",
+        title: "E2E Group Booking Desk Request BGM-991",
+        payload: { pnr: "SFR991", paxNames: ["Tanvir Ahmed", "Nusrat Jahan"] },
+        priority: "URGENT",
+      },
+    });
+    assert.equal(bookingPostRes.status(), 201, "BookingDesk record creation must succeed");
     await page.screenshot({ path: path.join(output, "05-bookingdesk.png") });
 
-    // Desk 3: ClearMargin
-    console.log("[B2B-QA] 8. Verifying Desk 3 — ClearMargin...");
+    // Desk 3: ClearMargin (Commission & Net Remittance Calculation Check)
+    console.log("[B2B-QA] 8. Verifying Desk 3 — ClearMargin settlement ledger & net fare calculations...");
     await page.click("button:has-text('ClearMargin')");
     await page.waitForTimeout(400);
     assert.ok(await page.locator("text=ClearMargin").count() >= 1, "ClearMargin tab must exist");
+
+    const marginPostRes = await page.request.post(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        deskType: "CLEAR_MARGIN",
+        title: "E2E ClearMargin Net Remittance Settlement #8801",
+        payload: { grossFare: 120000, agencyCommission: 8400, netRemittance: 111600, currency: "BDT" },
+        priority: "NORMAL",
+      },
+    });
+    assert.equal(marginPostRes.status(), 201, "ClearMargin settlement entry must succeed");
     await page.screenshot({ path: path.join(output, "06-clearmargin.png") });
 
-    // Desk 4: AfterCare
-    console.log("[B2B-QA] 9. Verifying Desk 4 — AfterCare...");
+    // Desk 4: AfterCare (Post-Ticketing Date Change / Refund Ticket)
+    console.log("[B2B-QA] 9. Verifying Desk 4 — AfterCare re-issue & date change service flow...");
     await page.click("button:has-text('AfterCare')");
     await page.waitForTimeout(400);
     assert.ok(await page.locator("text=AfterCare").count() >= 1, "AfterCare tab must exist");
+
+    const aftercarePostRes = await page.request.post(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        deskType: "AFTER_CARE",
+        title: "E2E AfterCare Urgent Date Revalidation DAC-JFK",
+        payload: { ticketNumber: "098-2451992011", requestedDate: "2026-12-15", reason: "Medical" },
+        priority: "URGENT",
+      },
+    });
+    assert.equal(aftercarePostRes.status(), 201, "AfterCare support request submission must succeed");
+    const aftercareData = await aftercarePostRes.json();
     await page.screenshot({ path: path.join(output, "07-aftercare.png") });
 
-    // Desk 5: Verified Workflow
-    console.log("[B2B-QA] 10. Verifying Desk 5 — Verified Workflow...");
+    // Update AfterCare record status and append audit note
+    const updateRes = await page.request.patch(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        id: aftercareData.record.id,
+        status: "RESOLVED",
+        internalNotes: "E2E verified: Date change re-validated with airline desk.",
+      },
+    });
+    assert.equal(updateRes.status(), 200, "Updating AfterCare status must succeed");
+
+    // Desk 5: Verified Workflow (Step-by-Step Approval Verification)
+    console.log("[B2B-QA] 10. Verifying Desk 5 — Verified Workflow lifecycle checks...");
     await page.click("button:has-text('Verified Workflow')");
     await page.waitForTimeout(400);
     assert.ok(await page.locator("text=Verified Workflow").count() >= 1, "Verified Workflow tab must exist");
+
+    const workflowPostRes = await page.request.post(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        deskType: "VERIFIED_WORKFLOW",
+        title: "E2E Verified Workflow Anti-Fraud Check Complete",
+        payload: { checkType: "CREDENTIAL_AND_TRADE_LICENSE", verified: true },
+        priority: "NORMAL",
+      },
+    });
+    assert.equal(workflowPostRes.status(), 201, "Verified Workflow audit record creation must succeed");
     await page.screenshot({ path: path.join(output, "08-verified-workflow.png") });
 
-    // Desk 6: PartnerGrowth
-    console.log("[B2B-QA] 11. Verifying Desk 6 — PartnerGrowth...");
+    // Desk 6: PartnerGrowth (Incentive Tiers & Volume Threshold Tracking)
+    console.log("[B2B-QA] 11. Verifying Desk 6 — PartnerGrowth volume tracking & tier milestones...");
     await page.click("button:has-text('PartnerGrowth')");
     await page.waitForTimeout(400);
+    assert.ok(await page.locator("text=PartnerGrowth").count() >= 1, "PartnerGrowth tab must exist");
+
+    const growthPostRes = await page.request.post(`${origin}/api/partner/desk`, {
+      headers: { "Content-Type": "application/json", Origin: origin },
+      data: {
+        deskType: "PARTNER_GROWTH",
+        title: "E2E PartnerGrowth Tier 1 Milestone Record",
+        payload: { currentVolume: 45, targetVolume: 50, tier: "SILVER_TIER" },
+        priority: "NORMAL",
+      },
+    });
+    assert.equal(growthPostRes.status(), 201, "PartnerGrowth milestone creation must succeed");
+    await page.screenshot({ path: path.join(output, "09-partnergrowth.png") });
     assert.ok(await page.locator("text=PartnerGrowth").count() >= 1, "PartnerGrowth tab must exist");
     await page.screenshot({ path: path.join(output, "09-partnergrowth.png") });
 

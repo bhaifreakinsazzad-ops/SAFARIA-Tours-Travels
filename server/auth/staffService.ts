@@ -42,7 +42,7 @@ const memoryStaffAuditLogs: StaffAuditLog[] = [];
 
 // Seed default staff user strictly for test runs
 function seedDefaultTestStaff() {
-  if (process.env.NODE_ENV === "production") return;
+  if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) return;
   const now = new Date().toISOString();
   const hashedPassword = hashPassword("safaria-ops-2026");
   const defaultStaff: StoredStaffUser = {
@@ -107,7 +107,8 @@ export const staffService = {
       }
     }
 
-    if (process.env.NODE_ENV === "production") {
+    // In production with live Supabase configured, require database persistence
+    if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
       return null;
     }
 

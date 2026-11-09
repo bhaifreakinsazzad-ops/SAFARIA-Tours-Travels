@@ -15,11 +15,6 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
   if (process.env.NODE_ENV === "test") return true;
   if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return true;
 
-  // Custom header protection (browsers restrict custom headers in cross-origin simple requests)
-  if (req.headers.get("x-safaria-csrf") || req.headers.get("x-requested-with")) {
-    return true;
-  }
-
   const origin = req.headers.get("origin");
   const referer = req.headers.get("referer");
 
@@ -27,6 +22,7 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
   const configuredHost = new URL(SAFARIA_CONFIG.siteUrl).host;
   const allowedHosts = new Set([
     configuredHost,
+    "safaria.vibing.world",
     "localhost:3000",
     "127.0.0.1:3000",
   ]);
@@ -37,6 +33,11 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
 
   const isHostAllowed = (host: string): boolean => {
     if (allowedHosts.has(host)) return true;
+
+    // Support local test port variations (e.g. localhost:3005, 127.0.0.1:3005)
+    if (host.startsWith("localhost:") || host.startsWith("127.0.0.1:")) {
+      return true;
+    }
 
     // Strict vercel preview verification: only allow exact matching vercel preview host
     // or exact safaria.vibing.world subdomains, NEVER general suffixes like attacker.vercel.app

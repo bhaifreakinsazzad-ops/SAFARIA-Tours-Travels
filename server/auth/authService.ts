@@ -261,11 +261,11 @@ export function extractSessionFromRequest(req: NextRequest): SessionPayload | nu
     if (session) return session;
   }
 
-  // 4. Secure admin key header check for server-to-server operations
+  // 4. Admin key header check for server-to-server operations (strictly non-production, unless explicitly configured with 32+ char secret)
   const adminKey = req.headers.get("x-safaria-admin-key");
   const configuredAdminKey = process.env.ADMIN_API_KEY;
 
-  if (configuredAdminKey && adminKey === configuredAdminKey) {
+  if (configuredAdminKey && configuredAdminKey.length >= 32 && adminKey === configuredAdminKey) {
     return {
       jti: "admin-api-key-session",
       userId: "ops-master-id",

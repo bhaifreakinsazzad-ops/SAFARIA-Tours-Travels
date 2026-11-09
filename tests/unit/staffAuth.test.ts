@@ -75,6 +75,33 @@ describe("Staff Authentication & Identity RBAC (Directive 011)", () => {
     expect(res.error).toBe("Staff account is suspended. Access denied.");
   });
 
+  it("strictly rejects deleted or non-existent staff users", async () => {
+    const res = await staffService.verifyStaffCredentials(
+      "deleted.user@safaria.vibing.world",
+      "SomePassword123!"
+    );
+    expect(res.success).toBe(false);
+    expect(res.error).toBe("Invalid staff credentials");
+  });
+
+  it("fails closed in production if bootstrap admin password is not configured", async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalPass = process.env.BOOTSTRAP_ADMIN_PASSWORD;
+    try {
+      (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+      delete process.env.BOOTSTRAP_ADMIN_PASSWORD;
+
+      await expect(
+        staffService.bootstrapInitialStaffUser({
+          email: "admin.prod@safaria.vibing.world",
+        })
+      ).rejects.toThrow("BOOTSTRAP_ADMIN_PASSWORD environment variable or explicit password must be provided in production.");
+    } finally {
+      (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
+      if (originalPass) process.env.BOOTSTRAP_ADMIN_PASSWORD = originalPass;
+    }
+  });
+
   it("records persistent audit logs for staff operations", async () => {
     await staffService.recordStaffAuditLog({
       staffEmail: "ops@safaria.vibing.world",

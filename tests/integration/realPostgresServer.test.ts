@@ -477,8 +477,54 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007 & 011)", () => 
     `);
     expect(rateRes.rows[0].points).toBe(1);
 
+    // 6. Directive 015: consume_rate_limit() execution is strictly denied to anon and granted to service_role
+    await client.query("SET ROLE anon;");
+    await expect(
+      client.query("SELECT * FROM consume_rate_limit('test:anon:rpc', 60, 5);")
+    ).rejects.toThrow();
+
+    await client.query("SET ROLE service_role;");
+    const rpcRes = await client.query("SELECT * FROM consume_rate_limit('test:service:rpc', 60, 5);");
+    expect(rpcRes.rows[0].allowed).toBe(true);
+    expect(rpcRes.rows[0].points).toBe(1);
+
     await client.query("RESET ROLE;");
     await client.end();
+  }, 30000);
+
+  it("proves Directive 015 atomic concurrency handling for rate limiting under simultaneous connections", async () => {
+    const client1 = pg.getPgClient();
+    const client2 = pg.getPgClient();
+    const client3 = pg.getPgClient();
+
+    await Promise.all([client1.connect(), client2.connect(), client3.connect()]);
+
+    try {
+      await Promise.all([
+        client1.query("SET ROLE service_role;"),
+        client2.query("SET ROLE service_role;"),
+        client3.query("SET ROLE service_role;"),
+      ]);
+
+      const testKey = `concurrent:test:${Date.now()}`;
+
+      // Execute 3 concurrent requests simultaneously when key does not exist yet
+      const [res1, res2, res3] = await Promise.all([
+        client1.query("SELECT * FROM consume_rate_limit($1, 60, 5);", [testKey]),
+        client2.query("SELECT * FROM consume_rate_limit($1, 60, 5);", [testKey]),
+        client3.query("SELECT * FROM consume_rate_limit($1, 60, 5);", [testKey]),
+      ]);
+
+      const points = [res1.rows[0].points, res2.rows[0].points, res3.rows[0].points].sort((a, b) => a - b);
+      // Because operations are strictly serialized via FOR UPDATE row locking and atomic UPSERT,
+      // the three points returned MUST be sequentially 1, 2, and 3 with zero lost increments.
+      expect(points).toEqual([1, 2, 3]);
+      expect(res1.rows[0].allowed).toBe(true);
+      expect(res2.rows[0].allowed).toBe(true);
+      expect(res3.rows[0].allowed).toBe(true);
+    } finally {
+      await Promise.all([client1.end(), client2.end(), client3.end()]);
+    }
   }, 30000);
 
   it("closes the audited gap: enquiriesRepository's B2B desk functions themselves are RLS-enforced, not just raw SQL", async () => {

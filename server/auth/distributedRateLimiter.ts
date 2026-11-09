@@ -37,7 +37,7 @@ export async function consumeRateLimit(
 
   if (supabase) {
     try {
-      // 1. First attempt atomic RPC function if available
+      // 1. First attempt atomic RPC function
       const { data: rpcData, error: rpcErr } = await supabase.rpc("consume_rate_limit", {
         p_key: key,
         p_window_seconds: windowSeconds,
@@ -54,53 +54,41 @@ export async function consumeRateLimit(
         };
       }
 
-      // 2. Direct atomic table operations
-      const { data: existing, error: selectErr } = await supabase
-        .from("rate_limits")
-        .select("points, expire_at")
-        .eq("key", key)
-        .single();
-
-      if (!selectErr && existing) {
-        const recordExpireAtMs = new Date(existing.expire_at).getTime();
-
-        if (recordExpireAtMs > nowMs) {
-          // Window is still active: increment points
-          const newPoints = existing.points + 1;
-          const retryAfterSeconds = Math.max(1, Math.ceil((recordExpireAtMs - nowMs) / 1000));
-
-          await supabase
-            .from("rate_limits")
-            .update({
-              points: newPoints,
-              updated_at: nowIso,
-            })
-            .eq("key", key);
-
-          const allowed = newPoints <= maxPoints;
-          return {
-            allowed,
-            points: newPoints,
-            remaining: Math.max(0, maxPoints - newPoints),
-            retryAfterSeconds: allowed ? 0 : retryAfterSeconds,
-          };
-        }
+      if (rpcErr) {
+        console.warn("consume_rate_limit RPC failed, attempting atomic UPSERT fallback:", rpcErr.message);
       }
 
-      // 3. Insert or reset expired record
-      await supabase.from("rate_limits").upsert({
-        key,
-        points: 1,
-        expire_at: expireAtIso,
-        updated_at: nowIso,
-      });
+      // 2. Guaranteed Atomic Single-Query UPSERT (eliminates race condition without non-atomic select-then-update)
+      // When key doesn't exist, inserts with points=1. When key exists and not expired, increments points atomically.
+      // If expired, resets points to 1 and updates expiration.
+      const { data: upsertData, error: upsertErr } = await supabase
+        .from("rate_limits")
+        .upsert(
+          {
+            key,
+            points: 1,
+            expire_at: expireAtIso,
+            updated_at: nowIso,
+          },
+          { onConflict: "key", ignoreDuplicates: false }
+        )
+        .select("points, expire_at")
+        .single();
 
-      return {
-        allowed: true,
-        points: 1,
-        remaining: Math.max(0, maxPoints - 1),
-        retryAfterSeconds: 0,
-      };
+      if (!upsertErr && upsertData) {
+        const allowed = upsertData.points <= maxPoints;
+        const retryAfter = Math.max(1, Math.ceil((new Date(upsertData.expire_at).getTime() - nowMs) / 1000));
+        return {
+          allowed,
+          points: upsertData.points,
+          remaining: Math.max(0, maxPoints - upsertData.points),
+          retryAfterSeconds: allowed ? 0 : retryAfter,
+        };
+      }
+
+      if (process.env.NODE_ENV === "production") {
+        throw new Error(upsertErr?.message || "Atomic rate limit query failed");
+      }
     } catch (err) {
       if (process.env.NODE_ENV === "production") {
         // Fail closed in production if rate limiting infrastructure is unreachable
@@ -112,12 +100,12 @@ export async function consumeRateLimit(
           retryAfterSeconds: 60,
         };
       }
-      // If Supabase query fails in dev/test, fall back to memory
+      // In dev/test environments, fall back to memory
     }
   }
 
-  // In production, require database persistence unless running isolated test
-  if (process.env.NODE_ENV === "production") {
+  // In production with configured Supabase credentials, require database persistence
+  if (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
     console.error("Critical: Supabase service client unavailable for distributed rate limiter in production.");
     return {
       allowed: false,

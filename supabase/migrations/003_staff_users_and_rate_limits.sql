@@ -92,6 +92,7 @@ RETURNS TABLE (
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public, pg_temp
 AS $$
 DECLARE
     v_now TIMESTAMPTZ := NOW();
@@ -102,6 +103,19 @@ DECLARE
     v_retry INT := 0;
     v_allowed BOOLEAN := true;
 BEGIN
+    -- Strict input validation
+    IF p_key IS NULL OR length(trim(p_key)) = 0 THEN
+        RAISE EXCEPTION 'Rate limit key cannot be null or empty';
+    END IF;
+
+    IF p_window_seconds <= 0 OR p_window_seconds > 86400 THEN
+        RAISE EXCEPTION 'Window seconds must be between 1 and 86400';
+    END IF;
+
+    IF p_max_points <= 0 OR p_max_points > 10000 THEN
+        RAISE EXCEPTION 'Max points must be between 1 and 10000';
+    END IF;
+
     SELECT rl.points, rl.expire_at INTO v_record
     FROM rate_limits rl
     WHERE rl.key = p_key
@@ -134,3 +148,8 @@ BEGIN
         v_retry;
 END;
 $$;
+
+REVOKE ALL ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) FROM PUBLIC;
+REVOKE ALL ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) FROM anon;
+REVOKE ALL ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) TO service_role;
