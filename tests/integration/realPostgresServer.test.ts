@@ -458,8 +458,18 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007 & 011)", () => 
     expect(staffRes.rows[0].email).toBe("ops.lead@safaria.vibing.world");
     expect(staffRes.rows[0].role).toBe("SUPER_ADMIN");
 
-    // 4. Rate limits table is accessible for public/anon throttling
+    // 4. Rate limits table is protected from anon manipulation (Directive 014 P0 security)
     await client.query("SET ROLE anon;");
+    await expect(
+      client.query(`
+        INSERT INTO rate_limits (key, points, expire_at)
+        VALUES ('test:anon:ip', 1, NOW() + INTERVAL '10 minutes')
+        RETURNING points;
+      `)
+    ).rejects.toThrow();
+
+    // 5. Rate limits table is accessible to service_role for atomic rate limiting
+    await client.query("SET ROLE service_role;");
     const rateRes = await client.query(`
       INSERT INTO rate_limits (key, points, expire_at)
       VALUES ('test:anon:ip', 1, NOW() + INTERVAL '10 minutes')

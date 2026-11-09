@@ -174,8 +174,14 @@ export async function verifySessionDurable(token: string): Promise<SessionPayloa
 
   // 3. Dynamic account status check for Staff users
   if (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT" || session.role === "FINANCE_DESK") {
+    if (session.jti === "test-admin-session" || session.jti === "admin-api-key-session") {
+      if (process.env.NODE_ENV === "production") {
+        return null; // Test sessions never valid in production
+      }
+      return session;
+    }
     const staffUser = await staffService.getStaffUserByEmail(session.email);
-    if (staffUser && staffUser.status !== "ACTIVE") {
+    if (!staffUser || staffUser.status !== "ACTIVE") {
       return null;
     }
   }
@@ -206,10 +212,13 @@ export async function extractSessionFromRequestAsync(req: NextRequest): Promise<
   // 3. Dynamic account status check for Staff users
   if (syncSession.role === "SUPER_ADMIN" || syncSession.role === "OPS_AGENT" || syncSession.role === "FINANCE_DESK") {
     if (syncSession.jti === "test-admin-session" || syncSession.jti === "admin-api-key-session") {
+      if (process.env.NODE_ENV === "production") {
+        return null; // Test sessions never valid in production
+      }
       return syncSession;
     }
     const staffUser = await staffService.getStaffUserByEmail(syncSession.email);
-    if (staffUser && staffUser.status !== "ACTIVE") {
+    if (!staffUser || staffUser.status !== "ACTIVE") {
       return null;
     }
   }

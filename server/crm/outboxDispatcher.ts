@@ -99,7 +99,12 @@ export const outboxDispatcher = {
     const locationId = process.env.GHL_LOCATION_ID;
 
     if (!apiKey || !locationId) {
-      // In staging/development test mode, mock dispatch successfully resolves
+      if (process.env.NODE_ENV === "production") {
+        // In production, never falsely mark tasks as DELIVERED if credentials are missing
+        console.error("GHL CRM credentials (GHL_API_KEY/GHL_ACCESS_TOKEN and GHL_LOCATION_ID) are missing in production.");
+        return false;
+      }
+      // In staging/development/test mode without credentials, mock dispatch successfully resolves
       return true;
     }
 

@@ -37,7 +37,24 @@ export async function consumeRateLimit(
 
   if (supabase) {
     try {
-      // 1. Check existing record in PostgreSQL rate_limits table
+      // 1. First attempt atomic RPC function if available
+      const { data: rpcData, error: rpcErr } = await supabase.rpc("consume_rate_limit", {
+        p_key: key,
+        p_window_seconds: windowSeconds,
+        p_max_points: maxPoints,
+      });
+
+      if (!rpcErr && rpcData && Array.isArray(rpcData) && rpcData.length > 0) {
+        const res = rpcData[0];
+        return {
+          allowed: res.allowed,
+          points: res.points,
+          remaining: res.remaining,
+          retryAfterSeconds: res.retry_after_seconds,
+        };
+      }
+
+      // 2. Direct atomic table operations
       const { data: existing, error: selectErr } = await supabase
         .from("rate_limits")
         .select("points, expire_at")
@@ -70,7 +87,7 @@ export async function consumeRateLimit(
         }
       }
 
-      // 2. Insert or reset expired record
+      // 3. Insert or reset expired record
       await supabase.from("rate_limits").upsert({
         key,
         points: 1,
@@ -84,9 +101,30 @@ export async function consumeRateLimit(
         remaining: Math.max(0, maxPoints - 1),
         retryAfterSeconds: 0,
       };
-    } catch {
-      // If Supabase query fails, fall back to memory
+    } catch (err) {
+      if (process.env.NODE_ENV === "production") {
+        // Fail closed in production if rate limiting infrastructure is unreachable
+        console.error("Critical: Distributed rate limiter failed in production:", err);
+        return {
+          allowed: false,
+          points: maxPoints,
+          remaining: 0,
+          retryAfterSeconds: 60,
+        };
+      }
+      // If Supabase query fails in dev/test, fall back to memory
     }
+  }
+
+  // In production, require database persistence unless running isolated test
+  if (process.env.NODE_ENV === "production") {
+    console.error("Critical: Supabase service client unavailable for distributed rate limiter in production.");
+    return {
+      allowed: false,
+      points: maxPoints,
+      remaining: 0,
+      retryAfterSeconds: 60,
+    };
   }
 
   // 3. In-memory fallback (local dev or isolated tests)

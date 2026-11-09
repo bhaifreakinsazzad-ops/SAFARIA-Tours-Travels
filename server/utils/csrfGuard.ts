@@ -35,13 +35,23 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
     allowedHosts.add(process.env.VERCEL_URL);
   }
 
+  const isHostAllowed = (host: string): boolean => {
+    if (allowedHosts.has(host)) return true;
+
+    // Strict vercel preview verification: only allow exact matching vercel preview host
+    // or exact safaria.vibing.world subdomains, NEVER general suffixes like attacker.vercel.app
+    if (process.env.VERCEL_URL && host === process.env.VERCEL_URL) return true;
+    if (process.env.NEXT_PUBLIC_VERCEL_URL && host === process.env.NEXT_PUBLIC_VERCEL_URL) return true;
+    if (host === "safaria.vibing.world" || host.endsWith(".safaria.vibing.world")) return true;
+
+    // Reject all unknown or arbitrary vercel/vibing subdomains
+    return false;
+  };
+
   if (origin) {
     try {
       const originHost = new URL(origin).host;
-      if (allowedHosts.has(originHost)) return true;
-      if (originHost.endsWith(".vibing.world") || originHost.endsWith(".vercel.app")) {
-        return true;
-      }
+      if (isHostAllowed(originHost)) return true;
     } catch {
       return false;
     }
@@ -50,10 +60,7 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
   if (referer) {
     try {
       const refererHost = new URL(referer).host;
-      if (allowedHosts.has(refererHost)) return true;
-      if (refererHost.endsWith(".vibing.world") || refererHost.endsWith(".vercel.app")) {
-        return true;
-      }
+      if (isHostAllowed(refererHost)) return true;
     } catch {
       return false;
     }

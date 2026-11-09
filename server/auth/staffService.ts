@@ -36,12 +36,13 @@ export interface StaffAuditLog {
   createdAt: string;
 }
 
-// In-Memory store for non-production / test runs
+// In-Memory store for offline unit test runs only
 const memoryStaffUsers = new Map<string, StoredStaffUser>();
 const memoryStaffAuditLogs: StaffAuditLog[] = [];
 
-// Seed default staff user for test runs
+// Seed default staff user strictly for test runs
 function seedDefaultTestStaff() {
+  if (process.env.NODE_ENV === "production") return;
   const now = new Date().toISOString();
   const hashedPassword = hashPassword("safaria-ops-2026");
   const defaultStaff: StoredStaffUser = {
@@ -95,9 +96,19 @@ export const staffService = {
             updatedAt: data.updated_at,
           };
         }
+        if (error && error.code !== "PGRST116") {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error looking up staff user: ${error.message}`);
+          }
+        }
       } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
         console.warn("Supabase getStaffUserByEmail error:", err);
       }
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      return null;
     }
 
     return memoryStaffUsers.get(cleanEmail) || null;
@@ -133,9 +144,19 @@ export const staffService = {
             updatedAt: data.updated_at,
           };
         }
+        if (error && error.code !== "PGRST116") {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error looking up staff user by id: ${error.message}`);
+          }
+        }
       } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
         console.warn("Supabase getStaffUserById error:", err);
       }
+    }
+
+    if (process.env.NODE_ENV === "production") {
+      return null;
     }
 
     for (const user of memoryStaffUsers.values()) {
@@ -337,6 +358,9 @@ export const staffService = {
     )
       .trim()
       .toLowerCase();
+    if (process.env.NODE_ENV === "production" && !params?.password && !process.env.BOOTSTRAP_ADMIN_PASSWORD) {
+      throw new Error("BOOTSTRAP_ADMIN_PASSWORD environment variable or explicit password must be provided in production.");
+    }
     const password = params?.password || process.env.BOOTSTRAP_ADMIN_PASSWORD || "safaria-ops-2026";
     const fullName = params?.fullName || "SAFARIA Super Administrator";
     const role: StaffRole = params?.role || "SUPER_ADMIN";

@@ -70,8 +70,67 @@ CREATE POLICY "Privileged service access to staff users"
 CREATE POLICY "Privileged service access to staff audit logs"
     ON staff_audit_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
 
--- Rate limits table allows atomic consumption across server roles
-GRANT SELECT, INSERT, UPDATE, DELETE ON rate_limits TO anon, authenticated, service_role;
+-- Rate limits table access is strictly restricted to service_role (backend server routes)
+-- Anonymous and general authenticated client roles are explicitly REVOKED from manipulating rate limits
+REVOKE ALL ON rate_limits FROM anon, authenticated;
+GRANT ALL PRIVILEGES ON rate_limits TO service_role;
 
-CREATE POLICY "Public rate limits operations"
-    ON rate_limits FOR ALL TO anon, authenticated, service_role USING (true) WITH CHECK (true);
+CREATE POLICY "Privileged service access to rate limits"
+    ON rate_limits FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Atomic SQL function to increment and consume rate limit window safely
+CREATE OR REPLACE FUNCTION consume_rate_limit(
+    p_key VARCHAR(128),
+    p_window_seconds INT,
+    p_max_points INT
+)
+RETURNS TABLE (
+    allowed BOOLEAN,
+    points INT,
+    remaining INT,
+    retry_after_seconds INT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_now TIMESTAMPTZ := NOW();
+    v_new_expire TIMESTAMPTZ := v_now + (p_window_seconds || ' seconds')::INTERVAL;
+    v_record RECORD;
+    v_points INT;
+    v_expire TIMESTAMPTZ;
+    v_retry INT := 0;
+    v_allowed BOOLEAN := true;
+BEGIN
+    SELECT rl.points, rl.expire_at INTO v_record
+    FROM rate_limits rl
+    WHERE rl.key = p_key
+    FOR UPDATE;
+
+    IF FOUND AND v_record.expire_at > v_now THEN
+        v_points := v_record.points + 1;
+        v_expire := v_record.expire_at;
+        UPDATE rate_limits
+        SET points = v_points, updated_at = v_now
+        WHERE key = p_key;
+    ELSE
+        v_points := 1;
+        v_expire := v_new_expire;
+        INSERT INTO rate_limits (key, points, expire_at, updated_at)
+        VALUES (p_key, 1, v_new_expire, v_now)
+        ON CONFLICT (key) DO UPDATE
+        SET points = 1, expire_at = v_new_expire, updated_at = v_now;
+    END IF;
+
+    IF v_points > p_max_points THEN
+        v_allowed := false;
+        v_retry := GREATEST(1, EXTRACT(EPOCH FROM (v_expire - v_now))::INT);
+    END IF;
+
+    RETURN QUERY SELECT
+        v_allowed,
+        v_points,
+        GREATEST(0, p_max_points - v_points),
+        v_retry;
+END;
+$$;
