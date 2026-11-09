@@ -45,3 +45,5 @@ next-env.d.ts
 
 # tooling & worktrees
 .claude
+
+/qa-b2b-workflows/

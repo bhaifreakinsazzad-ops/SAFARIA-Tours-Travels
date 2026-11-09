@@ -16,7 +16,8 @@
     "texture:globe": "node ./scripts/build-globe-texture.cjs",
     "test": "node ./node_modules/vitest/vitest.mjs run",
     "test:watch": "node ./node_modules/vitest/vitest.mjs",
-    "test:e2e": "node ./node_modules/@playwright/test/cli.js test"
+    "test:e2e": "node ./node_modules/@playwright/test/cli.js test",
+    "verify:b2b": "node ./scripts/verify-b2b-workflows.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.46.1",
