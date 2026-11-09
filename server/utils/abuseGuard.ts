@@ -1,13 +1,11 @@
 // ==============================================================================
 // SAFARIA Tours & Travels — Public Enquiry Abuse Protection
-// Lightweight in-process submission throttle + duplicate-content detector for
-// the unauthenticated public enquiry endpoints (flight quotation, agency
-// application, general service enquiry). Single-instance in-memory scope by
-// design, matching rateLimiter.ts; a multi-instance deployment needs a shared
-// store (Redis/Postgres) instead.
+// Multi-instance distributed submission throttle + duplicate-content detector
+// Backed by PostgreSQL rate_limits with atomic sliding window & memory fallback
 // ==============================================================================
 
 import crypto from "crypto";
+import { consumeRateLimit } from "@server/auth/distributedRateLimiter";
 
 const submissionWindows = new Map<string, number[]>();
 const recentFingerprints = new Map<string, number>();
@@ -38,6 +36,7 @@ function pruneFingerprints(now: number) {
  * Checks and records a submission attempt against a per-key sliding-window
  * cap (default: 5 per 10 minutes). Returns remaining lockout seconds, or 0 if
  * the submission is allowed (in which case it is recorded as counted).
+ * Synchronous version for testing and local memory checks.
  */
 export function checkSubmissionRateLimit(
   key: string,
@@ -55,6 +54,21 @@ export function checkSubmissionRateLimit(
 
   timestamps.push(now);
   submissionWindows.set(key, timestamps);
+  return 0;
+}
+
+/**
+ * Distributed multi-instance-safe rate limiter checking PostgreSQL rate_limits table
+ */
+export async function checkSubmissionRateLimitAsync(
+  key: string,
+  maxPerWindow: number = MAX_SUBMISSIONS_PER_WINDOW,
+  windowSeconds: number = 600
+): Promise<number> {
+  const result = await consumeRateLimit(`sub:${key}`, maxPerWindow, windowSeconds);
+  if (!result.allowed) {
+    return result.retryAfterSeconds;
+  }
   return 0;
 }
 
@@ -87,4 +101,24 @@ export function isDuplicateSubmission(
 
   recentFingerprints.set(fingerprint, now);
   return false;
+}
+
+/**
+ * Distributed multi-instance-safe duplicate detection
+ */
+export async function isDuplicateSubmissionAsync(
+  fingerprint: string,
+  windowSeconds: number = 300
+): Promise<boolean> {
+  const result = await consumeRateLimit(`dedup:${fingerprint}`, 1, windowSeconds);
+  // If points > 1, it has already been submitted inside the window
+  return !result.allowed;
+}
+
+/**
+ * Test utility to clear abuse guard maps
+ */
+export function _resetAbuseGuards(): void {
+  submissionWindows.clear();
+  recentFingerprints.clear();
 }

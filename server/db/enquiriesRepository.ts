@@ -8,6 +8,7 @@ import { isScopedConnectionConfigured, withAgencyScope } from "./scopedPgClient"
 import { generateReferenceCode } from "@server/utils/referenceGenerator";
 import { FlightEnquiryInput, AgencyApplicationInput, GeneralEnquiryInput } from "@server/validations/enquirySchemas";
 import { generateTemporaryPassword, hashPassword, verifyPassword } from "@server/auth/passwordService";
+import crypto from "node:crypto";
 
 export interface StoredFlightLeg {
   id: string;
@@ -51,7 +52,7 @@ export interface StoredAgencyApplication {
   tradeLicenseNumber?: string;
   yearsInBusiness: number;
   monthlyTicketVolume: string;
-  status: "PENDING_VERIFICATION" | "IN_REVIEW" | "TRIAL_APPROVED" | "ACTIVE_PARTNER" | "REJECTED";
+  status: "PENDING_VERIFICATION" | "IN_REVIEW" | "TRIAL_APPROVED" | "ACTIVE_PARTNER" | "REJECTED" | "SUSPENDED";
   trialActivatedAt?: string | null;
   trialExpiresAt?: string | null;
   approvedBy?: string | null;
@@ -201,8 +202,6 @@ export const enquiriesRepository = {
       specialNotes: input.specialNotes || "",
       status: "NEW",
       legs,
-      crmSyncedAt: null,
-      crmContactId: null,
       createdAt: now,
       updatedAt: now,
     };
@@ -213,7 +212,7 @@ export const enquiriesRepository = {
           id: enquiryId,
           reference_no: referenceNo,
           trip_type: input.tripType,
-          cabin_class: input.cabinClass,
+          cabin_class: input.cabinClass || "ECONOMY",
           passengers: input.passengers,
           preferred_carrier: input.preferredCarrier,
           lead_passenger_name: input.leadPassengerName,
@@ -222,41 +221,50 @@ export const enquiriesRepository = {
           email: input.email,
           special_notes: input.specialNotes,
           status: "NEW",
-          ip_hash: meta?.ip,
+          ip_hash: meta?.ip ? crypto.createHash("sha256").update(meta.ip).digest("hex") : undefined,
           user_agent: meta?.userAgent,
           created_at: now,
           updated_at: now,
         });
 
-        if (enquiryError) throw enquiryError;
+        if (enquiryError) {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error saving flight enquiry: ${enquiryError.message}`);
+          }
+          console.warn("Supabase enquiry insert failed, falling back to memory:", enquiryError);
+        } else {
+          const legsPayload = legs.map((leg) => ({
+            id: leg.id,
+            enquiry_id: enquiryId,
+            leg_index: leg.legIndex,
+            origin_iata: leg.originIata,
+            origin_city: leg.originCity,
+            destination_iata: leg.destinationIata,
+            destination_city: leg.destinationCity,
+            departure_date: leg.departureDate,
+            created_at: now,
+          }));
 
-        const legRows = legs.map((l) => ({
-          id: l.id,
-          enquiry_id: enquiryId,
-          leg_index: l.legIndex,
-          origin_iata: l.originIata,
-          origin_city: l.originCity,
-          destination_iata: l.destinationIata,
-          destination_city: l.destinationCity,
-          departure_date: l.departureDate,
-        }));
-
-        const { error: legsError } = await supabase.from("flight_legs").insert(legRows);
-        if (legsError) throw legsError;
-
-        return enquiryRecord;
+          const { error: legsError } = await supabase.from("flight_legs").insert(legsPayload);
+          if (legsError) {
+            console.warn("Supabase legs insert error:", legsError);
+          }
+          return enquiryRecord;
+        }
       } catch (err) {
-        console.warn("Supabase insertion fallback to in-memory store:", err);
+        if (process.env.NODE_ENV === "production") {
+          throw err;
+        }
+        console.warn("Supabase enquiry exception fallback to memory:", err);
       }
     }
 
-    // Fallback in-memory persistence
     memoryStore.flightEnquiries.set(enquiryId, enquiryRecord);
     return enquiryRecord;
   },
 
   /**
-   * Find flight enquiry by reference number
+   * Get single flight enquiry by collision-resistant reference number
    */
   async getFlightEnquiryByRef(ref: string): Promise<StoredFlightEnquiry | null> {
     const supabase = getSupabaseServiceClient();
@@ -286,7 +294,7 @@ export const enquiriesRepository = {
             crmContactId: data.crm_contact_id,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
             legs: (data.flight_legs || []).map((l: any) => ({
               id: l.id,
               enquiryId: l.enquiry_id,
@@ -326,7 +334,7 @@ export const enquiriesRepository = {
           .limit(limit);
 
         if (!error && data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
           return data.map((d: any) => ({
             id: d.id,
             referenceNo: d.reference_no,
@@ -344,7 +352,7 @@ export const enquiriesRepository = {
             crmContactId: d.crm_contact_id,
             createdAt: d.created_at,
             updatedAt: d.updated_at,
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
             legs: (d.flight_legs || []).map((l: any) => ({
               id: l.id,
               enquiryId: l.enquiry_id,
@@ -399,7 +407,7 @@ export const enquiriesRepository = {
   },
 
   /**
-   * Create B2B Agency Application
+   * Create B2B Agency Application with strict persistence
    */
   async createAgencyApplication(input: AgencyApplicationInput): Promise<StoredAgencyApplication> {
     const supabase = getSupabaseServiceClient();
@@ -445,9 +453,21 @@ export const enquiriesRepository = {
           created_at: now,
           updated_at: now,
         });
-        if (!error) return record;
+
+        if (error) {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error saving agency application: ${error.message}`);
+          }
+          console.warn("Supabase agency insertion failed, falling back to memory:", error);
+        } else {
+          memoryStore.agencyApplications.set(id, record);
+          return record;
+        }
       } catch (err) {
-        console.warn("Supabase agency insertion error:", err);
+        if (process.env.NODE_ENV === "production") {
+          throw err;
+        }
+        console.warn("Supabase agency insertion exception fallback to memory:", err);
       }
     }
 
@@ -456,12 +476,102 @@ export const enquiriesRepository = {
   },
 
   /**
-   * List B2B Agency Applications
+   * List B2B Agency Applications — fully database-backed in PostgreSQL/Supabase
    */
   async listAgencyApplications(): Promise<StoredAgencyApplication[]> {
+    const supabase = getSupabaseServiceClient();
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (!error && data) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
+          return data.map((d: any) => ({
+            id: d.id,
+            referenceNo: d.reference_no,
+            agencyName: d.agency_name,
+            contactPerson: d.contact_person,
+            phone: d.phone,
+            email: d.email,
+            city: d.city,
+            tradeLicenseNumber: d.trade_license_number,
+            yearsInBusiness: d.years_in_business,
+            monthlyTicketVolume: d.monthly_ticket_volume,
+            status: d.status,
+            trialActivatedAt: d.trial_activated_at,
+            trialExpiresAt: d.trial_expires_at,
+            approvedBy: d.approved_by,
+            notes: d.internal_notes,
+            passwordHash: d.password_hash,
+            passwordSalt: d.password_salt,
+            createdAt: d.created_at,
+            updatedAt: d.updated_at,
+          }));
+        }
+
+        if (error && process.env.NODE_ENV === "production") {
+          throw new Error(`Failed to list agency applications from database: ${error.message}`);
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") {
+          throw err;
+        }
+        console.warn("Supabase listAgencyApplications fallback to memory:", err);
+      }
+    }
+
     return Array.from(memoryStore.agencyApplications.values()).sort(
       (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     );
+  },
+
+  /**
+   * Get single B2B Agency Application by UUID ID
+   */
+  async getAgencyApplicationById(id: string): Promise<StoredAgencyApplication | null> {
+    const supabase = getSupabaseServiceClient();
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (!error && data) {
+          return {
+            id: data.id,
+            referenceNo: data.reference_no,
+            agencyName: data.agency_name,
+            contactPerson: data.contact_person,
+            phone: data.phone,
+            email: data.email,
+            city: data.city,
+            tradeLicenseNumber: data.trade_license_number,
+            yearsInBusiness: data.years_in_business,
+            monthlyTicketVolume: data.monthly_ticket_volume,
+            status: data.status,
+            trialActivatedAt: data.trial_activated_at,
+            trialExpiresAt: data.trial_expires_at,
+            approvedBy: data.approved_by,
+            notes: data.internal_notes,
+            passwordHash: data.password_hash,
+            passwordSalt: data.password_salt,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          };
+        }
+      } catch (err) {
+        console.warn("Supabase getAgencyApplicationById error:", err);
+      }
+    }
+
+    return memoryStore.agencyApplications.get(id) || null;
   },
 
   /**
@@ -494,6 +604,8 @@ export const enquiriesRepository = {
             trialExpiresAt: data.trial_expires_at,
             approvedBy: data.approved_by,
             notes: data.internal_notes,
+            passwordHash: data.password_hash,
+            passwordSalt: data.password_salt,
             createdAt: data.created_at,
             updatedAt: data.updated_at,
           };
@@ -512,7 +624,61 @@ export const enquiriesRepository = {
   },
 
   /**
-   * Update B2B Agency status (e.g. approve 72-hour trial or mark partner active)
+   * Get single B2B Agency Application by email address
+   */
+  async getAgencyApplicationByEmail(email: string): Promise<StoredAgencyApplication | null> {
+    const cleanEmail = email.trim().toLowerCase();
+    const supabase = getSupabaseServiceClient();
+
+    if (supabase) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .select("*")
+          .ilike("email", cleanEmail)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+
+        if (!error && data) {
+          return {
+            id: data.id,
+            referenceNo: data.reference_no,
+            agencyName: data.agency_name,
+            contactPerson: data.contact_person,
+            phone: data.phone,
+            email: data.email,
+            city: data.city,
+            tradeLicenseNumber: data.trade_license_number,
+            yearsInBusiness: data.years_in_business,
+            monthlyTicketVolume: data.monthly_ticket_volume,
+            status: data.status,
+            trialActivatedAt: data.trial_activated_at,
+            trialExpiresAt: data.trial_expires_at,
+            approvedBy: data.approved_by,
+            notes: data.internal_notes,
+            passwordHash: data.password_hash,
+            passwordSalt: data.password_salt,
+            createdAt: data.created_at,
+            updatedAt: data.updated_at,
+          };
+        }
+      } catch (err) {
+        console.warn("Supabase getAgencyApplicationByEmail error:", err);
+      }
+    }
+
+    for (const record of memoryStore.agencyApplications.values()) {
+      if (record.email.toLowerCase() === cleanEmail) {
+        return record;
+      }
+    }
+    return null;
+  },
+
+  /**
+   * Update B2B Agency status (approve trial, activate partner, or suspend)
+   * Guaranteed PostgreSQL persistence with zero silent memory-only success in production
    */
   async updateAgencyStatus(
     id: string,
@@ -533,13 +699,19 @@ export const enquiriesRepository = {
       trialExpiresAt = expDate.toISOString();
     }
 
-    const existing = memoryStore.agencyApplications.get(id);
+    // Retrieve existing agency application to check existing credentials
+    const existing = await this.getAgencyApplicationById(id);
+    if (!existing) {
+      return null;
+    }
+
     const grantsLoginAccess = status === "TRIAL_APPROVED" || status === "ACTIVE_PARTNER";
-    const needsFirstCredentials = grantsLoginAccess && existing && !existing.passwordHash;
+    const needsFirstCredentials = grantsLoginAccess && !existing.passwordHash;
 
     let issuedPassword: string | undefined;
     let passwordHash: string | undefined;
     let passwordSalt: string | undefined;
+
     if (needsFirstCredentials) {
       issuedPassword = generateTemporaryPassword();
       const hashed = hashPassword(issuedPassword);
@@ -551,29 +723,71 @@ export const enquiriesRepository = {
       try {
         const updatePayload: Record<string, unknown> = {
           status,
-          trial_activated_at: trialActivatedAt,
-          trial_expires_at: trialExpiresAt,
-          approved_by: approvedBy,
-          internal_notes: notes,
+          trial_activated_at: trialActivatedAt || existing.trialActivatedAt,
+          trial_expires_at: trialExpiresAt || existing.trialExpiresAt,
+          approved_by: approvedBy || existing.approvedBy,
+          internal_notes: notes !== undefined ? notes : existing.notes,
           updated_at: nowIso,
         };
+
         if (passwordHash) {
           updatePayload.password_hash = passwordHash;
           updatePayload.password_salt = passwordSalt;
         }
-        await supabase.from("agency_applications").update(updatePayload).eq("id", id);
+
+        const { data: updated, error } = await supabase
+          .from("agency_applications")
+          .update(updatePayload)
+          .eq("id", id)
+          .select("*")
+          .single();
+
+        if (error) {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error updating agency status: ${error.message}`);
+          }
+          console.warn("Supabase updateAgencyStatus error:", error);
+        } else if (updated) {
+          const updatedRecord: StoredAgencyApplication = {
+            id: updated.id,
+            referenceNo: updated.reference_no,
+            agencyName: updated.agency_name,
+            contactPerson: updated.contact_person,
+            phone: updated.phone,
+            email: updated.email,
+            city: updated.city,
+            tradeLicenseNumber: updated.trade_license_number,
+            yearsInBusiness: updated.years_in_business,
+            monthlyTicketVolume: updated.monthly_ticket_volume,
+            status: updated.status,
+            trialActivatedAt: updated.trial_activated_at,
+            trialExpiresAt: updated.trial_expires_at,
+            approvedBy: updated.approved_by,
+            notes: updated.internal_notes,
+            passwordHash: updated.password_hash,
+            passwordSalt: updated.password_salt,
+            createdAt: updated.created_at,
+            updatedAt: updated.updated_at,
+          };
+          memoryStore.agencyApplications.set(id, updatedRecord);
+          return { agency: updatedRecord, issuedPassword };
+        }
       } catch (err) {
-        console.warn("Supabase updateAgencyStatus error:", err);
+        if (process.env.NODE_ENV === "production") {
+          throw err;
+        }
+        console.warn("Supabase updateAgencyStatus exception fallback:", err);
       }
     }
 
+    // In-memory fallback for test environment
     const record = memoryStore.agencyApplications.get(id);
     if (record) {
       record.status = status;
       if (trialActivatedAt) record.trialActivatedAt = trialActivatedAt;
       if (trialExpiresAt) record.trialExpiresAt = trialExpiresAt;
       if (approvedBy) record.approvedBy = approvedBy;
-      if (notes) record.notes = notes;
+      if (notes !== undefined) record.notes = notes;
       if (passwordHash) {
         record.passwordHash = passwordHash;
         record.passwordSalt = passwordSalt;
@@ -581,22 +795,19 @@ export const enquiriesRepository = {
       record.updatedAt = nowIso;
       return { agency: record, issuedPassword };
     }
+
     return null;
   },
 
   /**
    * Verify B2B partner login credentials against the stored scrypt hash.
-   * Returns the agency only on an exact password match for an agency that
-   * has been granted login access (TRIAL_APPROVED / ACTIVE_PARTNER) and has
-   * had credentials issued. Never returns the hash/salt to the caller.
+   * Authoritative lookup directly against PostgreSQL / Supabase.
    */
   async verifyAgencyCredentials(
     email: string,
     password: string
   ): Promise<StoredAgencyApplication | null> {
-    const agencies = await this.listAgencyApplications();
-    const cleanEmail = email.trim().toLowerCase();
-    const matched = agencies.find((a) => a.email.toLowerCase() === cleanEmail);
+    const matched = await this.getAgencyApplicationByEmail(email);
 
     if (!matched) return null;
     if (matched.status !== "TRIAL_APPROVED" && matched.status !== "ACTIVE_PARTNER") return null;
@@ -647,13 +858,16 @@ export const enquiriesRepository = {
           updated_at: now,
         });
         if (!error) {
-          // Durably persisted — do not also create a memory-store mirror, or a
-          // legitimate idempotency-key collision rejected by Supabase's unique
-          // constraint would still produce a duplicate entry in memory.
           return entry;
+        }
+        if (process.env.NODE_ENV === "production") {
+          throw new Error(`Database error enqueueing outbox task: ${error.message}`);
         }
         console.warn("Supabase outbox insert failed, falling back to memory:", error);
       } catch (err) {
+        if (process.env.NODE_ENV === "production") {
+          throw err;
+        }
         console.warn("Supabase outbox insert fallback to memory:", err);
       }
     }
@@ -689,15 +903,11 @@ export const enquiriesRepository = {
           .limit(limit);
 
         if (!selectErr) {
-          // Configured Supabase answered successfully — this IS the answer,
-          // even when it's zero rows. Never fall through to the in-memory
-          // store below, which could otherwise claim stray memory-mirror
-          // entries alongside (or instead of) real DB rows.
           if (!candidates || candidates.length === 0) {
             return [];
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
           const candidateIds = candidates.map((c: any) => c.id);
           const { data: claimed, error: updateErr } = await supabase
             .from("integration_outbox")
@@ -708,16 +918,11 @@ export const enquiriesRepository = {
               updated_at: nowIso,
             })
             .in("id", candidateIds)
-            // Re-assert the claimable status on the UPDATE itself (not just the
-            // earlier SELECT) so two workers racing on the same candidate set
-            // cannot both flip the same row to PROCESSING: whichever worker's
-            // UPDATE commits first wins, and the loser's WHERE no longer
-            // matches that row, so .select() only returns what it actually claimed.
             .in("status", ["PENDING", "FAILED"])
             .select();
 
           if (!updateErr) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
             return (claimed || []).map((row: any) => ({
               id: row.id,
               channel: row.channel,
@@ -743,8 +948,7 @@ export const enquiriesRepository = {
       }
     }
 
-    // Atomic synchronized claiming for memory store (non-production / test,
-    // or genuine Supabase connection failure above)
+    // Atomic synchronized claiming for memory store (non-production / test)
     const claimedEntries: StoredOutboxEntry[] = [];
     const entries = Array.from(memoryStore.outboxEntries.values());
 
@@ -800,7 +1004,7 @@ export const enquiriesRepository = {
 
     if (supabase) {
       try {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic partial-update payload built conditionally below
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- dynamic partial-update payload
         const updateData: any = {
           status,
           attempts,
@@ -924,7 +1128,8 @@ export const enquiriesRepository = {
   },
 
   /**
-   * Create a persistent B2B Desk record (Fare, Booking, Ledger, AfterCare, etc.)
+   * Create a persistent B2B Desk record (Fare, Booking, ClearMargin, AfterCare, etc.)
+   * Fails closed when scoped connection is required or fails
    */
   async createB2BDeskRecord(
     deskType: StoredB2BDeskRecord["deskType"],
@@ -933,7 +1138,6 @@ export const enquiriesRepository = {
     payload: Record<string, unknown>,
     priority: StoredB2BDeskRecord["priority"] = "NORMAL"
   ): Promise<StoredB2BDeskRecord> {
-    const supabase = getSupabaseServiceClient();
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
 
@@ -949,10 +1153,7 @@ export const enquiriesRepository = {
       updatedAt: now,
     };
 
-    // Prefer a genuinely RLS-enforced insert (authenticated role + app.current_agency_id)
-    // over the service-role Supabase client when a direct Postgres connection is
-    // configured — this makes the database itself reject a mismatched agencyId,
-    // not just application code. See server/db/scopedPgClient.ts.
+    // 1. Scoped Direct Postgres Connection with RLS (authenticated role + app.current_agency_id)
     if (isScopedConnectionConfigured()) {
       try {
         await withAgencyScope(agencyId, async (client) => {
@@ -965,13 +1166,17 @@ export const enquiriesRepository = {
         memoryStore.b2bDeskRecords.set(id, record);
         return record;
       } catch (err) {
-        console.warn("Scoped RLS desk record insert failed, falling back:", err);
+        // If RLS rejected the insert or database failed, FAIL CLOSED: do not bypass via service_role
+        console.warn("Scoped RLS desk record insert failed:", err);
+        throw err;
       }
     }
 
+    // 2. Fallback to Supabase client when DATABASE_URL is not configured (e.g. test environments)
+    const supabase = getSupabaseServiceClient();
     if (supabase) {
       try {
-        await supabase.from("b2b_desk_records").insert({
+        const { error } = await supabase.from("b2b_desk_records").insert({
           id,
           agency_id: agencyId,
           desk_type: deskType,
@@ -982,7 +1187,11 @@ export const enquiriesRepository = {
           created_at: now,
           updated_at: now,
         });
+        if (error && process.env.NODE_ENV === "production") {
+          throw new Error(`Database error saving desk record: ${error.message}`);
+        }
       } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
         console.warn("Supabase desk record insert fallback to memory:", err);
       }
     }
@@ -993,14 +1202,13 @@ export const enquiriesRepository = {
 
   /**
    * List B2B Desk records with strict tenant isolation
-   * When agencyId is specified, partners can ONLY see their own records.
+   * Agency-scoped reads go through the real RLS boundary when available.
    */
   async listB2BDeskRecords(
     deskType?: StoredB2BDeskRecord["deskType"],
     agencyId?: string
   ): Promise<StoredB2BDeskRecord[]> {
-    // Agency-scoped reads go through the real RLS boundary when available —
-    // see the insert-path comment above for why this matters.
+    // 1. Agency-scoped reads go through the real RLS boundary when available
     if (agencyId && isScopedConnectionConfigured()) {
       try {
         return await withAgencyScope(agencyId, async (client) => {
@@ -1026,10 +1234,12 @@ export const enquiriesRepository = {
           }));
         });
       } catch (err) {
-        console.warn("Scoped RLS desk record list failed, falling back:", err);
+        console.warn("Scoped RLS desk record list failed:", err);
+        throw err;
       }
     }
 
+    // 2. Supabase path (used by staff or non-scoped environments)
     const supabase = getSupabaseServiceClient();
     if (supabase) {
       try {
@@ -1039,7 +1249,7 @@ export const enquiriesRepository = {
 
         const { data, error } = await query;
         if (!error && data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape (no generated types)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
           return data.map((d: any) => ({
             id: d.id,
             agencyId: d.agency_id,
@@ -1072,10 +1282,7 @@ export const enquiriesRepository = {
   /**
    * Update B2B Desk Record status + append-only audit trail.
    * `scopeAgencyId`, when supplied by a B2B_PARTNER caller, routes the update
-   * through the real RLS boundary (see the insert-path comment above) so the
-   * database — not just the route handler's prior ownership check — rejects a
-   * write against another agency's record. Staff/admin callers omit it since
-   * they legitimately act across every agency.
+   * through the real RLS boundary. Fails closed on cross-tenant or database failure.
    */
   async updateB2BDeskRecord(
     id: string,
@@ -1124,11 +1331,11 @@ export const enquiriesRepository = {
           memoryStore.b2bDeskRecords.set(id, updated);
           return updated;
         }
-        // RLS excluded the row (cross-tenant attempt) — do not fall back to
-        // the service-role path, which would silently bypass that rejection.
+        // RLS excluded the row (cross-tenant attempt) — fail closed immediately!
         return null;
       } catch (err) {
-        console.warn("Scoped RLS desk record update failed, falling back:", err);
+        console.warn("Scoped RLS desk record update failed:", err);
+        throw err;
       }
     }
 

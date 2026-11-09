@@ -9,12 +9,20 @@ import { enquiriesRepository } from "@server/db/enquiriesRepository";
 import { SITE_CONFIG } from "@server/config/siteConfig";
 import { readJsonBodyGuarded, PayloadTooLargeError } from "@server/utils/requestGuards";
 import { getErrorMessage } from "@server/utils/errorMessage";
-import { checkSubmissionRateLimit, buildSubmissionFingerprint, isDuplicateSubmission } from "@server/utils/abuseGuard";
+import {
+  checkSubmissionRateLimit,
+  checkSubmissionRateLimitAsync,
+  buildSubmissionFingerprint,
+  isDuplicateSubmission,
+  isDuplicateSubmissionAsync,
+} from "@server/utils/abuseGuard";
 
 export async function POST(req: NextRequest) {
   try {
     const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-    const lockedForSeconds = checkSubmissionRateLimit(ip);
+    const lockedForSeconds =
+      (await checkSubmissionRateLimitAsync(ip)) || checkSubmissionRateLimit(ip);
+
     if (lockedForSeconds > 0) {
       return NextResponse.json(
         { success: false, error: `Too many submissions. Please try again in ${lockedForSeconds} seconds.` },
@@ -39,7 +47,10 @@ export async function POST(req: NextRequest) {
     const input = parseResult.data;
 
     const fingerprint = buildSubmissionFingerprint([input.phone, input.serviceType, input.message]);
-    if (isDuplicateSubmission(fingerprint)) {
+    const isDup =
+      (await isDuplicateSubmissionAsync(fingerprint)) || isDuplicateSubmission(fingerprint);
+
+    if (isDup) {
       return NextResponse.json(
         {
           success: false,
@@ -60,9 +71,9 @@ I have submitted an inquiry for *${input.serviceType}* service.
 📌 *Reference No:* ${record.referenceNo}
 👤 *Name:* ${input.fullName}
 📞 *Phone:* ${input.phone}
-📝 *Request:* ${input.message}
+📝 *Notes:* ${input.message}
 
-Please advise on processing steps and documentation requirements.`;
+Please advise on required documentation and quotation.`;
 
     const whatsAppUrl = `https://wa.me/${phone}?text=${encodeURIComponent(messageText)}`;
 
@@ -70,16 +81,26 @@ Please advise on processing steps and documentation requirements.`;
       {
         success: true,
         referenceNo: record.referenceNo,
-        enquiry: record,
+        recordId: record.id,
         whatsAppUrl,
-        message: "Your travel inquiry has been received. A specialist will contact you shortly.",
+        message: "Your service enquiry has been registered with SAFARIA Tours & Travels.",
       },
       { status: 201 }
     );
   } catch (err: unknown) {
     if (err instanceof PayloadTooLargeError) {
-      return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 413 });
+      return NextResponse.json(
+        { success: false, error: "Request payload exceeds maximum permitted size" },
+        { status: 413 }
+      );
     }
-    return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Internal Server Error",
+        details: getErrorMessage(err),
+      },
+      { status: 500 }
+    );
   }
 }

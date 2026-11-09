@@ -4,6 +4,7 @@
 // ==============================================================================
 
 import { enquiriesRepository, StoredOutboxEntry } from "@server/db/enquiriesRepository";
+import { tryCreateOpportunity } from "./ghlAdapter";
 import { getErrorMessage } from "../utils/errorMessage";
 
 export interface DispatchSummary {
@@ -102,7 +103,18 @@ export const outboxDispatcher = {
       return true;
     }
 
-    // Live GHL API call
+    // Opportunity retry specific handling
+    if (entry.eventType === "GHL_OPPORTUNITY_RETRY") {
+      const oppId = await tryCreateOpportunity({
+        apiKey,
+        locationId,
+        contactId: entry.payload.contactId as string | undefined,
+        name: (entry.payload.name as string) || "SAFARIA Follow-up Opportunity",
+      });
+      return Boolean(oppId);
+    }
+
+    // Live GHL API call for contact upsert
     const res = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
       method: "POST",
       headers: {
