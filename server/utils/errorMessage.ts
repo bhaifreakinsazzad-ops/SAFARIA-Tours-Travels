@@ -1,0 +1,9 @@
+// ==============================================================================
+// Shared helper so API route catch blocks don't need `catch (err: any)`,
+// which this codebase's lint config rejects (@typescript-eslint/no-explicit-any).
+// ==============================================================================
+
+export function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
