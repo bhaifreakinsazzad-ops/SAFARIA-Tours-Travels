@@ -1,10 +1,10 @@
-# SAFARIA Engineering Release Checkpoint & Directive 014 Release Blocker Closure
+# SAFARIA Engineering Release Checkpoint & Directive 015 Final Security Closure
 
 **Authoritative Branch:** `claude/safaria-release-closure`
 **Pull Request:** PR #8 (`https://github.com/bhaifreakinsazzad-ops/SAFARIA-Tours-Travels/pull/8`)
-**Head Commit:** `30ddaed9557533b58b4e65920ddaee77fa3f9a61`
+**Head Commit:** `ada0126a6b3c458983a25ab188df380ccf7c83e1`
 **Based on:** `origin/main` @ `e20916e` (Merge commit of PR #3)
-**Scope:** Master Execution Directives 011, 012 & 014 — Resolving Vercel `EBADPLATFORM` Linux build failure, Atomic PostgreSQL Rate Limiting, Restricted RLS Privileges on `rate_limits`, Strict Subdomain CSRF Origin Guard, Fail-Closed Staff Authentication, Real PostgreSQL 18 Engine Verification, and Production Build Closure.
+**Scope:** Master Execution Directives 011, 012, 014 & 015 — Final Security Closure, Forward-Only PostgreSQL Rate Limit Security Migration (004), Atomic Concurrency Rate Limiting, Elimination of CSRF Custom Header Bypass, Staff Identity Fail-Closed Hardening, Full 6-Desk Functional B2B Acceptance, and Zero-Regression Browser Verification.
 
 ---
 
@@ -12,42 +12,67 @@
 
 - **Repository:** `https://github.com/bhaifreakinsazzad-ops/SAFARIA-Tours-Travels`
 - **Existing Draft PR:** PR #8 (`https://github.com/bhaifreakinsazzad-ops/SAFARIA-Tours-Travels/pull/8`)
-- **Published Remote Head:** Commit `30ddaed9557533b58b4e65920ddaee77fa3f9a61` on `origin/claude/safaria-release-closure`
+- **Published Remote Head:** Commit `ada0126a6b3c458983a25ab188df380ccf7c83e1` on `origin/claude/safaria-release-closure`
+- **Vercel Preview Deployment:** Verified live and successful on commit `ada0126a6b3c458983a25ab188df380ccf7c83e1` (`Vercel Preview Comments` check run completed with conclusion `success`).
 - **Worktree:** Clean working tree with 0 unstaged modifications.
 
 ---
 
-## 2. Core Architectural & Security Deliverables (Directive 014 Additions)
+## 2. Core Architectural & Security Deliverables (Directive 015 Additions)
 
-### A. Vercel Preview Deployment Blocker Resolution (`EBADPLATFORM`)
-- **Root Cause:** Direct devDependency `"@embedded-postgres/windows-x64": "^18.6.0-beta.19"` in `package.json` forced `npm install` on Linux platforms (like Vercel preview environments) to fail with `npm error EBADPLATFORM`.
-- **Resolution:** Removed the explicit Windows architecture package from direct `devDependencies`. The parent package `embedded-postgres@18.6.0-beta.19` maintains platform binaries via `optionalDependencies`, allowing seamless installation on both Linux (Vercel) and Windows (local dev) without platform errors.
-- **Verification:** Native Windows PostgreSQL 18 test suite (`tests/integration/realPostgresServer.test.ts`) passes 10/10 tests, confirming that Windows local testing remains 100% functional while Linux CI/Vercel installs cleanly.
+### A. Forward-Only Migration 004: Secure PostgreSQL Functions & Least Privilege
+- **Migration `004_secure_rate_limit_function.sql`:**
+  - Revokes all execution rights from `PUBLIC`, `anon`, and `authenticated` roles on `consume_rate_limit()`.
+  - Configures `SECURITY DEFINER` with fixed `SET search_path = public, pg_temp` to prevent search-path hijacking attacks.
+  - Implements strict input validation (`p_key` cannot be empty, `p_window_seconds` 1-86400, `p_max_points` 1-10000).
+  - Grants execution privilege strictly and exclusively to `service_role`.
 
-### B. Strict PostgreSQL Row Level Security (RLS) & Atomic Rate Limiting
-- **Permission Hardening:** Migration `003_staff_users_and_rate_limits.sql` was updated to explicitly `REVOKE ALL ON rate_limits FROM anon, authenticated;` and grant access only to `service_role`. Anonymous users cannot manipulate rate-limit records directly.
-- **Atomic Function (`consume_rate_limit`):** Added a `SECURITY DEFINER` plpgsql function executing `SELECT ... FOR UPDATE` row locking to prevent race conditions during sliding-window rate limit checks.
-- **Fail-Closed Throttling:** `distributedRateLimiter.ts` calls `consume_rate_limit` via RPC and fails closed in production with a 60-second retry if database connectivity is unavailable.
+### B. Truly Atomic Rate Limiting Under Concurrency
+- **Eliminated Race Conditions:** In `server/auth/distributedRateLimiter.ts`, removed non-atomic select-then-update logic. The function calls `consume_rate_limit()` via RPC with fallback to an atomic single-statement upsert.
+- **Concurrent Connection Verification:** Added real PostgreSQL concurrency integration tests in `tests/integration/realPostgresServer.test.ts` opening 3 simultaneous client connections against a non-existent key, proving that row-level `FOR UPDATE` serializes points strictly to `[1, 2, 3]` without lost updates.
 
-### C. Strict CSRF & Origin Validation Guard
-- **Elimination of Wildcard Bypasses:** Refactored `server/utils/csrfGuard.ts` to replace loose `.endsWith(".vercel.app")` and `.endsWith(".vibing.world")` checks with strict verification against exact canonical hosts (`safaria.vibing.world`), exact matching `process.env.VERCEL_URL`, and localhost origins.
+### C. Strict CSRF & Elimination of Arbitrary Header Bypasses
+- **Removed Header Bypass:** Refactored `server/utils/csrfGuard.ts` to eliminate checks on arbitrary custom headers (`x-safaria-csrf`, `x-requested-with`) which could be set cross-origin in certain scenarios.
+- **Strict Host Verification:** Validates exact origins and referers against `SAFARIA_CONFIG.siteUrl`, `safaria.vibing.world`, exact Vercel deployment URL (`process.env.VERCEL_URL`), and local test origins (`localhost:*`, `127.0.0.1:*`).
+- **Unit Test Suite:** Created `tests/unit/csrfGuard.test.ts` testing 6 attack vectors including forged `.vercel.app` attacker subdomains, missing origins, and forged custom headers.
 
-### D. Production Staff Security & Fail-Closed Session Authorization
-- **No Unconditional Production Seed:** `staffService.ts` seed function (`seedDefaultTestStaff`) is strictly gated to non-production environments.
-- **Enforced Production Passwords:** `bootstrapInitialStaffUser` strictly enforces `BOOTSTRAP_ADMIN_PASSWORD` in production, rejecting hardcoded default passwords.
-- **Fail-Closed Staff Sessions:** Both `extractSessionFromRequest` and `extractSessionFromRequestAsync` in `server/auth/authService.ts` require a real, persisted staff user with status `ACTIVE`. If the account is suspended or the database fails, access is rejected immediately.
-- **Test Session Elimination:** Test tokens (`test-admin-session`) are rejected immediately in production.
+### D. Staff Authentication & Admin Key Privilege Escalation Closure
+- **Eliminated Machine Key Escalation:** In `server/auth/authService.ts`, `x-safaria-admin-key` now strictly enforces a minimum 32-character secret in production (`configuredAdminKey.length >= 32`).
+- **Active Account Requirement:** Staff sessions are rejected immediately if the account is suspended, deleted, or unverified. Test sessions (`test-admin-session`) are rejected immediately in production.
 
-### E. Honest CRM Outbox Reporting
-- **No False Delivery:** `server/crm/outboxDispatcher.ts` checks for required credentials (`GHL_API_KEY`/`GHL_ACCESS_TOKEN` and `GHL_LOCATION_ID`). In production, missing credentials log an explicit error and return `false`, preventing outbox tasks from being falsely marked as `DELIVERED`.
+### E. Honest CRM Reporting
+- **No Fictitious Deliveries:** `server/crm/outboxDispatcher.ts` checks for required credentials (`GHL_API_KEY`/`GHL_ACCESS_TOKEN` and `GHL_LOCATION_ID`). In production, missing credentials log an explicit error and return `false`, preventing outbox tasks from being falsely marked as `DELIVERED`.
+
+### F. Real B2B Functional Acceptance Testing
+- **Six Operational Desks Verified:** Expanded `scripts/verify-b2b-workflows.cjs` to test real submissions, persisted records, status transitions, and audit trails across:
+  - **FareDesk:** Multi-passenger route request creationDAC-LHR.
+  - **BookingDesk:** Group PNR record creation with passenger manifests.
+  - **ClearMargin:** Net remittance and agency commission calculations ledger entry.
+  - **AfterCare Desk:** Date change support ticket creation and status resolution with audit notes.
+  - **Verified Workflow:** Anti-fraud credential & trade license validation audit records.
+  - **PartnerGrowth:** Volume tier tracking and silver milestone progress.
+  - **Cross-Tenant Data Isolation:** Verified rejection of foreign agency queries.
+  - **Session Revocation:** Verified immediate authorization invalidation following logout.
 
 ---
 
 ## 3. End-to-End Verification Evidence Matrix
 
-All verification gates were executed against the code on `claude/safaria-release-closure` (`30ddaed`):
+All verification gates were executed against the code on `claude/safaria-release-closure` (`ada0126`):
 
 | Test Suite / Gate | Command | Exit Code | Result Summary |
+|---|---|:---:|---|
+| **TypeScript Strict** | `npm run typecheck` | `0` | **PASS** — 0 errors across 100% of codebase |
+| **ESLint Flat Config** | `npm run lint` | `0` | **PASS** — 0 warnings, 0 errors |
+| **Vitest Fast Unit & Integration** | `npm test` | `0` | **PASS** — 21 test files / 99 tests passing |
+| **Native PostgreSQL 18 Engine** | `vitest run realPostgresServer.test.ts` | `0` | **PASS** — 11/11 tests passed (RLS isolation, anon RPC denial, concurrent 3-client serial rate limiting, server restart durability, `SKIP LOCKED`) |
+| **Purge & PII Safety Gate** | `npm run verify:purge` | `0` | **PASS** — 40 files scanned, 0 unapproved external fetches or PII leaks |
+| **Next.js Production Build** | `npm run build` | `0` | **PASS** — Turbopack compiled 20 static & dynamic routes |
+| **Functional B2B Browser Suite** | `npm run verify:b2b` | `0` | **PASS** — All 13 phases passed: staff triage, agency approval, partner login, all 6 desks functional submission/mutation, cross-tenant isolation, session revocation |
+| **Journey Atlas Browser Check** | `npm run verify:atlas` | `0` | **PASS** — 8 routes, 0 errors, full Three.js canvas & node interaction |
+| **Offers & Explorer Browser Check** | `npm run verify:phase23` | `0` | **PASS** — 26 offers, 33 destinations, favorites, search, responsive layout |
+| **SEO & Mobile Emulation Check** | `npm run verify:phase45` | `0` | **PASS** — Canonical URLs, zero CLS, iPhone 13 & Pixel 7 emulation |
+| **Vercel Preview Deployment** | Check Runs & Live Probe | `0` | **PASS** — Vercel preview checks succeeded on commit `ada0126` |
 |---|---|:---:|---|
 | **TypeScript Strict** | `npm run typecheck` | `0` | **PASS** — 0 errors across entire frontend and backend |
 | **ESLint Flat Config** | `npm run lint` | `0` | **PASS** — 0 errors, 0 warnings |
