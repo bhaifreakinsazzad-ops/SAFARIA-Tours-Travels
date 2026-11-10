@@ -1,0 +1,142 @@
+{
+  "name": "SAFARIA",
+  "version": 2,
+  "meta": { "source": "safaria.vibing.world/home-301198 (#safaria-site stylesheet, saved 2026-11-02) + SAFARIA master brief" },
+  "color": {
+    "themes": [
+      { "id": "night", "name": "Emerald Night" },
+      { "id": "day", "name": "Ivory Day" }
+    ],
+    "tokens": [
+      { "name": "surface-000", "value": { "night": "#041713", "day": "#f8f5ec" }, "usage": "Page ground (--sf-bg). Every section sits on this unless it is a form shell." },
+      { "name": "surface-100", "value": { "night": "#062b27", "day": "#f3f0e7" }, "usage": "Alternate section band and pricing tiles (--sf-green)." },
+      { "name": "surface-200", "value": { "night": "#0b352a", "day": "#ffffff" }, "usage": "Raised cards, menus, dialogs (--sf-raised)." },
+      { "name": "surface-input", "value": { "night": "#051f19", "day": "#fffdf7" }, "usage": "Text fields and selects (--sf-input; day = the Travel Studio field ground)." },
+      { "name": "surface-footer", "value": { "night": "#03130f", "day": "#efe9d8" }, "usage": "Footer band only." },
+      { "name": "ink", "value": { "night": "#f8f5ec", "day": "#062b27" }, "usage": "Headings and body copy on every surface-* token (12.3:1 minimum)." },
+      { "name": "ink-muted", "value": { "night": "#b1c3bc", "day": "#3f5a50" }, "usage": "Secondary copy, captions, service sub-lines on surface-000/100/200 (6.9:1 minimum)." },
+      { "name": "ink-faint", "value": { "night": "#9caf9f", "day": "#55695f" }, "usage": "Legal lines and footer meta on surface-footer (4.85:1 minimum). Never for anything a visitor must act on." },
+      { "name": "gold", "value": { "night": "#d6b779", "day": "#7d5f22" }, "usage": "Champagne accent: eyebrow rules, icons, step numbers, active states, accent text on surface-000/200. Day value is darkened so it still reads as text (5.2:1)." },
+      { "name": "gold-hi", "value": "#f0d6a1", "usage": "Top stop of the gold CTA gradient. Fill only, never text." },
+      { "name": "gold-lo", "value": "#cbaa6a", "usage": "Bottom stop of the gold CTA gradient. Fill only, never text." },
+      { "name": "on-gold", "value": "#092720", "usage": "Label on gold-hi/gold-lo fills (7.2:1 on the darker stop)." },
+      { "name": "emerald", "value": "#064e3b", "usage": "Primary emerald brand fill: day-theme primary buttons, emerald bands, logo S. Ivory on it is 8.9:1." },
+      { "name": "navy", "value": "#10243a", "usage": "Royal navy: corporate travel band and aviation/tracker panels. Ivory on it 14.4:1, gold 8.2:1." },
+      { "name": "ivory", "value": "#f8f5ec", "usage": "Warm ivory constant: text on emerald and navy in both themes, form shells on night pages." },
+      { "name": "line", "value": { "night": "rgba(207,181,124,.28)", "day": "rgba(125,95,34,.30)" }, "usage": "Hairline dividers between sections, list rows and card edges (--sf-line). Decorative only." },
+      { "name": "line-strong", "value": { "night": "rgba(207,181,124,.5)", "day": "#82988d" }, "usage": "Control borders: price cards, fields, toggles (3:1 or better on its ground)." },
+      { "name": "focus", "value": { "night": "#f1cf8e", "day": "#7d5f22" }, "usage": "3px solid focus outline at 5px offset on every interactive element. Holds 5.9:1 or better on all surfaces." },
+      { "name": "success", "value": { "night": "#7fd4a8", "day": "#0f6b47" }, "usage": "Valid-field and sent states, always paired with a check icon and words." },
+      { "name": "danger", "value": { "night": "#f2a07b", "day": "#a3401c" }, "usage": "Field errors, always paired with an icon and message text. Orange, not red, so it separates from success by lightness too." },
+      { "name": "scrim", "value": "rgba(4,23,19,.68)", "usage": "Glass pills over imagery (motion toggle, scroll cue, hero chips)." }
+    ]
+  },
+  "type": {
+    "fonts": [],
+    "families": {
+      "display": "\"Cormorant Garamond\", Georgia, serif",
+      "sans": "Inter, \"Noto Sans Bengali\", \"Hind Siliguri\", system-ui, sans-serif",
+      "bengali": "\"Noto Sans Bengali\", \"Hind Siliguri\", Inter, sans-serif"
+    },
+    "groups": [
+      {
+        "name": "Display",
+        "family": "display",
+        "styles": [
+          { "name": "display-hero", "fontSize": "84px", "lineHeight": 1.08, "fontWeight": 500, "letterSpacing": "-0.035em", "sample": "Your Gateway to Global Travel", "usage": "h1 only. Fluid clamp(54px, 6.1vw, 84px); 48px under 600px." },
+          { "name": "display-section", "fontSize": "58px", "lineHeight": 1.08, "fontWeight": 500, "letterSpacing": "-0.035em", "sample": "Your Agency. Our Travel Operations.", "usage": "Section h2. Fluid clamp(38px, 4vw, 58px)." },
+          { "name": "display-dialog", "fontSize": "36px", "lineHeight": 1.1, "fontWeight": 500, "letterSpacing": "-0.02em", "sample": "Istanbul, Türkiye", "usage": "Destination dialog title." },
+          { "name": "display-card", "fontSize": "27px", "lineHeight": 1.15, "fontWeight": 500, "sample": "Cox's Bazar · CXB", "usage": "Destination card name; 21px on phones." },
+          { "name": "brand-name", "fontSize": "24px", "lineHeight": 1.1, "fontWeight": 600, "letterSpacing": "0.04em", "sample": "SAFARIA", "usage": "Wordmark text beside the logo in header and footer." }
+        ]
+      },
+      {
+        "name": "Bengali",
+        "family": "bengali",
+        "styles": [
+          { "name": "bn-hero", "fontSize": "70px", "lineHeight": 1.38, "fontWeight": 500, "letterSpacing": "-0.035em", "sample": "বিশ্ব ভ্রমণের প্রবেশদ্বার", "usage": "h1 when lang=bn. clamp(44px, 5.2vw, 70px); 43px/1.45 on phones." },
+          { "name": "bn-section", "fontSize": "44px", "lineHeight": 1.4, "fontWeight": 500, "sample": "এয়ার টিকেট কোটেশন", "usage": "h2 when lang=bn. clamp(30px, 3.25vw, 44px)." },
+          { "name": "bn-body", "fontSize": "16px", "lineHeight": 1.8, "fontWeight": 400, "sample": "আপনার ভ্রমণের তথ্য দিন, আমাদের প্রতিনিধি যোগাযোগ করবেন।", "usage": "Bengali body copy; never set Bengali at 1.65 leading." }
+        ]
+      },
+      {
+        "name": "Text",
+        "family": "sans",
+        "styles": [
+          { "name": "lead", "fontSize": "17px", "lineHeight": 1.7, "fontWeight": 400, "sample": "Air tickets, visas, hotels and tours, handled by people who answer.", "usage": "Hero and section intros, max 470px wide; 15px on phones." },
+          { "name": "body", "fontSize": "16px", "lineHeight": 1.65, "fontWeight": 400, "sample": "Tell us where you are going. A SAFARIA agent prepares a verified quotation.", "usage": "Default body." },
+          { "name": "service-title", "fontSize": "18px", "lineHeight": 1.4, "fontWeight": 500, "sample": "Air Ticketing", "usage": "Service list rows and card titles; 16px on phones." },
+          { "name": "body-sm", "fontSize": "14px", "lineHeight": 1.9, "fontWeight": 400, "sample": "Visa decisions are made by the relevant authority.", "usage": "Card copy, Why-SAFARIA articles." },
+          { "name": "button", "fontSize": "13px", "lineHeight": 1.5, "fontWeight": 600, "sample": "Request a Flight Quote", "usage": "All button labels." },
+          { "name": "caption", "fontSize": "12px", "lineHeight": 1.5, "fontWeight": 400, "sample": "Updated 2 minutes ago", "usage": "Service sub-lines, timestamps, helper text." },
+          { "name": "eyebrow", "fontSize": "11px", "lineHeight": 1.4, "fontWeight": 600, "letterSpacing": "0.19em", "sample": "AIR TICKETING", "usage": "Uppercase kicker above h2, followed by a 42px gold rule." }
+        ]
+      }
+    ]
+  },
+  "spacing": {
+    "tokens": [
+      { "name": "space-1", "value": "4px", "usage": "Toggle inner gap, icon nudges." },
+      { "name": "space-2", "value": "8px", "usage": "Chip gaps, compact padding." },
+      { "name": "space-3", "value": "12px", "usage": "Button icon gap, menu padding." },
+      { "name": "space-4", "value": "16px", "usage": "Phone side gutter, list-row gap." },
+      { "name": "space-5", "value": "24px", "usage": "Card padding, grid gap." },
+      { "name": "space-6", "value": "32px", "usage": "Tablet gutter, footer padding." },
+      { "name": "space-7", "value": "48px", "usage": "Form shell padding on desktop." },
+      { "name": "space-8", "value": "64px", "usage": "Section inner padding, service layout gap." },
+      { "name": "space-9", "value": "112px", "usage": "Desktop wrap inset (width: min(1200px, 100% - 112px))." },
+      { "name": "wrap-max", "value": "1200px", "usage": "Max content width (.sf-wrap)." },
+      { "name": "touch-min", "value": "44px", "usage": "Minimum height and width of every tap target." },
+      { "name": "button-h", "value": "54px", "usage": "Primary/outline button height." }
+    ]
+  },
+  "radius": {
+    "tokens": [
+      { "name": "radius-xs", "value": "4px", "usage": "Menu items, focus outline corners." },
+      { "name": "radius-sm", "value": "6px", "usage": "Tabs, accordions, small buttons." },
+      { "name": "radius-btn", "value": "7px", "usage": "Primary and outline buttons." },
+      { "name": "radius-md", "value": "9px", "usage": "Price cards, trial bar, form shells." },
+      { "name": "radius-lg", "value": "12px", "usage": "Studio shell, draft tools panels." },
+      { "name": "radius-xl", "value": "18px", "usage": "Large feature panels on desktop." },
+      { "name": "radius-pill", "value": "30px", "usage": "Glass chips: motion toggle, filters." }
+    ]
+  },
+  "shadow": {
+    "tokens": [
+      { "name": "shadow-btn", "value": "0 3px 20px rgba(0,0,0,.133)", "usage": "Gold CTA at rest." },
+      { "name": "shadow-btn-hover", "value": "0 4px 28px rgba(210,183,125,.22)", "usage": "Gold CTA hover glow." },
+      { "name": "shadow-menu", "value": "0 16px 40px rgba(0,0,0,.333)", "usage": "Dropdowns and mobile nav drawer." },
+      { "name": "shadow-panel", "value": "0 20px 50px rgba(0,0,0,.133)", "usage": "Form shells over imagery." },
+      { "name": "shadow-header", "value": "0 6px 30px rgba(0,0,0,.2)", "usage": "Sticky header once compact." },
+      { "name": "shadow-selected", "value": "inset 0 3px 0 #d6b779", "usage": "Selected price card top bar." }
+    ]
+  },
+  "duration": {
+    "note": "Motion tokens. Pair each with an easing below; everything collapses to 0ms under prefers-reduced-motion.",
+    "tokens": [
+      { "name": "dur-micro", "value": "120ms", "usage": "Button press and icon feedback." },
+      { "name": "dur-short", "value": "250ms", "usage": "Hover, focus, colour and border transitions (matches existing .sf-button)." },
+      { "name": "dur-medium", "value": "600ms", "usage": "Card and section reveals." },
+      { "name": "dur-long", "value": "1100ms", "usage": "Hero entrance and cinematic image wipes." },
+      { "name": "dur-stagger", "value": "70ms", "usage": "Gap between items in a staggered list or headline lines." },
+      { "name": "dur-continuous", "value": "60000ms", "usage": "One globe revolution; decorative loops only." }
+    ]
+  },
+  "easing": {
+    "tokens": [
+      { "name": "ease-out", "value": "cubic-bezier(.22,1,.36,1)", "usage": "Entrances and reveals (outExpo-like)." },
+      { "name": "ease-in-out", "value": "cubic-bezier(.65,0,.35,1)", "usage": "Drawers, dialogs, step changes." },
+      { "name": "ease-spring", "value": "cubic-bezier(.34,1.56,.64,1)", "usage": "Small confirmations: tick, chip select. Never on large surfaces." }
+    ]
+  },
+  "zIndex": {
+    "tokens": [
+      { "name": "z-canvas", "value": "0", "usage": "three.js canvas behind hero copy." },
+      { "name": "z-content", "value": "2", "usage": "Hero copy above art." },
+      { "name": "z-menu", "value": "3", "usage": "Dropdown menus." },
+      { "name": "z-header", "value": "40", "usage": "Sticky header." },
+      { "name": "z-dock", "value": "45", "usage": "Mobile contact dock." },
+      { "name": "z-dialog", "value": "60", "usage": "Destination dialog and AI assistant panel." }
+    ]
+  }
+}

@@ -55,12 +55,12 @@ export function SiteExperience() {
   return (
     <>
       <div className="site-shell" id="sf-home">
-        <header className="site-header">
+        <header className="site-header bg-emerald text-ivory shadow-header">
           <a className="brand" href="#sf-home">
             <Image src="/images/logo-inverted.webp" width={56} height={56} alt="" priority />
             <span className="brand-wordmark">SAFARIA<small>TOURS &amp; TRAVELS</small></span>
           </a>
-          <nav id="sf-navigation" className={`primary-nav ${menuOpen ? "is-open" : ""}`} aria-label={language === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}>
+          <nav id="sf-navigation" className={`primary-nav ${menuOpen ? "is-open" : ""} bg-emerald text-ivory`} aria-label={language === "bn" ? "প্রধান নেভিগেশন" : "Main navigation"}>
             <a href="#sf-atlas" onClick={() => setMenuOpen(false)}>{t.atlas}</a>
             <a href="#sf26-offers" onClick={() => setMenuOpen(false)}>{language === "bn" ? "সেবা" : "Offers"}</a>
             <a href="#sf-destinations" onClick={() => setMenuOpen(false)}>{language === "bn" ? "গন্তব্য" : "Destinations"}</a>
@@ -80,9 +80,9 @@ export function SiteExperience() {
             <div className="hero-skyline" aria-hidden="true"><Image src="/images/skyline.webp" fill priority sizes="100vw" alt="" /></div>
             <div className="hero-inner">
               <div className="hero-copy">
-                <h1 id="hero-title" className="display-heading">{t.title}</h1>
+                <h1 id="hero-title" className="display-heading text-ivory">{t.title}</h1>
                 <p>{t.intro}</p>
-                <button className="button button-gold hero-cta" type="button" onClick={() => openRoute()}>{t.request}<span aria-hidden="true">→</span></button>
+                <button className="button button-gold hero-cta bg-gold text-on-gold shadow-btn hover:shadow-btn-hover focus:outline-focus" type="button" onClick={() => openRoute()}>{t.request}<span aria-hidden="true">→</span></button>
               </div>
               <div className="hero-atlas" id="sf-atlas">
                 {atlasInteractive ? <JourneyAtlas language={language} onSelect={openRoute} /> : <div className="atlas-visual" aria-label={language === "bn" ? "ঢাকা থেকে গন্তব্যগুলোর মানচিত্র" : "Map of destinations from Dhaka"}><div className="atlas-static"><AtlasFallback /></div>{mobile3DAvailable && <button type="button" className="atlas-enable-3d" onClick={() => setAtlasInteractive(true)}>{language === "bn" ? "3D গ্লোব চালু করুন" : "Enable 3D globe"}</button>}</div>}
