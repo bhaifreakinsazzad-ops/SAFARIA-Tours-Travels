@@ -4,6 +4,7 @@
 // ==============================================================================
 
 import { enquiriesRepository, StoredOutboxEntry } from "@server/db/enquiriesRepository";
+import { tryCreateOpportunity } from "./ghlAdapter";
 import { getErrorMessage } from "../utils/errorMessage";
 
 export interface DispatchSummary {
@@ -98,11 +99,27 @@ export const outboxDispatcher = {
     const locationId = process.env.GHL_LOCATION_ID;
 
     if (!apiKey || !locationId) {
-      // In staging/development test mode, mock dispatch successfully resolves
+      if (process.env.NODE_ENV === "production") {
+        // In production, never falsely mark tasks as DELIVERED if credentials are missing
+        console.error("GHL CRM credentials (GHL_API_KEY/GHL_ACCESS_TOKEN and GHL_LOCATION_ID) are missing in production.");
+        return false;
+      }
+      // In staging/development/test mode without credentials, mock dispatch successfully resolves
       return true;
     }
 
-    // Live GHL API call
+    // Opportunity retry specific handling
+    if (entry.eventType === "GHL_OPPORTUNITY_RETRY") {
+      const oppId = await tryCreateOpportunity({
+        apiKey,
+        locationId,
+        contactId: entry.payload.contactId as string | undefined,
+        name: (entry.payload.name as string) || "SAFARIA Follow-up Opportunity",
+      });
+      return Boolean(oppId);
+    }
+
+    // Live GHL API call for contact upsert
     const res = await fetch("https://services.leadconnectorhq.com/contacts/upsert", {
       method: "POST",
       headers: {

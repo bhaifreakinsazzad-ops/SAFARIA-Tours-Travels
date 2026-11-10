@@ -2,30 +2,33 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Lock, Plane, Building2, RefreshCw, ArrowLeft, Filter } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Lock, Plane, Building2, RefreshCw, ArrowLeft, Filter, LogOut } from "lucide-react";
 import { StoredFlightEnquiry, StoredAgencyApplication } from "@server/db/enquiriesRepository";
 
 export default function AdminTriagePage() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"ENQUIRIES" | "AGENCIES">("ENQUIRIES");
   const [enquiries, setEnquiries] = useState<StoredFlightEnquiry[]>([]);
   const [agencies, setAgencies] = useState<StoredAgencyApplication[]>([]);
   const [loading, setLoading] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
   const fetchRecords = async () => {
     setLoading(true);
     try {
-      const enqRes = await fetch("/api/admin/enquiries", {
-        headers: { "x-safaria-admin-key": "safaria-ops-2026" },
-      });
+      const enqRes = await fetch("/api/admin/enquiries", { credentials: "include" });
+      if (enqRes.status === 401 || enqRes.status === 403) {
+        router.push("/login");
+        return;
+      }
       const enqData = await enqRes.json();
       if (enqData.success) {
         setEnquiries(enqData.enquiries || []);
       }
 
-      const agRes = await fetch("/api/admin/agencies", {
-        headers: { "x-safaria-admin-key": "safaria-ops-2026" },
-      });
+      const agRes = await fetch("/api/admin/agencies", { credentials: "include" });
       const agData = await agRes.json();
       if (agData.success) {
         setAgencies(agData.applications || []);
@@ -38,11 +41,25 @@ export default function AdminTriagePage() {
   };
 
   useEffect(() => {
-    // One-time data load on mount: fetchRecords internally calls setState as
-    // its async fetch resolves, not synchronously within this effect body.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchRecords();
+    // One-time auth + data load on mount only — fetchRecords/router are
+    // stable across renders here and intentionally excluded to avoid re-running.
+    (async () => {
+      const meRes = await fetch("/api/auth/me", { credentials: "include" });
+      const meData = await meRes.json();
+      if (!meData.authenticated || meData.user?.role !== "SUPER_ADMIN") {
+        router.push("/login");
+        return;
+      }
+      setCheckingAuth(false);
+      fetchRecords();
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+    router.push("/login");
+  };
 
   const handleUpdateStatus = async (
     id: string,
@@ -51,10 +68,8 @@ export default function AdminTriagePage() {
     try {
       const res = await fetch("/api/admin/enquiries", {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          "x-safaria-admin-key": "safaria-ops-2026",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ id, status: targetStatus }),
       });
       const data = await res.json();
@@ -66,6 +81,14 @@ export default function AdminTriagePage() {
       console.error("Failed to update status:", e);
     }
   };
+
+  if (checkingAuth) {
+    return (
+      <div className="min-h-screen bg-surface-0 text-safaria-ink flex items-center justify-center text-sm text-safaria-inkMuted">
+        Verifying session…
+      </div>
+    );
+  }
 
   const filteredEnquiries = enquiries.filter((e) => {
     if (statusFilter === "ALL") return true;
@@ -97,14 +120,23 @@ export default function AdminTriagePage() {
           </div>
         </div>
 
-        <button
-          onClick={fetchRecords}
-          disabled={loading}
-          className="flex items-center gap-1.5 rounded border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:border-safaria-gold transition-colors"
-        >
-          <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={fetchRecords}
+            disabled={loading}
+            className="flex items-center gap-1.5 rounded border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:border-safaria-gold transition-colors"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+            <span>Refresh</span>
+          </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 rounded border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:border-red-400 transition-colors"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span>Sign Out</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}

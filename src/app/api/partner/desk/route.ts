@@ -4,12 +4,14 @@
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { extractSessionFromRequest } from "@server/auth/authService";
+import { extractSessionFromRequestAsync } from "@server/auth/authService";
 import { enquiriesRepository, StoredB2BDeskRecord } from "@server/db/enquiriesRepository";
+import { isAuthorizedOrigin } from "@server/utils/csrfGuard";
+import { readJsonBodyGuarded, PayloadTooLargeError } from "@server/utils/requestGuards";
 import { getErrorMessage } from "@server/utils/errorMessage";
 
 export async function GET(req: NextRequest) {
-  const session = extractSessionFromRequest(req);
+  const session = await extractSessionFromRequestAsync(req);
   if (!session) {
     return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
   }
@@ -30,7 +32,7 @@ export async function GET(req: NextRequest) {
       );
     }
     targetAgencyId = session.agencyId;
-  } else if (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT") {
+  } else if (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT" || session.role === "FINANCE_DESK") {
     // Staff can inspect all agencies or filter by requestedAgencyId
     targetAgencyId = requestedAgencyId || undefined;
   }
@@ -44,13 +46,26 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = extractSessionFromRequest(req);
+  if (!isAuthorizedOrigin(req)) {
+    return NextResponse.json(
+      { success: false, error: "Cross-site request forgery detected. Request rejected." },
+      { status: 403 }
+    );
+  }
+
+  const session = await extractSessionFromRequestAsync(req);
   if (!session) {
     return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
   }
 
   try {
-    const body = await req.json();
+    const body = await readJsonBodyGuarded<{
+      deskType?: StoredB2BDeskRecord["deskType"];
+      title?: string;
+      payload?: Record<string, unknown>;
+      priority?: StoredB2BDeskRecord["priority"];
+    }>(req, 32_000);
+
     const { deskType, title, payload, priority } = body;
 
     if (!deskType || !title) {
@@ -60,7 +75,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const agencyId = session.agencyId || "ops-internal";
+    const agencyId = session.agencyId || (session.role === "SUPER_ADMIN" ? "ops-internal" : undefined);
+    if (!agencyId) {
+      return NextResponse.json(
+        { success: false, error: "Agency context is missing from authenticated session" },
+        { status: 403 }
+      );
+    }
 
     const record = await enquiriesRepository.createB2BDeskRecord(
       deskType,
@@ -79,18 +100,36 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (err: unknown) {
+    if (err instanceof PayloadTooLargeError) {
+      return NextResponse.json(
+        { success: false, error: "Request payload exceeds maximum permitted size" },
+        { status: 413 }
+      );
+    }
     return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
   }
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = extractSessionFromRequest(req);
+  if (!isAuthorizedOrigin(req)) {
+    return NextResponse.json(
+      { success: false, error: "Cross-site request forgery detected. Request rejected." },
+      { status: 403 }
+    );
+  }
+
+  const session = await extractSessionFromRequestAsync(req);
   if (!session) {
     return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
   }
 
   try {
-    const { id, status, internalNotes } = await req.json();
+    const { id, status, internalNotes } = await readJsonBodyGuarded<{
+      id?: string;
+      status?: StoredB2BDeskRecord["status"];
+      internalNotes?: string;
+    }>(req, 16_000);
+
     if (!id || !status) {
       return NextResponse.json(
         { success: false, error: "Missing required fields: id, status" },
@@ -98,26 +137,20 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
-    // Tenant authorization check
-    const records = await enquiriesRepository.listB2BDeskRecords(undefined, undefined);
-    const targetRecord = records.find((r) => r.id === id);
-
-    if (!targetRecord) {
-      return NextResponse.json({ success: false, error: "Record not found" }, { status: 404 });
-    }
-
-    if (session.role === "B2B_PARTNER" && targetRecord.agencyId !== session.agencyId) {
-      return NextResponse.json(
-        { success: false, error: "Access denied: Cannot modify another agency's desk record" },
-        { status: 403 }
-      );
-    }
-
     const auditTrailNote = internalNotes
       ? `[${new Date().toISOString()} by ${session.email}]: ${internalNotes}`
       : undefined;
 
-    const updated = await enquiriesRepository.updateB2BDeskRecord(id, status, auditTrailNote);
+    // Scope partner update through the real RLS boundary so the database enforces tenant scoping
+    const scopeAgencyId = session.role === "B2B_PARTNER" ? session.agencyId : undefined;
+    const updated = await enquiriesRepository.updateB2BDeskRecord(id, status, auditTrailNote, scopeAgencyId);
+
+    if (!updated) {
+      return NextResponse.json(
+        { success: false, error: "Record not found or access denied by tenant isolation policy" },
+        { status: 404 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
@@ -125,6 +158,12 @@ export async function PATCH(req: NextRequest) {
       message: "Desk record status transition and audit trail updated successfully",
     });
   } catch (err: unknown) {
+    if (err instanceof PayloadTooLargeError) {
+      return NextResponse.json(
+        { success: false, error: "Request payload exceeds maximum permitted size" },
+        { status: 413 }
+      );
+    }
     return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
   }
 }

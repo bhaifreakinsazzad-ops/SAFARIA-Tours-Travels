@@ -62,4 +62,38 @@ describe("GoHighLevel Outbox Dispatcher & Failure Monitor", () => {
     const pendingRemaining = await enquiriesRepository.listPendingOutboxEntries(10);
     expect(pendingRemaining.length).toBe(0);
   });
+
+  it("never represents mock delivery as DELIVERED in production when GHL credentials are missing (Directive 015)", async () => {
+    const originalEnv = process.env.NODE_ENV;
+    const originalKey = process.env.GHL_API_KEY;
+    const originalToken = process.env.GHL_ACCESS_TOKEN;
+    const originalLoc = process.env.GHL_LOCATION_ID;
+
+    try {
+      (process.env as Record<string, string | undefined>).NODE_ENV = "production";
+      delete process.env.GHL_API_KEY;
+      delete process.env.GHL_ACCESS_TOKEN;
+      delete process.env.GHL_LOCATION_ID;
+
+      const delivered = await outboxDispatcher.deliverEntry({
+        id: "mock-outbox-001",
+        channel: "GHL_CRM",
+        eventType: "FLIGHT_ENQUIRY_CREATED",
+        payload: { lead: "Test Customer" },
+        status: "PROCESSING",
+        attempts: 1,
+        idempotencyKey: "test-idemp-001",
+        nextRetryAt: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+
+      expect(delivered).toBe(false);
+    } finally {
+      (process.env as Record<string, string | undefined>).NODE_ENV = originalEnv;
+      if (originalKey) process.env.GHL_API_KEY = originalKey;
+      if (originalToken) process.env.GHL_ACCESS_TOKEN = originalToken;
+      if (originalLoc) process.env.GHL_LOCATION_ID = originalLoc;
+    }
+  });
 });

@@ -4,12 +4,28 @@
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { extractSessionFromRequest, revokeSessionDurable } from "@server/auth/authService";
+import { extractSessionFromRequestAsync, revokeSessionDurable, extractRawTokenFromRequest, verifySession } from "@server/auth/authService";
+import { isAuthorizedOrigin } from "@server/utils/csrfGuard";
 import { getErrorMessage } from "@server/utils/errorMessage";
 
 export async function POST(req: NextRequest) {
+  if (!isAuthorizedOrigin(req)) {
+    return NextResponse.json(
+      { success: false, error: "Cross-site request forgery detected. Request rejected." },
+      { status: 403 }
+    );
+  }
+
   try {
-    const session = extractSessionFromRequest(req);
+    let session = await extractSessionFromRequestAsync(req);
+
+    // If session was already marked revoked or had expired status, attempt to extract token to ensure jti is stored
+    if (!session) {
+      const rawToken = extractRawTokenFromRequest(req);
+      if (rawToken) {
+        session = verifySession(rawToken);
+      }
+    }
 
     if (session && session.jti) {
       await revokeSessionDurable(session.jti, session.userId, "USER_LOGOUT");
@@ -20,7 +36,7 @@ export async function POST(req: NextRequest) {
       message: "Logged out successfully. Session revoked.",
     });
 
-    // Clear session cookie
+    // Clear session cookie with Max-Age 0 and expired date
     response.cookies.set("safaria_session", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
