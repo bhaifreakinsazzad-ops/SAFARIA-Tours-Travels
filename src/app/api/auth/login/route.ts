@@ -5,38 +5,28 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { signSession } from "@server/auth/authService";
+import { staffService } from "@server/auth/staffService";
 import { enquiriesRepository } from "@server/db/enquiriesRepository";
-import { checkRateLimit, recordFailure, recordSuccess } from "@server/auth/rateLimiter";
+import { consumeRateLimit, resetRateLimit } from "@server/auth/distributedRateLimiter";
 import { readJsonBodyGuarded, PayloadTooLargeError } from "@server/utils/requestGuards";
-import { SAFARIA_CONFIG } from "@/config/constants";
+import { isAuthorizedOrigin } from "@server/utils/csrfGuard";
 import { getErrorMessage } from "@server/utils/errorMessage";
-
-const STAFF_EMAIL_DOMAIN = `@${new URL(SAFARIA_CONFIG.siteUrl).hostname}`;
 
 function clientIp(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
 }
 
-/**
- * Resolves the staff login password. SAFARIA_ADMIN_SECRET is strictly mandatory
- * in production — mirrors getSecretKey()'s fail-closed pattern in authService.ts.
- * No literal credential is ever accepted outside local/test runs.
- */
-function getStaffPassword(): string {
-  if (process.env.SAFARIA_ADMIN_SECRET) {
-    return process.env.SAFARIA_ADMIN_SECRET;
-  }
-  if (process.env.NODE_ENV === "production") {
-    throw new Error(
-      "FATAL SECURITY CONFIGURATION: SAFARIA_ADMIN_SECRET environment variable is mandatory in production! Hardcoded fallbacks are prohibited."
+export async function POST(req: NextRequest) {
+  // 1. CSRF & Origin validation
+  if (!isAuthorizedOrigin(req)) {
+    return NextResponse.json(
+      { success: false, error: "Cross-site request forgery detected. Request rejected." },
+      { status: 403 }
     );
   }
-  return "safaria-ops-2026";
-}
 
-export async function POST(req: NextRequest) {
   try {
-    const { email, password, role } = await readJsonBodyGuarded<{
+    const { email, password } = await readJsonBodyGuarded<{
       email?: string;
       password?: string;
       role?: string;
@@ -50,41 +40,60 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
-    const rateLimitKey = `${clientIp(req)}:${cleanEmail}`;
-    const lockedForSeconds = checkRateLimit(rateLimitKey);
-    if (lockedForSeconds > 0) {
+    const ip = clientIp(req);
+    const rateLimitKey = `login:${ip}:${cleanEmail}`;
+
+    // 2. Distributed sliding-window rate limiting (5 attempts per 10 minutes)
+    const rateResult = await consumeRateLimit(rateLimitKey, 5, 600);
+    if (!rateResult.allowed) {
       return NextResponse.json(
         {
           success: false,
-          error: `Too many failed login attempts. Try again in ${lockedForSeconds} seconds.`,
+          error: `Too many failed login attempts. Try again in ${rateResult.retryAfterSeconds} seconds.`,
         },
         { status: 429 }
       );
     }
 
-    // 1. Staff Admin Authentication
-    if (role === "ADMIN" || cleanEmail.endsWith(STAFF_EMAIL_DOMAIN)) {
-      const staffPassword = getStaffPassword();
-      if (password !== staffPassword) {
-        recordFailure(rateLimitKey);
+    // 3. Attempt Staff User Authentication first (Individual account lookup)
+    const staffUser = await staffService.getStaffUserByEmail(cleanEmail);
+    if (staffUser) {
+      const verifyResult = await staffService.verifyStaffCredentials(
+        cleanEmail,
+        String(password),
+        ip
+      );
+
+      if (!verifyResult.success || !verifyResult.user) {
         return NextResponse.json(
-          { success: false, error: "Invalid staff credentials" },
+          {
+            success: false,
+            error: verifyResult.error || "Invalid staff credentials",
+            lockedForSeconds: verifyResult.lockedForSeconds,
+          },
           { status: 401 }
         );
       }
-      recordSuccess(rateLimitKey);
 
+      await resetRateLimit(rateLimitKey);
+
+      // Sign session with individual staff role from database
       const token = signSession({
-        userId: "staff_001",
-        email: cleanEmail,
-        role: "SUPER_ADMIN",
+        userId: verifyResult.user.id,
+        email: verifyResult.user.email,
+        role: verifyResult.user.role,
       });
 
+      // Secure response: do NOT return raw signed token in ordinary JSON when using secure HttpOnly cookies
       const response = NextResponse.json({
         success: true,
-        role: "SUPER_ADMIN",
-        user: { email: cleanEmail, name: "SAFARIA Operations Staff" },
-        token,
+        role: verifyResult.user.role,
+        user: {
+          id: verifyResult.user.id,
+          email: verifyResult.user.email,
+          name: verifyResult.user.fullName,
+          role: verifyResult.user.role,
+        },
       });
 
       response.cookies.set("safaria_session", token, {
@@ -98,10 +107,9 @@ export async function POST(req: NextRequest) {
       return response;
     }
 
-    // 2. B2B Partner Agency Authentication
-    // Check if agency application exists in repository
-    const agencies = await enquiriesRepository.listAgencyApplications();
-    const matchedAgency = agencies.find((a) => a.email.toLowerCase() === cleanEmail);
+    // 4. B2B Partner Agency Authentication
+    // Authoritative lookup directly against PostgreSQL / Supabase
+    const matchedAgency = await enquiriesRepository.getAgencyApplicationByEmail(cleanEmail);
 
     if (!matchedAgency) {
       return NextResponse.json(
@@ -125,9 +133,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (matchedAgency.status === "REJECTED") {
+    if (matchedAgency.status === "REJECTED" || matchedAgency.status === "SUSPENDED") {
       return NextResponse.json(
-        { success: false, error: "Invalid partner credentials" },
+        {
+          success: false,
+          error: `Agency account is ${matchedAgency.status.toLowerCase()}. Access denied.`,
+        },
         { status: 401 }
       );
     }
@@ -136,8 +147,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "Partner login credentials have not been issued yet. Contact SAFARIA operations to receive your access password.",
+          error: "Partner login credentials have not been issued yet. Contact SAFARIA operations to receive your access password.",
         },
         { status: 403 }
       );
@@ -150,29 +160,33 @@ export async function POST(req: NextRequest) {
     );
 
     if (!verifiedAgency) {
-      recordFailure(rateLimitKey);
       return NextResponse.json(
         { success: false, error: "Invalid partner credentials" },
         { status: 401 }
       );
     }
-    recordSuccess(rateLimitKey);
 
-    // For verified, approved agency
+    await resetRateLimit(rateLimitKey);
+
+    // Sign session token strictly scoped to this agency ID
     const token = signSession({
-      userId: `partner_user_${matchedAgency.id}`,
-      email: matchedAgency.email,
+      userId: verifiedAgency.id,
+      email: verifiedAgency.email,
       role: "B2B_PARTNER",
-      agencyId: matchedAgency.id,
-      agencyName: matchedAgency.agencyName,
+      agencyId: verifiedAgency.id,
+      agencyName: verifiedAgency.agencyName,
     });
 
     const response = NextResponse.json({
       success: true,
       role: "B2B_PARTNER",
-      agencyId: matchedAgency.id,
-      agencyName: matchedAgency.agencyName,
-      token,
+      agencyId: verifiedAgency.id,
+      agency: {
+        id: verifiedAgency.id,
+        agencyName: verifiedAgency.agencyName,
+        email: verifiedAgency.email,
+        status: verifiedAgency.status,
+      },
     });
 
     response.cookies.set("safaria_session", token, {
@@ -186,8 +200,14 @@ export async function POST(req: NextRequest) {
     return response;
   } catch (err: unknown) {
     if (err instanceof PayloadTooLargeError) {
-      return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 413 });
+      return NextResponse.json(
+        { success: false, error: "Request payload exceeds maximum permitted size" },
+        { status: 413 }
+      );
     }
-    return NextResponse.json({ success: false, error: getErrorMessage(err) }, { status: 500 });
+    return NextResponse.json(
+      { success: false, error: getErrorMessage(err) },
+      { status: 500 }
+    );
   }
 }

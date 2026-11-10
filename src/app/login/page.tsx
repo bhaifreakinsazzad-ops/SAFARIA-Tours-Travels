@@ -32,6 +32,7 @@ export default function LoginPage() {
         return;
       }
 
+      setSubmitting(false);
       router.push(data.role === "SUPER_ADMIN" ? "/admin" : "/partner");
     } catch {
       setError("Unable to reach the server. Please try again.");

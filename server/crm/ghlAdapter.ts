@@ -15,15 +15,11 @@ export interface GhlSyncResult {
 }
 
 /**
- * Creates a GHL opportunity against a contact that was just upserted. Requires
+ * Creates a GHL opportunity against an existing contact ID. Requires
  * GHL_PIPELINE_ID and GHL_PIPELINE_STAGE_ID in addition to the base GHL
- * credentials — neither is configured anywhere in this repo (no owner-supplied
- * pipeline exists yet), so this silently no-ops until the business owner
- * provisions a real GHL pipeline and supplies those two IDs. Failures never
- * throw past this function — a missing/broken opportunity call must not fail
- * the contact sync it's attached to.
+ * credentials.
  */
-async function tryCreateOpportunity(params: {
+export async function tryCreateOpportunity(params: {
   apiKey: string;
   locationId: string;
   contactId: string | undefined;
@@ -127,6 +123,16 @@ export const ghlAdapter = {
         name: `Flight Quotation ${enquiry.referenceNo}`,
       });
 
+      // If pipeline was configured but opportunity creation failed, persist recoverable outbox task
+      const pipelineConfigured = Boolean(process.env.GHL_PIPELINE_ID && process.env.GHL_PIPELINE_STAGE_ID);
+      if (pipelineConfigured && !opportunityId && contactId) {
+        await enquiriesRepository.enqueueOutbox("GHL_CRM", "GHL_OPPORTUNITY_RETRY", {
+          contactId,
+          name: `Flight Quotation ${enquiry.referenceNo}`,
+          referenceNo: enquiry.referenceNo,
+        }, `ghl_opp_${enquiry.id}`);
+      }
+
       return {
         success: true,
         contactId,
@@ -211,6 +217,16 @@ export const ghlAdapter = {
         contactId,
         name: `B2B Agency Application ${app.referenceNo}`,
       });
+
+      // If pipeline was configured but opportunity creation failed, persist recoverable outbox task
+      const pipelineConfigured = Boolean(process.env.GHL_PIPELINE_ID && process.env.GHL_PIPELINE_STAGE_ID);
+      if (pipelineConfigured && !opportunityId && contactId) {
+        await enquiriesRepository.enqueueOutbox("GHL_CRM", "GHL_OPPORTUNITY_RETRY", {
+          contactId,
+          name: `B2B Agency Application ${app.referenceNo}`,
+          referenceNo: app.referenceNo,
+        }, `ghl_opp_${app.id}`);
+      }
 
       return {
         success: true,

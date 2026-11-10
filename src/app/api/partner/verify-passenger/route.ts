@@ -1,10 +1,11 @@
 // ==============================================================================
 // SAFARIA Tours & Travels — Verified Workflow™ Name & Passport Verification API
-// Eliminates airline reissue penalties caused by misspelled passenger names
+// Passenger name formatting and document validity advisory check
 // ==============================================================================
 
 import { NextRequest, NextResponse } from "next/server";
-import { extractSessionFromRequest } from "@server/auth/authService";
+import { extractSessionFromRequestAsync } from "@server/auth/authService";
+import { isAuthorizedOrigin } from "@server/utils/csrfGuard";
 import { getErrorMessage } from "@server/utils/errorMessage";
 
 export interface PassengerAuditResult {
@@ -12,17 +13,25 @@ export interface PassengerAuditResult {
   warnings: string[];
   normalizedSurname: string;
   normalizedGivenNames: string;
-  formattedGdsString: string; // e.g. RAHMAN/TANVIR MR
+  formattedGdsString: string;
+  disclaimer: string;
 }
 
 export async function POST(req: NextRequest) {
-  const session = extractSessionFromRequest(req);
+  if (!isAuthorizedOrigin(req)) {
+    return NextResponse.json(
+      { success: false, error: "Cross-site request forgery detected. Request rejected." },
+      { status: 403 }
+    );
+  }
+
+  const session = await extractSessionFromRequestAsync(req);
   if (!session) {
     return NextResponse.json({ success: false, error: "Authentication required" }, { status: 401 });
   }
 
   try {
-    const { surname, givenNames, title, passportExpiry } = await req.json();
+    const { surname, givenNames, title, passportExpiry, dateOfBirth } = await req.json();
 
     if (!surname || !givenNames) {
       return NextResponse.json(
@@ -41,7 +50,7 @@ export async function POST(req: NextRequest) {
       warnings.push("Names contain punctuation or non-alphabetic characters. Airlines require letters only (A-Z).");
     }
 
-    // 2. Check title embedded inside given name (common agent error: "MR MD RAHMAN")
+    // 2. Check title embedded inside given name (e.g. "MR MD RAHMAN")
     const commonTitles = ["MR", "MRS", "MS", "MISS", "MSTR", "DR"];
     for (const t of commonTitles) {
       if (cleanGiven.startsWith(`${t} `) || cleanGiven.endsWith(` ${t}`)) {
@@ -49,18 +58,26 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // 3. Single name check (passports with only one name e.g. "MOHAMMAD")
+    // 3. Single name check
     if (cleanSurname === cleanGiven) {
-      warnings.push("Surname and given name appear identical. Airlines like Saudia/Emirates require FNU (First Name Unknown) formatting.");
+      warnings.push("Surname and given name appear identical. Certain carriers require FNU (First Name Unknown) formatting.");
     }
 
-    // 4. Passport validity check
+    // 4. Date of birth sanity check
+    if (dateOfBirth) {
+      const dob = new Date(dateOfBirth);
+      if (isNaN(dob.getTime()) || dob > new Date()) {
+        warnings.push("Date of birth cannot be in the future.");
+      }
+    }
+
+    // 5. Passport validity advisory
     if (passportExpiry) {
       const expDate = new Date(passportExpiry);
       const minValid = new Date();
-      minValid.setMonth(minValid.getMonth() + 6); // 6 months rule
+      minValid.setMonth(minValid.getMonth() + 6);
       if (expDate < minValid) {
-        warnings.push("Passport validity is under 6 months from today. International travel may be rejected by immigration.");
+        warnings.push("Passport validity is under 6 months from today. Many international destinations require at least 6 months validity from departure date.");
       }
     }
 
@@ -74,7 +91,8 @@ export async function POST(req: NextRequest) {
         normalizedSurname: cleanSurname,
         normalizedGivenNames: cleanGiven,
         formattedGdsString,
-        penaltyRiskLevel: warnings.length === 0 ? "ZERO_RISK" : "HIGH_PENALTY_RISK",
+        penaltyRiskLevel: warnings.length === 0 ? "LOW_RISK" : "ADVISORY_WARNINGS",
+        disclaimer: "Document advisory check only. Specific destination immigration rules and airline requirements vary; this check does not guarantee passport authenticity or border entry.",
       },
     });
   } catch (err: unknown) {

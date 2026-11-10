@@ -5,7 +5,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { outboxDispatcher } from "@server/crm/outboxDispatcher";
-import { extractSessionFromRequest } from "@server/auth/authService";
+import { extractSessionFromRequestAsync } from "@server/auth/authService";
 import { getErrorMessage } from "@server/utils/errorMessage";
 
 async function dispatchAndRespond() {
@@ -27,9 +27,8 @@ async function dispatchAndRespond() {
 
 /**
  * Vercel Cron Jobs issue a GET request with `Authorization: Bearer <CRON_SECRET>`
- * (see vercel.json's `crons` entry for this route) — this is the entry point
- * that actually gets invoked on a schedule once deployed. Without CRON_SECRET
- * configured, this path is unreachable (no insecure fallback).
+ * (see vercel.json's `crons` entry for this route). Without CRON_SECRET configured,
+ * this path is unreachable (fails closed).
  */
 export async function GET(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -52,11 +51,11 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const cronSecret = req.headers.get("x-cron-secret");
   const configuredCronSecret = process.env.CRON_SECRET;
-  const session = extractSessionFromRequest(req);
+  const session = await extractSessionFromRequestAsync(req);
 
   const isAuthorized =
     (Boolean(configuredCronSecret) && cronSecret === configuredCronSecret) ||
-    (session && (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT")) ||
+    (session && (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT" || session.role === "FINANCE_DESK")) ||
     (process.env.NODE_ENV === "test" && cronSecret === "safaria-cron-secret-2026");
 
   if (!isAuthorized) {

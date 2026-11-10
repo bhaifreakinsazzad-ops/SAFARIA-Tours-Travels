@@ -1,7 +1,7 @@
 // ==============================================================================
 // SAFARIA Tours & Travels — Real Native PostgreSQL Server Integration Test
 // Executes against real PostgreSQL 18 binary: RLS, Persistence Across Restarts,
-// Concurrency with FOR UPDATE SKIP LOCKED, and Schema Migration Compatibility
+// Concurrency with FOR UPDATE SKIP LOCKED, Dynamic Port Allocation, and Schema Compatibility
 // ==============================================================================
 
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
@@ -9,15 +9,30 @@ import EmbeddedPostgres from "embedded-postgres";
 import fs from "fs";
 import path from "path";
 import os from "os";
+import net from "net";
 import { enquiriesRepository } from "@server/db/enquiriesRepository";
 import { _closeScopedPoolForTests } from "@server/db/scopedPgClient";
 
-describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
+async function getFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = net.createServer();
+    srv.listen(0, "127.0.0.1", () => {
+      const p = (srv.address() as net.AddressInfo).port;
+      srv.close((err) => {
+        if (err) reject(err);
+        else resolve(p);
+      });
+    });
+  });
+}
+
+describe("Real Native PostgreSQL 18 Server Engine (Directive 007 & 011)", () => {
   let pg: EmbeddedPostgres;
   let dbDir: string;
-  const port = 54333; // Isolated test port
+  let port: number;
 
   beforeAll(async () => {
+    port = await getFreePort();
     dbDir = path.join(os.tmpdir(), `safaria_pg_real_${Date.now()}`);
     pg = new EmbeddedPostgres({
       databaseDir: dbDir,
@@ -53,17 +68,26 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     await client.end();
   }, 30000);
 
-  it("applies 001_safaria_core_schema.sql DDL to real PostgreSQL engine without error", async () => {
-    const migrationPath = path.resolve(__dirname, "../../supabase/migrations/001_safaria_core_schema.sql");
-    const migrationSql = fs.readFileSync(migrationPath, "utf8");
+  it("applies migrations 001, 002, 003 DDL to real PostgreSQL engine without error", async () => {
+    const migrationDir = path.resolve(__dirname, "../../supabase/migrations");
+    const migrationFiles = [
+      "001_safaria_core_schema.sql",
+      "002_agency_partner_credentials.sql",
+      "003_staff_users_and_rate_limits.sql",
+    ];
 
     const client = pg.getPgClient();
     await client.connect();
 
-    // Execute the complete real migration script
-    await client.query(migrationSql);
+    for (const file of migrationFiles) {
+      const fullPath = path.join(migrationDir, file);
+      if (fs.existsSync(fullPath)) {
+        const sql = fs.readFileSync(fullPath, "utf8");
+        await client.query(sql);
+      }
+    }
 
-    // Verify all 7 core tables exist in PostgreSQL information_schema
+    // Verify all core tables exist in PostgreSQL information_schema
     const tablesRes = await client.query(`
       SELECT table_name 
       FROM information_schema.tables 
@@ -79,6 +103,9 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     expect(tableNames).toContain("b2b_desk_records");
     expect(tableNames).toContain("integration_outbox");
     expect(tableNames).toContain("revoked_sessions");
+    expect(tableNames).toContain("staff_users");
+    expect(tableNames).toContain("staff_audit_logs");
+    expect(tableNames).toContain("rate_limits");
 
     await client.end();
   }, 30000);
@@ -148,80 +175,86 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
       try {
         const { execSync } = await import("child_process");
         const list = execSync('tasklist /fi "imagename eq postgres.exe" /nh', { encoding: "utf8" });
-        if (!list.includes("postgres.exe")) {
-          break;
-        }
+        if (!list.includes("postgres.exe")) break;
       } catch {
         break;
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
-    // Additional grace period to ensure Windows kernel IPC handle release
-    await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    // RESTART the PostgreSQL server from the persistent cluster directory
+    // Re-instantiate pointing to the SAME physical database directory
+    pg = new EmbeddedPostgres({
+      databaseDir: dbDir,
+      port,
+      user: "postgres",
+      password: "password",
+      persistent: true,
+      authMethod: "password",
+    });
+
     await pg.start();
 
-    // Reconnect new client
+    // Reconnect and verify data survived the shutdown and crash recovery
     const client2 = pg.getPgClient();
     await client2.connect();
 
-    const queryRes = await client2.query(`
-      SELECT reference_no, agency_name, status 
+    const result = await client2.query(`
+      SELECT agency_name, city, status 
       FROM agency_applications 
       WHERE reference_no = 'B2B-20261108-DURABLE';
     `);
 
-    expect(queryRes.rows.length).toBe(1);
-    expect(queryRes.rows[0].agency_name).toBe("Durable Aviation Ltd");
-    expect(queryRes.rows[0].status).toBe("ACTIVE_PARTNER");
+    expect(result.rows.length).toBe(1);
+    expect(result.rows[0].agency_name).toBe("Durable Aviation Ltd");
+    expect(result.rows[0].city).toBe("Sylhet");
+    expect(result.rows[0].status).toBe("ACTIVE_PARTNER");
 
     await client2.end();
   }, 60000);
 
-  it("executes atomic distributed job claiming with FOR UPDATE SKIP LOCKED across concurrent connections", async () => {
+  it("demonstrates distributed worker row claiming with FOR UPDATE SKIP LOCKED without double delivery", async () => {
+    const clientSetup = pg.getPgClient();
+    await clientSetup.connect();
+
+    // Clear and insert 4 pending jobs into integration_outbox
+    await clientSetup.query("TRUNCATE TABLE integration_outbox;");
+    await clientSetup.query(`
+      INSERT INTO integration_outbox (channel, event_type, payload, idempotency_key, status)
+      VALUES 
+        ('GHL_CRM', 'FLIGHT_ENQUIRY', '{"ref": "JOB1"}'::jsonb, 'idem-job-1', 'PENDING'),
+        ('GHL_CRM', 'FLIGHT_ENQUIRY', '{"ref": "JOB2"}'::jsonb, 'idem-job-2', 'PENDING'),
+        ('GHL_CRM', 'FLIGHT_ENQUIRY', '{"ref": "JOB3"}'::jsonb, 'idem-job-3', 'PENDING'),
+        ('GHL_CRM', 'FLIGHT_ENQUIRY', '{"ref": "JOB4"}'::jsonb, 'idem-job-4', 'PENDING');
+    `);
+    await clientSetup.end();
+
+    // Worker A and Worker B run concurrent queries using FOR UPDATE SKIP LOCKED
     const clientA = pg.getPgClient();
     const clientB = pg.getPgClient();
     await clientA.connect();
     await clientB.connect();
 
-    // Seed 4 pending outbox entries
-    for (let i = 1; i <= 4; i++) {
-      await clientA.query(`
-        INSERT INTO integration_outbox (
-          channel, event_type, payload, idempotency_key, status
-        ) VALUES (
-          'GHL_CRM', 'CONTACT_UPSERT', '{"test": true}'::jsonb, 'pg-claim-test-${Date.now()}-${i}', 'PENDING'
-        );
-      `);
-    }
-
-    // Worker A claims 2 entries in transaction with SKIP LOCKED
     await clientA.query("BEGIN;");
+    await clientB.query("BEGIN;");
+
+    // Worker A claims 2 records
     const claimA = await clientA.query(`
-      UPDATE integration_outbox
-      SET status = 'PROCESSING', locked_by = 'worker-node-1'
-      WHERE id IN (
-        SELECT id FROM integration_outbox
-        WHERE status = 'PENDING'
-        ORDER BY created_at ASC
-        LIMIT 2
-        FOR UPDATE SKIP LOCKED
-      ) RETURNING id;
+      SELECT id, idempotency_key 
+      FROM integration_outbox 
+      WHERE status = 'PENDING' 
+      ORDER BY created_at ASC 
+      LIMIT 2 
+      FOR UPDATE SKIP LOCKED;
     `);
 
-    // Worker B claims 2 entries in transaction with SKIP LOCKED concurrently
-    await clientB.query("BEGIN;");
+    // Worker B claims 2 records concurrently — SKIP LOCKED must guarantee Worker B never sees Worker A's rows
     const claimB = await clientB.query(`
-      UPDATE integration_outbox
-      SET status = 'PROCESSING', locked_by = 'worker-node-2'
-      WHERE id IN (
-        SELECT id FROM integration_outbox
-        WHERE status = 'PENDING'
-        ORDER BY created_at ASC
-        LIMIT 2
-        FOR UPDATE SKIP LOCKED
-      ) RETURNING id;
+      SELECT id, idempotency_key 
+      FROM integration_outbox 
+      WHERE status = 'PENDING' 
+      ORDER BY created_at ASC 
+      LIMIT 2 
+      FOR UPDATE SKIP LOCKED;
     `);
 
     await clientA.query("COMMIT;");
@@ -286,7 +319,7 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     ).rejects.toThrow(/permission denied/i);
     await client.query("RESET ROLE;");
 
-    // 2. Insert two distinct partner agencies into agency_applications first
+    // 2. Insert two distinct partner agencies (Agency Alpha and Agency Beta)
     await client.query("SET ROLE service_role;");
     const appAlpha = await client.query(`
       INSERT INTO agency_applications (
@@ -396,11 +429,105 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
     await client.end();
   }, 30000);
 
+  it("proves staff_users RBAC isolation and audit log persistence in real PostgreSQL", async () => {
+    const client = pg.getPgClient();
+    await client.connect();
+
+    // 1. Anon role cannot select staff users
+    await client.query("SET ROLE anon;");
+    await expect(
+      client.query("SELECT * FROM staff_users;")
+    ).rejects.toThrow(/permission denied/i);
+    await client.query("RESET ROLE;");
+
+    // 2. Authenticated role cannot select staff users
+    await client.query("SET ROLE authenticated;");
+    await expect(
+      client.query("SELECT * FROM staff_users;")
+    ).rejects.toThrow(/permission denied/i);
+    await client.query("RESET ROLE;");
+
+    // 3. Service role can insert and read staff users
+    await client.query("SET ROLE service_role;");
+    const staffRes = await client.query(`
+      INSERT INTO staff_users (email, full_name, role, password_hash, password_salt, status)
+      VALUES ('ops.lead@safaria.vibing.world', 'Operations Lead', 'SUPER_ADMIN', 'mock_hash', 'mock_salt', 'ACTIVE')
+      RETURNING id, email, role;
+    `);
+    expect(staffRes.rows.length).toBe(1);
+    expect(staffRes.rows[0].email).toBe("ops.lead@safaria.vibing.world");
+    expect(staffRes.rows[0].role).toBe("SUPER_ADMIN");
+
+    // 4. Rate limits table is protected from anon manipulation (Directive 014 P0 security)
+    await client.query("SET ROLE anon;");
+    await expect(
+      client.query(`
+        INSERT INTO rate_limits (key, points, expire_at)
+        VALUES ('test:anon:ip', 1, NOW() + INTERVAL '10 minutes')
+        RETURNING points;
+      `)
+    ).rejects.toThrow();
+
+    // 5. Rate limits table is accessible to service_role for atomic rate limiting
+    await client.query("SET ROLE service_role;");
+    const rateRes = await client.query(`
+      INSERT INTO rate_limits (key, points, expire_at)
+      VALUES ('test:anon:ip', 1, NOW() + INTERVAL '10 minutes')
+      RETURNING points;
+    `);
+    expect(rateRes.rows[0].points).toBe(1);
+
+    // 6. Directive 015: consume_rate_limit() execution is strictly denied to anon and granted to service_role
+    await client.query("SET ROLE anon;");
+    await expect(
+      client.query("SELECT * FROM consume_rate_limit('test:anon:rpc', 60, 5);")
+    ).rejects.toThrow();
+
+    await client.query("SET ROLE service_role;");
+    const rpcRes = await client.query("SELECT * FROM consume_rate_limit('test:service:rpc', 60, 5);");
+    expect(rpcRes.rows[0].allowed).toBe(true);
+    expect(rpcRes.rows[0].points).toBe(1);
+
+    await client.query("RESET ROLE;");
+    await client.end();
+  }, 30000);
+
+  it("proves Directive 015 atomic concurrency handling for rate limiting under simultaneous connections", async () => {
+    const client1 = pg.getPgClient();
+    const client2 = pg.getPgClient();
+    const client3 = pg.getPgClient();
+
+    await Promise.all([client1.connect(), client2.connect(), client3.connect()]);
+
+    try {
+      await Promise.all([
+        client1.query("SET ROLE service_role;"),
+        client2.query("SET ROLE service_role;"),
+        client3.query("SET ROLE service_role;"),
+      ]);
+
+      const testKey = `concurrent:test:${Date.now()}`;
+
+      // Execute 3 concurrent requests simultaneously when key does not exist yet
+      const [res1, res2, res3] = await Promise.all([
+        client1.query("SELECT * FROM consume_rate_limit($1, 60, 5);", [testKey]),
+        client2.query("SELECT * FROM consume_rate_limit($1, 60, 5);", [testKey]),
+        client3.query("SELECT * FROM consume_rate_limit($1, 60, 5);", [testKey]),
+      ]);
+
+      const points = [res1.rows[0].points, res2.rows[0].points, res3.rows[0].points].sort((a, b) => a - b);
+      // Because operations are strictly serialized via FOR UPDATE row locking and atomic UPSERT,
+      // the three points returned MUST be sequentially 1, 2, and 3 with zero lost increments.
+      expect(points).toEqual([1, 2, 3]);
+      expect(res1.rows[0].allowed).toBe(true);
+      expect(res2.rows[0].allowed).toBe(true);
+      expect(res3.rows[0].allowed).toBe(true);
+    } finally {
+      await Promise.all([client1.end(), client2.end(), client3.end()]);
+    }
+  }, 30000);
+
   it("closes the audited gap: enquiriesRepository's B2B desk functions themselves are RLS-enforced, not just raw SQL", async () => {
-    // Prior coverage above proves RLS policies work via raw SQL. This proves
-    // the actual application code path (server/db/scopedPgClient.ts, wired
-    // into enquiriesRepository.*) is genuinely DB-enforced end to end —
-    // service-role Supabase client, which bypasses RLS, is never used here.
     const originalDatabaseUrl = process.env.DATABASE_URL;
     process.env.DATABASE_URL = `postgres://postgres:password@localhost:${port}/postgres`;
 
@@ -448,8 +575,6 @@ describe("Real Native PostgreSQL 18 Server Engine (Directive 007)", () => {
       expect(deltaView.some((r) => r.id === gammaRecord.id)).toBe(false);
 
       // Gamma attempting to update Delta's record by ID is rejected by RLS
-      // (the row simply isn't visible/updatable under Gamma's scope), not by
-      // an application-code ownership check.
       const crossTenantUpdate = await enquiriesRepository.updateB2BDeskRecord(
         deltaRecord.id,
         "RESOLVED",
