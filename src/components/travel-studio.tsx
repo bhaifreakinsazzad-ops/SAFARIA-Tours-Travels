@@ -12,7 +12,7 @@ const labels = {
   en: ["Service", "Route & dates", "Passengers", "Preferences", "Review"],
 };
 const serviceOptions = [
-  ["air", "ফ্লাইট", "Flights"], ["tour", "ট্যুর", "Tours"], ["hotel", "হোটেল", "Hotels"], ["visa", "ভিসা", "Visa"], ["transport", "যাতায়াত", "Transfers"],
+  ["air", "ফ্লাইট", "Flights"], ["tour", "ট্যুর", "Tours"], ["hotel", "হোটেল", "Hotels"], ["visa", "ভিসা", "Visa"], ["umrah", "ওমরাহ", "Umrah"], ["transport", "যাতায়াত", "Transfers"],
 ];
 
 export function TravelStudio({ language }: { language: Language }) {
@@ -54,10 +54,13 @@ export function TravelStudio({ language }: { language: Language }) {
         "business": "BUSINESS",
         "first": "FIRST",
       };
-      const res = await fetch("/api/enquiries", {
+      const generalServiceType: Record<string, "VISA" | "HOLIDAY" | "HOTEL" | "UMRAH" | "CUSTOM"> = {
+        visa: "VISA", tour: "HOLIDAY", hotel: "HOTEL", umrah: "UMRAH", transport: "CUSTOM",
+      };
+      const res = await fetch(fields.category === "air" ? "/api/enquiries" : "/api/general", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+        body: JSON.stringify(fields.category === "air" ? {
           tripType: fields.tripType === "return" ? "ROUND_TRIP" : (fields.tripType === "multi-city" ? "MULTI_CITY" : "ONE_WAY"),
           legs: [
             {
@@ -89,8 +92,16 @@ export function TravelStudio({ language }: { language: Language }) {
           phoneCountryCode: "+880",
           phoneNumber: cleanPhone.startsWith("880") ? cleanPhone.slice(3) : cleanPhone,
           email: fields.email.trim() || undefined,
-          specialNotes: `${fields.baggage ? `Baggage: ${fields.baggage}. ` : ""}${fields.notes}`.trim() || undefined,
-          consentAgreed: true,
+          specialNotes: `${fields.baggage ? `Baggage: ${fields.baggage}. ` : ""}${fields.notes}`.trim().slice(0, 500) || undefined,
+          consentAgreed: fields.consent,
+        } : {
+          serviceType: generalServiceType[fields.category] || "CUSTOM",
+          fullName: fields.fullName.trim(),
+          phone: fields.phone.trim(),
+          email: fields.email.trim() || undefined,
+          destinationOrCountry: destinations.find((d) => d.code === fields.destination)?.city || fields.destination,
+          passengerOrPaxCount: fields.adults + fields.children + fields.infants,
+          message: `Route: ${fields.origin} → ${fields.destination}. Departure: ${fields.departure}. Trip type: ${fields.tripType}. Cabin: ${fields.cabin}. ${fields.notes || "Please provide a quotation and service details."}`.slice(0, 1000),
         }),
       });
       const data = await res.json();
