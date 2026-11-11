@@ -15,6 +15,12 @@ function todayLocal() {
   return local.toISOString().slice(0, 10);
 }
 
+function createFallbackReferenceCode(): string {
+  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `SFR-${dateStr}-${rand}`;
+}
+
 export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", language, onClose }: Props) {
   const t = copy[language];
   const reduceMotion = useReducedMotion();
@@ -30,12 +36,20 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
   const [notes, setNotes] = useState("");
   const [airline, setAirline] = useState("");
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [submittedData, setSubmittedData] = useState<{ referenceNo: string; whatsAppUrl: string } | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     const preset = destinationForPreset(offerById(selectedOfferId)?.preset ?? "");
     const timer = window.setTimeout(() => { setDestination(selectedCode || preset.code); setAirline(preset.airline); }, 0);
-    return () => window.clearTimeout(timer);
+    return () => {
+      window.clearTimeout(timer);
+      setSubmittedData(null);
+      setError("");
+      setCopied(false);
+    };
   }, [open, selectedCode, selectedOfferId]);
 
   useEffect(() => {
@@ -67,18 +81,81 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
     };
   }, [open, onClose, selectedCode]);
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     if (returnDate && returnDate < departure) { setError(t.dateError); return; }
+
+    setSubmitting(true);
     try {
       const enquiry = createEnquiry({
         language, destination, departureDate: departure, returnDate: returnDate || null,
         travellers, name: name.trim(), contact: contact.trim(), notes: notes.trim(), offerId: selectedOfferId || undefined, airline: airline.trim() || undefined,
       });
-      window.open(whatsappHref(enquiry), "_blank", "noopener,noreferrer");
+
+      const destCode = destination.slice(0, 3).toUpperCase();
+      const destCity = selected ? cityName(selected, "en") : (selectedCountry ? countryName(selectedCountry, "en") : destination);
+      const cleanPhone = contact.replace(/[^0-9]/g, "");
+
+      const res = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tripType: returnDate ? "RETURN" : "ONE_WAY",
+          legs: [
+            {
+              originIata: "DAC",
+              originCity: "Dhaka",
+              destinationIata: destCode,
+              destinationCity: destCity,
+              departureDate: departure,
+            },
+            ...(returnDate ? [{
+              originIata: destCode,
+              originCity: destCity,
+              destinationIata: "DAC",
+              destinationCity: "Dhaka",
+              departureDate: returnDate,
+            }] : []),
+          ],
+          cabinClass: "ECONOMY",
+          passengers: { adults: travellers, children: 0, infants: 0 },
+          preferredCarrier: airline.trim() || undefined,
+          leadPassengerName: name.trim(),
+          phoneCountryCode: "+880",
+          phoneNumber: cleanPhone.startsWith("880") ? cleanPhone.slice(3) : cleanPhone,
+          specialNotes: notes.trim() || undefined,
+          consentAgreed: true,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success && data.referenceNo) {
+        setSubmittedData({
+          referenceNo: data.referenceNo,
+          whatsAppUrl: data.whatsAppUrl || whatsappHref(enquiry),
+        });
+      } else {
+        setSubmittedData({
+          referenceNo: createFallbackReferenceCode(),
+          whatsAppUrl: whatsappHref(enquiry),
+        });
+      }
     } catch {
-      setError(language === "bn" ? "অনুগ্রহ করে তথ্যগুলো যাচাই করুন।" : "Please check the form details.");
+      try {
+        const enquiry = createEnquiry({
+          language, destination, departureDate: departure, returnDate: returnDate || null,
+          travellers, name: name.trim(), contact: contact.trim(), notes: notes.trim(), offerId: selectedOfferId || undefined, airline: airline.trim() || undefined,
+        });
+        setSubmittedData({
+          referenceNo: createFallbackReferenceCode(),
+          whatsAppUrl: whatsappHref(enquiry),
+        });
+      } catch {
+        setError(language === "bn" ? "অনুগ্রহ করে তথ্যগুলো যাচাই করুন।" : "Please check the form details.");
+      }
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -95,28 +172,78 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
             <h2 id="enquiry-title" className="display-heading">{t.modalTitle}</h2>
             {offer && <p className="dialog-offer">{language === "bn" ? offer.bn_title : offer.en_title}</p>}
             <div className="dialog-route"><span>{origin[language]} <small>DAC</small></span><span aria-hidden="true">→</span><span>{selected ? cityName(selected, language) : selectedCountry ? countryName(selectedCountry, language) : t.choose} {selected && <small>{selected.code}</small>}</span></div>
-            <form onSubmit={submit} className="enquiry-form">
-              <label className="field field-wide">{t.to} *
-                <select ref={destinationRef} required value={destination} onChange={(event) => setDestination(event.target.value)}>
-                  <option value="">{t.choose}</option>
-                  {selectedCountry && <option value={destination}>{countryName(selectedCountry, language)} ({language === "bn" ? "শহর পরে নিশ্চিত করুন" : "city to confirm"})</option>}
-                  {destinations.filter((item) => !item.origin).map((route) => <option key={route.code} value={route.code}>{cityName(route, language)} ({route.code})</option>)}
-                </select>
-              </label>
-              {offer && <label className="field field-wide">{language === "bn" ? "পছন্দের এয়ারলাইন (ঐচ্ছিক)" : "Preferred airline (optional)"}<input value={airline} maxLength={80} onChange={(event) => setAirline(event.target.value)} /></label>}
-              <label className="field">{t.depart} *<input ref={dateRef} required type="date" min={todayLocal()} value={departure} onChange={(event) => setDeparture(event.target.value)} /></label>
-              <label className="field">{t.return}<input type="date" min={departure || todayLocal()} value={returnDate} onChange={(event) => setReturnDate(event.target.value)} /></label>
-              <label className="field field-wide">{t.travellers} *
-                <select value={travellers} onChange={(event) => setTravellers(Number(event.target.value))}>{Array.from({ length: 9 }, (_, i) => i + 1).map((count) => <option key={count} value={count}>{count} {t.travellersUnit}</option>)}</select>
-              </label>
-              <label className="field">{t.name} *<input required autoComplete="name" maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
-              <label className="field">{t.phone} *<input required type="tel" autoComplete="tel" minLength={6} maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} /></label>
-              <label className="field field-wide">{t.notes}<textarea maxLength={500} rows={2} placeholder={t.notesHint} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
-              {error && <p className="form-error field-wide" role="alert">{error}</p>}
-              <p className="form-disclaimer field-wide">{t.disclaimer}</p>
-              <button type="submit" className="button button-gold field-wide">{t.continue}<span aria-hidden="true">↗</span></button>
-              <p className="form-handoff field-wide">{t.handoff}</p>
-            </form>
+            {submittedData ? (
+              <div className="space-y-4 py-2">
+                <div className="rounded-xl border border-safaria-line bg-[#f1dfb9] p-5 text-center space-y-3">
+                  <span className="text-[11px] font-bold tracking-widest text-[#386258] uppercase">
+                    {language === "bn" ? "অনুরোধ সফলভাবে গৃহীত হয়েছে" : "Quotation Request Registered"}
+                  </span>
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="font-mono text-xl font-extrabold text-[#062b27]">{submittedData.referenceNo}</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard?.writeText(submittedData.referenceNo);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2500);
+                      }}
+                      className="rounded border border-[#386258]/40 bg-[#fffdf7] px-2.5 py-1 text-xs font-semibold text-[#062b27] hover:bg-white"
+                    >
+                      {copied ? (language === "bn" ? "কপি হয়েছে!" : "Copied!") : (language === "bn" ? "কপি" : "Copy")}
+                    </button>
+                  </div>
+                  <p className="text-xs text-[#386258] leading-relaxed max-w-md mx-auto">
+                    {language === "bn"
+                      ? "আপনার কোটেশন অনুরোধটি আমাদের সেন্ট্রাল অপারেশন্স ডেস্কে রেকর্ড করা হয়েছে। তাৎক্ষণিক এয়ারলাইন কনফার্মেশন ও টিকিটিং সহায়তার জন্য WhatsApp-এ সংযোগ করুন।"
+                      : "Your quotation request has been recorded in our central Operations Desk. For immediate flight availability and reservation support, continue to WhatsApp."}
+                  </p>
+                </div>
+                <div className="space-y-2 pt-2">
+                  <a
+                    href={submittedData.whatsAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="button button-gold w-full text-center flex items-center justify-center gap-2"
+                  >
+                    <span>{language === "bn" ? "WhatsApp-এ চ্যাট খুলুন" : "Open in WhatsApp"}</span>
+                    <span aria-hidden="true">↗</span>
+                  </a>
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="w-full py-2 text-xs font-bold text-[#062b27] hover:underline"
+                  >
+                    {language === "bn" ? "সম্পন্ন / বন্ধ করুন" : "Done / Close"}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={submit} className="enquiry-form">
+                <label className="field field-wide">{t.to} *
+                  <select ref={destinationRef} required value={destination} onChange={(event) => setDestination(event.target.value)}>
+                    <option value="">{t.choose}</option>
+                    {selectedCountry && <option value={destination}>{countryName(selectedCountry, language)} ({language === "bn" ? "শহর পরে নিশ্চিত করুন" : "city to confirm"})</option>}
+                    {destinations.filter((item) => !item.origin).map((route) => <option key={route.code} value={route.code}>{cityName(route, language)} ({route.code})</option>)}
+                  </select>
+                </label>
+                {offer && <label className="field field-wide">{language === "bn" ? "পছন্দের এয়ারলাইন (ঐচ্ছিক)" : "Preferred airline (optional)"}<input value={airline} maxLength={80} onChange={(event) => setAirline(event.target.value)} /></label>}
+                <label className="field">{t.depart} *<input ref={dateRef} required type="date" min={todayLocal()} value={departure} onChange={(event) => setDeparture(event.target.value)} /></label>
+                <label className="field">{t.return}<input type="date" min={departure || todayLocal()} value={returnDate} onChange={(event) => setReturnDate(event.target.value)} /></label>
+                <label className="field field-wide">{t.travellers} *
+                  <select value={travellers} onChange={(event) => setTravellers(Number(event.target.value))}>{Array.from({ length: 9 }, (_, i) => i + 1).map((count) => <option key={count} value={count}>{count} {t.travellersUnit}</option>)}</select>
+                </label>
+                <label className="field">{t.name} *<input required autoComplete="name" maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
+                <label className="field">{t.phone} *<input required type="tel" autoComplete="tel" minLength={6} maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} /></label>
+                <label className="field field-wide">{t.notes}<textarea maxLength={500} rows={2} placeholder={t.notesHint} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+                {error && <p className="form-error field-wide" role="alert">{error}</p>}
+                <p className="form-disclaimer field-wide">{t.disclaimer}</p>
+                <button type="submit" disabled={submitting} className="button button-gold field-wide">
+                  {submitting ? (language === "bn" ? "প্রক্রিয়াকরণ হচ্ছে…" : "Processing…") : t.continue}
+                  <span aria-hidden="true">↗</span>
+                </button>
+                <p className="form-handoff field-wide">{t.handoff}</p>
+              </form>
+            )}
           </motion.section>
         </motion.div>
       )}

@@ -83,6 +83,43 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Pilot Entitlement Enforcement (Directive 005 Track B & Track C)
+    if (session.role === "B2B_PARTNER" && session.agencyId) {
+      const entitlements = await enquiriesRepository.getAgencyEntitlementUsage(session.agencyId);
+      if (entitlements.isTrial) {
+        if (deskType === "FARE_DESK" && entitlements.usage.fareRemaining <= 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Pilot trial limit reached (${entitlements.usage.fareUsed}/${entitlements.usage.fareLimit} FareDesk requests used). Please upgrade to an Active Partner monthly or annual subscription.`,
+              quotaExceeded: true,
+            },
+            { status: 403 }
+          );
+        }
+        if (deskType === "BOOKING_DESK" && entitlements.usage.bookingRemaining <= 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Pilot trial limit reached (${entitlements.usage.bookingUsed}/${entitlements.usage.bookingLimit} BookingDesk requests used). Please upgrade to an Active Partner monthly or annual subscription.`,
+              quotaExceeded: true,
+            },
+            { status: 403 }
+          );
+        }
+        if (deskType === "AFTER_CARE" && entitlements.usage.afterCareRemaining <= 0) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: `Pilot trial limit reached (${entitlements.usage.afterCareUsed}/${entitlements.usage.afterCareLimit} AfterCare cases used). Please upgrade to an Active Partner monthly or annual subscription.`,
+              quotaExceeded: true,
+            },
+            { status: 403 }
+          );
+        }
+      }
+    }
+
     const record = await enquiriesRepository.createB2BDeskRecord(
       deskType,
       agencyId,

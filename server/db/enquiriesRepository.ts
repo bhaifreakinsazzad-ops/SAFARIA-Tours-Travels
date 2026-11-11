@@ -8,6 +8,7 @@ import { isScopedConnectionConfigured, withAgencyScope } from "./scopedPgClient"
 import { generateReferenceCode } from "@server/utils/referenceGenerator";
 import { FlightEnquiryInput, AgencyApplicationInput, GeneralEnquiryInput } from "@server/validations/enquirySchemas";
 import { generateTemporaryPassword, hashPassword, verifyPassword } from "@server/auth/passwordService";
+import { PILOT_ENTITLEMENTS, PAID_ENTITLEMENTS } from "@/config/constants";
 import crypto from "node:crypto";
 
 export interface StoredFlightLeg {
@@ -41,6 +42,22 @@ export interface StoredFlightEnquiry {
   updatedAt: string;
 }
 
+export interface AgencyInvoice {
+  id: string;
+  invoiceNo: string;
+  agencyId: string;
+  agencyName: string;
+  amountBdt: number;
+  plan: "MONTHLY" | "ANNUAL";
+  status: "PENDING_VERIFICATION" | "VERIFIED_PAID" | "CANCELLED";
+  paymentMethod: "BANK_TRANSFER" | "BKASH_MERCHANT" | "NAGAD" | "MANUAL_RECONCILED";
+  paymentReference?: string;
+  issuedAt: string;
+  verifiedAt?: string | null;
+  verifiedBy?: string | null;
+  notes?: string;
+}
+
 export interface StoredAgencyApplication {
   id: string;
   referenceNo: string;
@@ -53,9 +70,17 @@ export interface StoredAgencyApplication {
   yearsInBusiness: number;
   monthlyTicketVolume: string;
   status: "PENDING_VERIFICATION" | "IN_REVIEW" | "TRIAL_APPROVED" | "ACTIVE_PARTNER" | "REJECTED" | "SUSPENDED";
+  plan?: "MONTHLY" | "ANNUAL" | "TRIAL";
+  subscriptionStartedAt?: string | null;
+  subscriptionExpiresAt?: string | null;
   trialActivatedAt?: string | null;
   trialExpiresAt?: string | null;
   approvedBy?: string | null;
+  assignedStaffOwner?: string | null;
+  whatsappDraftOpened?: boolean;
+  whatsappInboundConfirmed?: boolean;
+  painCategory?: string;
+  district?: string;
   notes?: string;
   passwordHash?: string | null;
   passwordSalt?: string | null;
@@ -119,6 +144,7 @@ export interface StoredGeneralEnquiry {
 class InMemoryStore {
   flightEnquiries: Map<string, StoredFlightEnquiry> = new Map();
   agencyApplications: Map<string, StoredAgencyApplication> = new Map();
+  agencyInvoices: Map<string, AgencyInvoice> = new Map();
   outboxEntries: Map<string, StoredOutboxEntry> = new Map();
   b2bDeskRecords: Map<string, StoredB2BDeskRecord> = new Map();
   generalEnquiries: Map<string, StoredGeneralEnquiry> = new Map();
@@ -130,6 +156,7 @@ class InMemoryStore {
 
   seedDefaultAgency() {
     const now = new Date().toISOString();
+    const oneYearLater = new Date(Date.now() + 365 * 86400 * 1000).toISOString();
     this.agencyApplications.set("agency-greendelta-01", {
       id: "agency-greendelta-01",
       referenceNo: "B2B-20261108-GREEN1",
@@ -142,14 +169,39 @@ class InMemoryStore {
       yearsInBusiness: 5,
       monthlyTicketVolume: "OVER_100",
       status: "ACTIVE_PARTNER",
+      plan: "ANNUAL",
+      subscriptionStartedAt: now,
+      subscriptionExpiresAt: oneYearLater,
+      assignedStaffOwner: "ops@safaria.vibing.world",
+      whatsappDraftOpened: true,
+      whatsappInboundConfirmed: true,
+      painCategory: "PAIN_FARE",
+      district: "Dhaka",
       createdAt: now,
       updatedAt: now,
+    });
+
+    this.agencyInvoices.set("inv-greendelta-01", {
+      id: "inv-greendelta-01",
+      invoiceNo: "INV-202611-0001",
+      agencyId: "agency-greendelta-01",
+      agencyName: "Green Delta Travels",
+      amountBdt: 69999,
+      plan: "ANNUAL",
+      status: "VERIFIED_PAID",
+      paymentMethod: "BANK_TRANSFER",
+      paymentReference: "EBL-NPSB-98124019",
+      issuedAt: now,
+      verifiedAt: now,
+      verifiedBy: "ops@safaria.vibing.world",
+      notes: "Annual B2B partnership activated with full entitlements and priority FareDesk routing.",
     });
   }
 
   clear() {
     this.flightEnquiries.clear();
     this.agencyApplications.clear();
+    this.agencyInvoices.clear();
     this.outboxEntries.clear();
     this.b2bDeskRecords.clear();
     this.generalEnquiries.clear();
@@ -1532,6 +1584,197 @@ export const enquiriesRepository = {
     if (gen) return { type: "GENERAL", record: gen };
 
     return null;
+  },
+
+  /**
+   * Get real-time entitlement limits and consumption for an agency
+   */
+  async getAgencyEntitlementUsage(agencyId: string) {
+    const agency = await this.getAgencyApplicationById(agencyId);
+    const isTrial = agency?.status === "TRIAL_APPROVED";
+    const isActive = agency?.status === "ACTIVE_PARTNER";
+
+    // Pilot entitlements vs Paid entitlements
+    const limits = isTrial
+      ? PILOT_ENTITLEMENTS
+      : (isActive ? PAID_ENTITLEMENTS : {
+          fareRequestsLimit: 0,
+          bookingRequestsLimit: 0,
+          afterCareLimit: 0,
+          seatsLimit: 0,
+        });
+
+    // Count usage directly from b2bDeskRecords
+    const records = await this.listB2BDeskRecords(undefined, agencyId);
+    const fareUsed = records.filter((r) => r.deskType === "FARE_DESK").length;
+    const bookingUsed = records.filter((r) => r.deskType === "BOOKING_DESK").length;
+    const afterCareUsed = records.filter((r) => r.deskType === "AFTER_CARE").length;
+    const verifiedUsed = records.filter((r) => r.deskType === "VERIFIED_WORKFLOW").length;
+
+    const isRenewalDue = Boolean(
+      agency?.subscriptionExpiresAt &&
+      (new Date(agency.subscriptionExpiresAt).getTime() - Date.now()) <= 7 * 86400 * 1000
+    );
+
+    return {
+      agencyId,
+      agencyName: agency?.agencyName || "Partner Agency",
+      status: agency?.status || "UNKNOWN",
+      plan: agency?.plan || (isTrial ? "TRIAL" : (isActive ? "MONTHLY" : "NONE")),
+      trialActivatedAt: agency?.trialActivatedAt || null,
+      trialExpiresAt: agency?.trialExpiresAt || null,
+      subscriptionStartedAt: agency?.subscriptionStartedAt || null,
+      subscriptionExpiresAt: agency?.subscriptionExpiresAt || null,
+      isRenewalDue,
+      isTrial,
+      isActive,
+      usage: {
+        fareUsed,
+        fareLimit: limits.fareRequestsLimit,
+        fareRemaining: Math.max(0, limits.fareRequestsLimit - fareUsed),
+        bookingUsed,
+        bookingLimit: limits.bookingRequestsLimit,
+        bookingRemaining: Math.max(0, limits.bookingRequestsLimit - bookingUsed),
+        afterCareUsed,
+        afterCareLimit: limits.afterCareLimit,
+        afterCareRemaining: Math.max(0, limits.afterCareLimit - afterCareUsed),
+        verifiedUsed,
+        seatsUsed: 1,
+        seatsLimit: limits.seatsLimit,
+      },
+    };
+  },
+
+  /**
+   * Create billing invoice for an agency
+   */
+  async createAgencyInvoice(input: {
+    agencyId: string;
+    amountBdt: number;
+    plan: "MONTHLY" | "ANNUAL";
+    paymentMethod: AgencyInvoice["paymentMethod"];
+    paymentReference?: string;
+    notes?: string;
+    status?: AgencyInvoice["status"];
+    verifiedBy?: string;
+  }): Promise<AgencyInvoice> {
+    const agency = await this.getAgencyApplicationById(input.agencyId);
+    const id = `inv-${crypto.randomUUID().slice(0, 8)}`;
+    const now = new Date();
+    const invoiceNo = `INV-${now.toISOString().slice(0, 7).replace("-", "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    const invoice: AgencyInvoice = {
+      id,
+      invoiceNo,
+      agencyId: input.agencyId,
+      agencyName: agency?.agencyName || "Partner Agency",
+      amountBdt: input.amountBdt,
+      plan: input.plan,
+      status: input.status || "PENDING_VERIFICATION",
+      paymentMethod: input.paymentMethod,
+      paymentReference: input.paymentReference,
+      issuedAt: now.toISOString(),
+      verifiedAt: input.status === "VERIFIED_PAID" ? now.toISOString() : null,
+      verifiedBy: input.verifiedBy || null,
+      notes: input.notes,
+    };
+
+    memoryStore.agencyInvoices.set(id, invoice);
+    return invoice;
+  },
+
+  /**
+   * List invoices optionally filtered by agencyId
+   */
+  async listAgencyInvoices(agencyId?: string): Promise<AgencyInvoice[]> {
+    const list = Array.from(memoryStore.agencyInvoices.values());
+    if (agencyId) {
+      return list.filter((inv) => inv.agencyId === agencyId);
+    }
+    return list.sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime());
+  },
+
+  /**
+   * Update invoice status
+   */
+  async updateAgencyInvoiceStatus(
+    id: string,
+    status: AgencyInvoice["status"],
+    verifiedBy?: string,
+    notes?: string
+  ): Promise<AgencyInvoice | null> {
+    const invoice = memoryStore.agencyInvoices.get(id);
+    if (!invoice) return null;
+    invoice.status = status;
+    if (status === "VERIFIED_PAID") {
+      invoice.verifiedAt = new Date().toISOString();
+      if (verifiedBy) invoice.verifiedBy = verifiedBy;
+    }
+    if (notes) invoice.notes = notes;
+    return invoice;
+  },
+
+  /**
+   * Activate or renew an agency subscription
+   */
+  async updateAgencySubscription(
+    agencyId: string,
+    plan: "MONTHLY" | "ANNUAL" = "MONTHLY",
+    durationDays: number = 30,
+    approvedBy: string = "SYSTEM"
+  ): Promise<StoredAgencyApplication | null> {
+    const agency = await this.getAgencyApplicationById(agencyId);
+    if (!agency) return null;
+
+    const days = typeof durationDays === "number" && !isNaN(durationDays) && durationDays > 0 ? durationDays : (plan === "ANNUAL" ? 365 : 30);
+    const now = new Date();
+    const expires = new Date(now.getTime() + days * 86400 * 1000);
+
+    agency.status = "ACTIVE_PARTNER";
+    agency.plan = plan;
+    agency.subscriptionStartedAt = now.toISOString();
+    agency.subscriptionExpiresAt = expires.toISOString();
+    agency.approvedBy = approvedBy;
+    agency.updatedAt = now.toISOString();
+
+    memoryStore.agencyApplications.set(agencyId, agency);
+    return agency;
+  },
+
+  /**
+   * Telemetry: Record that the user opened the WhatsApp draft link
+   */
+  async recordWhatsAppDraftOpened(refOrId: string): Promise<boolean> {
+    for (const app of memoryStore.agencyApplications.values()) {
+      if (app.referenceNo === refOrId || app.id === refOrId) {
+        app.whatsappDraftOpened = true;
+        app.updatedAt = new Date().toISOString();
+        return true;
+      }
+    }
+    return false;
+  },
+
+  /**
+   * Staff toggle: mark whether the agency actually replied on WhatsApp
+   */
+  async setWhatsAppInboundConfirmed(agencyId: string, confirmed: boolean): Promise<boolean> {
+    const agency = await this.getAgencyApplicationById(agencyId);
+    if (!agency) return false;
+    agency.whatsappInboundConfirmed = confirmed;
+    agency.updatedAt = new Date().toISOString();
+    return true;
+  },
+
+  /**
+   * Staff owner assignment
+   */
+  async assignAgencyStaffOwner(agencyId: string, staffEmail: string): Promise<boolean> {
+    const agency = await this.getAgencyApplicationById(agencyId);
+    if (!agency) return false;
+    agency.assignedStaffOwner = staffEmail;
+    agency.updatedAt = new Date().toISOString();
+    return true;
   },
 
   /**
