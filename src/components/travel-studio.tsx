@@ -15,12 +15,6 @@ const serviceOptions = [
   ["air", "ফ্লাইট", "Flights"], ["tour", "ট্যুর", "Tours"], ["hotel", "হোটেল", "Hotels"], ["visa", "ভিসা", "Visa"], ["transport", "যাতায়াত", "Transfers"],
 ];
 
-function createStudioFallbackRef(): string {
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `SFR-${dateStr}-${rand}`;
-}
-
 export function TravelStudio({ language }: { language: Language }) {
   const step = useTravelStore((state) => state.step);
   const fields = useTravelStore((state) => state.fields);
@@ -36,7 +30,7 @@ export function TravelStudio({ language }: { language: Language }) {
   const bn = language === "bn";
   const set = <K extends keyof TravelFields>(key: K, value: TravelFields[K]) => { update({ [key]: value } as Partial<TravelFields>); setErrors((current) => current.filter((item) => item !== key)); };
   const [submitting, setSubmitting] = useState(false);
-  const [submittedData, setSubmittedData] = useState<{ referenceNo: string; whatsAppUrl: string } | null>(null);
+  const [submittedData, setSubmittedData] = useState<{ referenceNo?: string; whatsAppUrl: string; saved: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
 
   async function advance(event: FormEvent<HTMLFormElement>) {
@@ -92,17 +86,18 @@ export function TravelStudio({ language }: { language: Language }) {
         setSubmittedData({
           referenceNo: data.referenceNo,
           whatsAppUrl: data.whatsAppUrl || travelWhatsappHref(fields, language),
+          saved: true,
         });
       } else {
         setSubmittedData({
-          referenceNo: createStudioFallbackRef(),
           whatsAppUrl: travelWhatsappHref(fields, language),
+          saved: false,
         });
       }
     } catch {
       setSubmittedData({
-        referenceNo: createStudioFallbackRef(),
         whatsAppUrl: travelWhatsappHref(fields, language),
+        saved: false,
       });
     } finally {
       setSubmitting(false);
@@ -136,14 +131,16 @@ export function TravelStudio({ language }: { language: Language }) {
         <div className="p-8 space-y-6">
           <div className="rounded-xl border border-safaria-line bg-[#092c27] p-6 text-center space-y-4">
             <span className="text-xs font-bold tracking-widest text-safaria-gold uppercase">
-              {bn ? "কোটেশন অনুরোধ সেন্ট্রাল সিস্টেমে নিবন্ধিত হয়েছে" : "Flight Quotation Registered"}
+              {submittedData.saved
+                ? (bn ? "কোটেশন অনুরোধ নিবন্ধিত" : "Quotation request registered")
+                : (bn ? "WhatsApp-এ অনুরোধ পাঠান" : "Continue in WhatsApp")}
             </span>
-            <div className="flex items-center justify-center gap-3">
+            {submittedData.referenceNo && <div className="flex items-center justify-center gap-3">
               <span className="font-mono text-2xl font-extrabold text-safaria-gold">{submittedData.referenceNo}</span>
               <button
                 type="button"
                 onClick={() => {
-                  navigator.clipboard?.writeText(submittedData.referenceNo);
+                  navigator.clipboard?.writeText(submittedData.referenceNo ?? "");
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2500);
                 }}
@@ -151,11 +148,15 @@ export function TravelStudio({ language }: { language: Language }) {
               >
                 {copied ? (bn ? "কপি হয়েছে!" : "Copied!") : (bn ? "কপি" : "Copy")}
               </button>
-            </div>
+            </div>}
             <p className="text-xs text-safaria-muted leading-relaxed max-w-lg mx-auto">
-              {bn
-                ? "আপনার ভ্রমণের খসড়াটি সফলভাবে অপারেশন্স ডেস্কে রেকর্ড করা হয়েছে। তাৎক্ষণিক এয়ারলাইন কনফার্মেশন ও সিট বুকিংয়ের জন্য WhatsApp-এ সংযোগ করুন।"
-                : "Your itinerary request is recorded with our Operations Desk. For real-time seat availability and wholesale fare confirmation, proceed to WhatsApp."}
+              {submittedData.saved
+                ? (bn
+                  ? "আপনার পরিকল্পনা সংরক্ষিত হয়েছে। WhatsApp-এ Send চাপলে আমাদের টিম ফলো-আপ করতে পারবে; বুকিং নিশ্চিত হয়নি।"
+                  : "Your itinerary has been saved. Press Send in WhatsApp for follow-up; no booking is confirmed.")
+                : (bn
+                  ? "সার্ভারে সংরক্ষণ করা যায়নি, তাই ট্র্যাকিং নম্বর তৈরি হয়নি। WhatsApp-এ বার্তা নিজে Send করে অনুরোধটি পাঠাতে পারবেন।"
+                  : "Online saving was unavailable; no tracking reference was issued. Open WhatsApp and press Send to contact our team.")}
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
