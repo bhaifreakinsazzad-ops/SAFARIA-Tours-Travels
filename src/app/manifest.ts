@@ -4,8 +4,8 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     id: "/",
     name: "SAFARIA Tours & Travels",
-    short_name: "SAFARIA B2B",
-    description: "B2B Travel SaaS, Wholesale Quotations & Operational Desks in Bangladesh",
+    short_name: "SAFARIA",
+    description: "Flights, travel quotations, visa and Umrah assistance, plus agency partner services in Bangladesh",
     start_url: "/",
     scope: "/",
     display: "standalone",
