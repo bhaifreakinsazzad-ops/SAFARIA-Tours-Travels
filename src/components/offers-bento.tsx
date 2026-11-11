@@ -29,7 +29,7 @@ export function OffersBento({ language, onSelect }: { language: Language; onSele
     return () => observer.disconnect();
   }, [reduceMotion]);
 
-  return <section id="sf26-offers" className="content-section offers-section" ref={root} aria-labelledby="offers-title">
+  return <section id="sf26-offers" className="bg-sf-000 p-space-5 rounded-radius-md shadow-header" ref={root} aria-labelledby="offers-title">
     <div className="section-heading"><p className="eyebrow">01 / CURATED SERVICES</p><h2 id="offers-title" className="display-heading">{language === "bn" ? "যাত্রার প্রতিটি পর্যায়ে" : "Every part of the journey"}</h2><p>{language === "bn" ? "আপনার পরিকল্পনার জন্য বিকল্প জানতে একটি কোটেশন অনুরোধ করুন।" : "Explore options for your plans and request a tailored quotation."}</p></div>
     {offerCategories.map((category) => <div className="offer-group" key={category}>
       <h3>{labels[category][language === "bn" ? 0 : 1]} <span>{String(offers.filter((item) => item.category === category).length).padStart(2, "0")}</span></h3>

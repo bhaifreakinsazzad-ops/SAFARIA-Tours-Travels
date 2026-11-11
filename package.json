@@ -14,7 +14,7 @@
     "verify:phase45": "node ./scripts/verify-phase45.cjs",
     "import:data": "node ./scripts/import-data.cjs",
     "texture:globe": "node ./scripts/build-globe-texture.cjs",
-    "test": "node ./node_modules/vitest/vitest.mjs run",
+    "test": "node ./node_modules/vitest/vitest.mjs",
     "test:watch": "node ./node_modules/vitest/vitest.mjs",
     "test:e2e": "node ./node_modules/@playwright/test/cli.js test",
     "verify:b2b": "node ./scripts/verify-b2b-workflows.cjs"
