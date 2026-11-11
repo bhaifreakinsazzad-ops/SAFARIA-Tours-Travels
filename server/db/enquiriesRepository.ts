@@ -221,6 +221,9 @@ export const enquiriesRepository = {
     meta?: { ip?: string; userAgent?: string }
   ): Promise<StoredFlightEnquiry> {
     const supabase = getSupabaseServiceClient();
+    if (!supabase && process.env.NODE_ENV === "production") {
+      throw new Error("Persistent storage unavailable for flight enquiries");
+    }
     const referenceNo = generateReferenceCode("SFR");
     const now = new Date().toISOString();
     const enquiryId = crypto.randomUUID();
@@ -299,6 +302,15 @@ export const enquiriesRepository = {
 
           const { error: legsError } = await supabase.from("flight_legs").insert(legsPayload);
           if (legsError) {
+            if (process.env.NODE_ENV === "production") {
+              // Avoid reporting success when a route is only partially stored.
+              const { error: rollbackError } = await supabase
+                .from("flight_enquiries")
+                .delete()
+                .eq("id", enquiryId);
+              if (rollbackError) console.error("Could not roll back incomplete flight enquiry", rollbackError);
+              throw new Error("Unable to persist all flight itinerary legs");
+            }
             console.warn("Supabase legs insert error:", legsError);
           }
           return enquiryRecord;
@@ -463,6 +475,9 @@ export const enquiriesRepository = {
    */
   async createAgencyApplication(input: AgencyApplicationInput): Promise<StoredAgencyApplication> {
     const supabase = getSupabaseServiceClient();
+    if (!supabase && process.env.NODE_ENV === "production") {
+      throw new Error("Persistent storage unavailable for agency applications");
+    }
     const referenceNo = generateReferenceCode("B2B");
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
@@ -1452,6 +1467,9 @@ export const enquiriesRepository = {
    */
   async createGeneralEnquiry(input: GeneralEnquiryInput): Promise<StoredGeneralEnquiry> {
     const supabase = getSupabaseServiceClient();
+    if (!supabase && process.env.NODE_ENV === "production") {
+      throw new Error("Persistent storage unavailable for general enquiries");
+    }
     const referenceNo = generateReferenceCode("GEN");
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
@@ -1473,7 +1491,7 @@ export const enquiriesRepository = {
 
     if (supabase) {
       try {
-        await supabase.from("general_enquiries").insert({
+        const { error: generalEnquiryError } = await supabase.from("general_enquiries").insert({
           id,
           reference_no: referenceNo,
           service_type: input.serviceType,
@@ -1489,7 +1507,9 @@ export const enquiriesRepository = {
           created_at: now,
           updated_at: now,
         });
+        if (generalEnquiryError) throw new Error(`Database error saving general enquiry: ${generalEnquiryError.message}`);
       } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
         console.warn("Supabase general enquiry insert fallback to memory:", err);
       }
     }
