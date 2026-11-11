@@ -30,6 +30,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
   const [contact, setContact] = useState("");
   const [notes, setNotes] = useState("");
   const [airline, setAirline] = useState("");
+  const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submittedData, setSubmittedData] = useState<HandoffState | null>(null);
@@ -44,6 +45,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
       setSubmittedData(null);
       setError("");
       setCopied(false);
+      setConsent(false);
     };
   }, [open, selectedCode, selectedOfferId]);
 
@@ -80,6 +82,10 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
     event.preventDefault();
     setError("");
     if (returnDate && returnDate < departure) { setError(t.dateError); return; }
+    if (!consent) {
+      setError(language === "bn" ? "অনুরোধ পাঠানোর আগে তথ্য ব্যবহারের সম্মতি দিন।" : "Please agree to the enquiry data use before continuing.");
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -120,7 +126,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
           phoneCountryCode: "+880",
           phoneNumber: cleanPhone.startsWith("880") ? cleanPhone.slice(3) : cleanPhone,
           specialNotes: notes.trim() || undefined,
-          consentAgreed: true,
+          consentAgreed: consent,
         }),
       });
 
@@ -237,6 +243,12 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
                 <label className="field">{t.name} *<input required autoComplete="name" maxLength={80} value={name} onChange={(event) => setName(event.target.value)} /></label>
                 <label className="field">{t.phone} *<input required type="tel" autoComplete="tel" minLength={6} maxLength={24} value={contact} onChange={(event) => setContact(event.target.value)} /></label>
                 <label className="field field-wide">{t.notes}<textarea maxLength={500} rows={2} placeholder={t.notesHint} value={notes} onChange={(event) => setNotes(event.target.value)} /></label>
+                <label className="consent-field field-wide">
+                  <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} required />
+                  <span>{language === "bn"
+                    ? "কোটেশন প্রস্তুত করতে আমার দেওয়া তথ্য ব্যবহার ও WhatsApp-এ খসড়া খুলতে সম্মতি দিচ্ছি।"
+                    : "I agree to use my details to prepare this quotation and open a WhatsApp draft."}</span>
+                </label>
                 {error && <p className="form-error field-wide" role="alert">{error}</p>}
                 <p className="form-disclaimer field-wide">{t.disclaimer}</p>
                 <button type="submit" disabled={submitting} className="button button-gold field-wide">
