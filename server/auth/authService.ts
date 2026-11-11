@@ -6,8 +6,9 @@
 import crypto from "crypto";
 import { NextRequest } from "next/server";
 import { enquiriesRepository } from "@server/db/enquiriesRepository";
+import { staffService, StaffRole } from "./staffService";
 
-export type UserRole = "SUPER_ADMIN" | "OPS_AGENT" | "B2B_PARTNER" | "ANONYMOUS";
+export type UserRole = StaffRole | "B2B_PARTNER" | "ANONYMOUS";
 
 export interface SessionPayload {
   jti: string; // Unique cryptographic Session/Token ID for granular revocation
@@ -152,6 +153,7 @@ export function verifySession(token: string): SessionPayload | null {
 
 /**
  * Durable session verification checking database revocation and account status
+ * (Fails closed on revoked tokens, suspended partner accounts, or suspended staff accounts)
  */
 export async function verifySessionDurable(token: string): Promise<SessionPayload | null> {
   const session = verifySession(token);
@@ -170,6 +172,20 @@ export async function verifySessionDurable(token: string): Promise<SessionPayloa
     }
   }
 
+  // 3. Dynamic account status check for Staff users
+  if (session.role === "SUPER_ADMIN" || session.role === "OPS_AGENT" || session.role === "FINANCE_DESK") {
+    if (session.jti === "test-admin-session" || session.jti === "admin-api-key-session") {
+      if (process.env.NODE_ENV === "production") {
+        return null; // Test sessions never valid in production
+      }
+      return session;
+    }
+    const staffUser = await staffService.getStaffUserByEmail(session.email);
+    if (!staffUser || staffUser.status !== "ACTIVE") {
+      return null;
+    }
+  }
+
   return session;
 }
 
@@ -180,13 +196,29 @@ export async function extractSessionFromRequestAsync(req: NextRequest): Promise<
   const syncSession = extractSessionFromRequest(req);
   if (!syncSession) return null;
 
+  // 1. Verify against durable revocation table in database
   if (syncSession.jti && (await isSessionRevokedDurable(syncSession.jti))) {
     return null;
   }
 
+  // 2. Dynamic account suspension check for B2B Partners
   if (syncSession.role === "B2B_PARTNER" && syncSession.agencyId) {
     const isActive = await enquiriesRepository.isAgencyActive(syncSession.agencyId);
     if (!isActive) {
+      return null;
+    }
+  }
+
+  // 3. Dynamic account status check for Staff users
+  if (syncSession.role === "SUPER_ADMIN" || syncSession.role === "OPS_AGENT" || syncSession.role === "FINANCE_DESK") {
+    if (syncSession.jti === "test-admin-session" || syncSession.jti === "admin-api-key-session") {
+      if (process.env.NODE_ENV === "production") {
+        return null; // Test sessions never valid in production
+      }
+      return syncSession;
+    }
+    const staffUser = await staffService.getStaffUserByEmail(syncSession.email);
+    if (!staffUser || staffUser.status !== "ACTIVE") {
       return null;
     }
   }
@@ -195,35 +227,45 @@ export async function extractSessionFromRequestAsync(req: NextRequest): Promise<
 }
 
 /**
- * Extract authenticated session from NextRequest (Cookie or Bearer header)
+ * Helper to extract raw token string from request
  */
-export function extractSessionFromRequest(req: NextRequest): SessionPayload | null {
+export function extractRawTokenFromRequest(req: NextRequest): string | null {
   // 1. Try Authorization header
   const authHeader = req.headers.get("authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
-    const token = authHeader.substring(7).trim();
-    const session = verifySession(token);
-    if (session) return session;
+    return authHeader.substring(7).trim();
   }
 
   // 2. Try x-safaria-session custom header
   const customHeader = req.headers.get("x-safaria-session");
   if (customHeader) {
-    const session = verifySession(customHeader.trim());
-    if (session) return session;
+    return customHeader.trim();
   }
 
   // 3. Try cookies
   const cookieToken = req.cookies.get("safaria_session")?.value;
   if (cookieToken) {
-    return verifySession(cookieToken);
+    return cookieToken.trim();
   }
 
-  // 4. Secure admin key header check
+  return null;
+}
+
+/**
+ * Extract authenticated session from NextRequest (Cookie, Bearer header, or Admin Key)
+ */
+export function extractSessionFromRequest(req: NextRequest): SessionPayload | null {
+  const token = extractRawTokenFromRequest(req);
+  if (token) {
+    const session = verifySession(token);
+    if (session) return session;
+  }
+
+  // 4. Admin key header check for server-to-server operations (strictly non-production, unless explicitly configured with 32+ char secret)
   const adminKey = req.headers.get("x-safaria-admin-key");
   const configuredAdminKey = process.env.ADMIN_API_KEY;
 
-  if (configuredAdminKey && adminKey === configuredAdminKey) {
+  if (configuredAdminKey && configuredAdminKey.length >= 32 && adminKey === configuredAdminKey) {
     return {
       jti: "admin-api-key-session",
       userId: "ops-master-id",
