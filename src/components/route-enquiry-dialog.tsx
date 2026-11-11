@@ -102,7 +102,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          tripType: returnDate ? "RETURN" : "ONE_WAY",
+          tripType: returnDate ? "ROUND_TRIP" : "ONE_WAY",
           legs: [
             {
               originIata: "DAC",
