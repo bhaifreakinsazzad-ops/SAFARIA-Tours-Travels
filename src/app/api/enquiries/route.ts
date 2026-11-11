@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       {
         success: false,
         error: "Internal Server Error",
-        details: getErrorMessage(err),
+        ...(process.env.NODE_ENV !== "production" ? { details: getErrorMessage(err) } : {}),
       },
       { status: 500 }
     );
