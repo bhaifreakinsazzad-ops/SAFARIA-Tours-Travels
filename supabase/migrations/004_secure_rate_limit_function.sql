@@ -27,62 +27,54 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $$
+AS $
 DECLARE
-    v_now TIMESTAMPTZ := NOW();
-    v_new_expire TIMESTAMPTZ := v_now + (p_window_seconds || ' seconds')::INTERVAL;
-    v_record RECORD;
+    v_now TIMESTAMPTZ := clock_timestamp();
+    v_new_expire TIMESTAMPTZ;
     v_points INT;
     v_expire TIMESTAMPTZ;
     v_retry INT := 0;
-    v_allowed BOOLEAN := true;
 BEGIN
-    -- Strict input validation
     IF p_key IS NULL OR length(trim(p_key)) = 0 THEN
         RAISE EXCEPTION 'Rate limit key cannot be null or empty';
     END IF;
-
     IF p_window_seconds <= 0 OR p_window_seconds > 86400 THEN
         RAISE EXCEPTION 'Window seconds must be between 1 and 86400';
     END IF;
-
     IF p_max_points <= 0 OR p_max_points > 10000 THEN
         RAISE EXCEPTION 'Max points must be between 1 and 10000';
     END IF;
 
-    -- Concurrency handling: lock the key record if present
-    SELECT rl.points, rl.expire_at INTO v_record
-    FROM rate_limits rl
-    WHERE rl.key = p_key
-    FOR UPDATE;
+    v_new_expire := v_now + make_interval(secs => p_window_seconds);
 
-    IF FOUND AND v_record.expire_at > v_now THEN
-        v_points := v_record.points + 1;
-        v_expire := v_record.expire_at;
-        UPDATE rate_limits
-        SET points = v_points, updated_at = v_now
-        WHERE key = p_key;
-    ELSE
-        v_points := 1;
-        v_expire := v_new_expire;
-        INSERT INTO rate_limits (key, points, expire_at, updated_at)
-        VALUES (p_key, 1, v_new_expire, v_now)
-        ON CONFLICT (key) DO UPDATE
-        SET points = 1, expire_at = v_new_expire, updated_at = v_now;
-    END IF;
+    -- One atomic INSERT/ON CONFLICT update also handles the initially absent
+    -- key. Row-level locking on the unique key prevents lost increments.
+    INSERT INTO public.rate_limits AS counter
+      (key, points, expire_at, updated_at)
+    VALUES (p_key, 1, v_new_expire, v_now)
+    ON CONFLICT (key) DO UPDATE
+    SET points = CASE
+          WHEN counter.expire_at > v_now THEN counter.points + 1
+          ELSE 1
+        END,
+        expire_at = CASE
+          WHEN counter.expire_at > v_now THEN counter.expire_at
+          ELSE EXCLUDED.expire_at
+        END,
+        updated_at = v_now
+    RETURNING counter.points, counter.expire_at
+    INTO v_points, v_expire;
 
     IF v_points > p_max_points THEN
-        v_allowed := false;
         v_retry := GREATEST(1, EXTRACT(EPOCH FROM (v_expire - v_now))::INT);
     END IF;
-
     RETURN QUERY SELECT
-        v_allowed,
+        (v_points <= p_max_points),
         v_points,
         GREATEST(0, p_max_points - v_points),
         v_retry;
 END;
-$$;
+$;
 
 -- Grant execution strictly to service_role
 GRANT EXECUTE ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) TO service_role;
