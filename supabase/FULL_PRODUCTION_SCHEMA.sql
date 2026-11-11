@@ -382,7 +382,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $
+AS $rate_limit$
 DECLARE
     v_now TIMESTAMPTZ := clock_timestamp();
     v_new_expire TIMESTAMPTZ;
@@ -429,7 +429,7 @@ BEGIN
         GREATEST(0, p_max_points - v_points),
         v_retry;
 END;
-$;
+$rate_limit$;
 
 REVOKE ALL ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) FROM PUBLIC;
 REVOKE ALL ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) FROM anon;
@@ -470,7 +470,7 @@ RETURNS TABLE (
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public, pg_temp
-AS $
+AS $rate_limit$
 DECLARE
     v_now TIMESTAMPTZ := clock_timestamp();
     v_new_expire TIMESTAMPTZ;
@@ -517,7 +517,7 @@ BEGIN
         GREATEST(0, p_max_points - v_points),
         v_retry;
 END;
-$;
+$rate_limit$;
 
 -- Grant execution strictly to service_role
 GRANT EXECUTE ON FUNCTION consume_rate_limit(VARCHAR, INT, INT) TO service_role;
