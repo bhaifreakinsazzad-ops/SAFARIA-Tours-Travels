@@ -6,13 +6,16 @@ import { destinationByCode } from "@/data/catalog";
 import { whatsappHrefFor } from "@/config/constants";
 import type { Language } from "./atlas-data";
 
+export type TravelLeg = { origin: string; destination: string; departure: string };
 export type TravelFields = {
   category: string; tripType: string; origin: string; destination: string; departure: string; returnDate: string;
+  multiCityLegs: TravelLeg[];
   adults: number; children: number; infants: number; cabin: string; airline: string; baggage: string; flexible: string; notes: string;
   fullName: string; phone: string; email: string; contactMethod: string; consent: boolean;
 };
 export const initialTravelFields: TravelFields = {
   category: "air", tripType: "return", origin: "DAC", destination: "", departure: "", returnDate: "",
+  multiCityLegs: [{ origin: "", destination: "", departure: "" }],
   adults: 1, children: 0, infants: 0, cabin: "economy", airline: "", baggage: "", flexible: "flexible", notes: "",
   fullName: "", phone: "", email: "", contactMethod: "whatsapp", consent: false,
 };
@@ -42,16 +45,32 @@ export function travelStepErrors(step: number, fields: TravelFields): string[] {
     if (!destinationByCode(fields.destination) || fields.destination === fields.origin) errors.push("destination");
     if (!validDate(fields.departure) || fields.departure < localToday()) errors.push("departure");
     if (fields.tripType === "return" && (!validDate(fields.returnDate) || fields.returnDate < fields.departure)) errors.push("returnDate");
+    if (fields.tripType === "multi-city") {
+      const extraLegs = fields.multiCityLegs ?? [];
+      if (extraLegs.length < 1 || extraLegs.length > 5) errors.push("multiCityLegs");
+      let precedingDate = fields.departure;
+      for (const leg of extraLegs) {
+        if (!destinationByCode(leg.origin) ||
+            !destinationByCode(leg.destination) ||
+            leg.origin === leg.destination ||
+            !validDate(leg.departure) ||
+            leg.departure < localToday() ||
+            leg.departure < precedingDate) {
+          errors.push("multiCityLegs");
+          break;
+        }
+        precedingDate = leg.departure;
+      }
+    }
   }
   if (step === 2) {
     if (!Number.isInteger(fields.adults) || fields.adults < 1 || fields.adults > 9) errors.push("adults");
-    if (!Number.isInteger(fields.children) || fields.children < 0 || fields.children > 9) errors.push("children");
-    if (!Number.isInteger(fields.infants) || fields.infants < 0 || fields.infants > fields.adults) errors.push("infants");
-    if (fields.adults + fields.children > 12) errors.push("passengerLimit");
+    if (!Number.isInteger(fields.children) || fields.children < 0 || fields.children > 8) errors.push("children");
+    if (!Number.isInteger(fields.infants) || fields.infants < 0 || fields.infants > 4 || fields.infants > fields.adults) errors.push("infants");
+    if (fields.adults + fields.children + fields.infants > 9) errors.push("passengerLimit");
   }
   if (step === 3) {
     if (!fields.cabin) errors.push("cabin");
-    if (fields.tripType === "multi-city" && !fields.notes.trim()) errors.push("notes");
   }
   if (step === 4) {
     if (!fields.fullName.trim()) errors.push("fullName");
@@ -74,6 +93,8 @@ export function travelWhatsappHref(fields: TravelFields, language: Language) {
     `Route: ${from.city} (${from.code}) → ${to.city} (${to.code})`,
     `Departure: ${fields.departure}`,
     ...(fields.tripType === "return" ? [`Return: ${fields.returnDate}`] : []),
+    ...(fields.tripType === "multi-city" ? (fields.multiCityLegs ?? []).map((leg, index) =>
+      `Leg ${index + 2}: ${leg.origin} → ${leg.destination} on ${leg.departure}`) : []),
     `Passengers: ${fields.adults} adult(s), ${fields.children} child(ren), ${fields.infants} infant(s)`,
     `Cabin: ${fields.cabin}`,
     ...(fields.airline ? [`Airline: ${fields.airline}`] : []),
