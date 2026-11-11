@@ -63,9 +63,9 @@ async function main() {
     const handoffLink = page.getByRole("dialog").getByRole("link", { name: /Open in WhatsApp/ });
     await handoffLink.waitFor({ state: "visible" });
     const whatsAppUrl = (await handoffLink.getAttribute("href")) || "";
-    assert.match(whatsAppUrl, /^https:\\/\\/wa\\.me\\/8801674178437\\?text=/);
+    assert.equal(whatsAppUrl.startsWith("https://wa.me/8801674178437?text="), true);
     const message = decodeURIComponent(whatsAppUrl.split("?text=")[1]);
-    assert.match(message, /Dhaka \\(DAC\\) → Riyadh \\(RUH\\)/);
+    assert.ok(message.includes("Dhaka (DAC) → Riyadh (RUH)"));
     assert.match(message, /Atlas Test/);
     assert.match(message, /supplier confirmation/);
     await page.getByRole("button", { name: "Done / Close" }).click();
