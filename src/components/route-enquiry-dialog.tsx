@@ -8,17 +8,12 @@ import { cityName, countryName, destinationByCode, destinationForPreset, destina
 import { createEnquiry, whatsappHref } from "@/lib/enquiry";
 
 type Props = { open: boolean; selectedCode: string; selectedOfferId?: string; language: Language; onClose: () => void };
+type HandoffState = { referenceNo?: string; whatsAppUrl: string; saved: boolean };
 
 function todayLocal() {
   const date = new Date();
   const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
   return local.toISOString().slice(0, 10);
-}
-
-function createFallbackReferenceCode(): string {
-  const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `SFR-${dateStr}-${rand}`;
 }
 
 export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", language, onClose }: Props) {
@@ -37,7 +32,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
   const [airline, setAirline] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [submittedData, setSubmittedData] = useState<{ referenceNo: string; whatsAppUrl: string } | null>(null);
+  const [submittedData, setSubmittedData] = useState<HandoffState | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -134,11 +129,12 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
         setSubmittedData({
           referenceNo: data.referenceNo,
           whatsAppUrl: data.whatsAppUrl || whatsappHref(enquiry),
+          saved: true,
         });
       } else {
         setSubmittedData({
-          referenceNo: createFallbackReferenceCode(),
           whatsAppUrl: whatsappHref(enquiry),
+          saved: false,
         });
       }
     } catch {
@@ -148,8 +144,8 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
           travellers, name: name.trim(), contact: contact.trim(), notes: notes.trim(), offerId: selectedOfferId || undefined, airline: airline.trim() || undefined,
         });
         setSubmittedData({
-          referenceNo: createFallbackReferenceCode(),
           whatsAppUrl: whatsappHref(enquiry),
+          saved: false,
         });
       } catch {
         setError(language === "bn" ? "অনুগ্রহ করে তথ্যগুলো যাচাই করুন।" : "Please check the form details.");
@@ -176,14 +172,16 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
               <div className="space-y-4 py-2">
                 <div className="rounded-xl border border-safaria-line bg-[#f1dfb9] p-5 text-center space-y-3">
                   <span className="text-[11px] font-bold tracking-widest text-[#386258] uppercase">
-                    {language === "bn" ? "অনুরোধ সফলভাবে গৃহীত হয়েছে" : "Quotation Request Registered"}
+                    {submittedData.saved
+                      ? (language === "bn" ? "কোটেশন অনুরোধ নিবন্ধিত" : "Quotation request registered")
+                      : (language === "bn" ? "WhatsApp-এ অনুরোধ পাঠান" : "Continue your enquiry in WhatsApp")}
                   </span>
-                  <div className="flex items-center justify-center gap-3">
+                  {submittedData.referenceNo && <div className="flex items-center justify-center gap-3">
                     <span className="font-mono text-xl font-extrabold text-[#062b27]">{submittedData.referenceNo}</span>
                     <button
                       type="button"
                       onClick={() => {
-                        navigator.clipboard?.writeText(submittedData.referenceNo);
+                        navigator.clipboard?.writeText(submittedData.referenceNo ?? "");
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2500);
                       }}
@@ -191,11 +189,15 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
                     >
                       {copied ? (language === "bn" ? "কপি হয়েছে!" : "Copied!") : (language === "bn" ? "কপি" : "Copy")}
                     </button>
-                  </div>
+                  </div>}
                   <p className="text-xs text-[#386258] leading-relaxed max-w-md mx-auto">
-                    {language === "bn"
-                      ? "আপনার কোটেশন অনুরোধটি আমাদের সেন্ট্রাল অপারেশন্স ডেস্কে রেকর্ড করা হয়েছে। তাৎক্ষণিক এয়ারলাইন কনফার্মেশন ও টিকিটিং সহায়তার জন্য WhatsApp-এ সংযোগ করুন।"
-                      : "Your quotation request has been recorded in our central Operations Desk. For immediate flight availability and reservation support, continue to WhatsApp."}
+                    {submittedData.saved
+                      ? (language === "bn"
+                        ? "আপনার অনুরোধটি সংরক্ষিত হয়েছে। পরবর্তী সহায়তার জন্য WhatsApp-এ বার্তা নিজে Send করুন; এটি টিকিট বুকিং নয়।"
+                        : "Your request has been saved. Open WhatsApp and press Send for follow-up; this is not a confirmed booking.")
+                      : (language === "bn"
+                        ? "সার্ভারে অনুরোধটি সংরক্ষণ করা যায়নি, তাই কোনো ট্র্যাকিং নম্বর দেওয়া হচ্ছে না। WhatsApp খুলে Send চাপলে টিম আপনার বার্তাটি পাবে।"
+                        : "We could not save this request online, so no tracking number was issued. Open WhatsApp and press Send to contact our team.")}
                   </p>
                 </div>
                 <div className="space-y-2 pt-2">
