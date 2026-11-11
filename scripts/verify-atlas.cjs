@@ -27,7 +27,9 @@ async function main() {
     const nodeBounds = await riyadhNode.boundingBox();
     assert.ok(nodeBounds);
     await page.mouse.move(nodeBounds.x + nodeBounds.width / 2, nodeBounds.y + nodeBounds.height / 2);
-    assert.match(await page.locator(".atlas-tooltip:visible").innerText(), /রিয়াদ/);
+    await page.waitForTimeout(200);
+    const riyadhTooltip = riyadhNode.locator('.atlas-tooltip');
+assert.match(await riyadhTooltip.innerText(), /রিয়াদ/);
     await page.screenshot({ path: path.join(output, "node-hover.png") });
     await page.mouse.click(nodeBounds.x + nodeBounds.width / 2, nodeBounds.y + nodeBounds.height / 2);
     await page.getByRole("dialog").waitFor({ state: "visible" });

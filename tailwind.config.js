@@ -16,9 +16,9 @@ const config = {
     extend: {
       colors: {
         // Palette
-        emerald: designTokens.color.tokens.find(t => t.name === 'emerald')?.value,
-        navy:    designTokens.color.tokens.find(t => t.name === 'navy')?.value,
-        gold:    designTokens.color.tokens.find(t => t.name === 'gold')?.value,
+        deepEmerald: designTokens.color.tokens.find(t => t.name === 'emerald')?.value,
+        forest:      designTokens.color.tokens.find(t => t.name === 'navy')?.value,
+        champagneGold: designTokens.color.tokens.find(t => t.name === 'gold')?.value,
         ivory:   designTokens.color.tokens.find(t => t.name === 'ivory')?.value,
         // Surface tokens (mapped to utility names)
         ...Object.fromEntries(

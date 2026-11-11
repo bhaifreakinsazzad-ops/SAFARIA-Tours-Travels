@@ -18,10 +18,10 @@ export function AgencyPortal({ language }: { language: Language }) {
   const invalid = (key: string) => errors.includes(key) && (touched.includes(key) || submitted);
   const message = (key: string) => invalid(key) && <small className="field-error">{bn ? "এই তথ্যটি যাচাই করুন" : "Please check this field"}</small>;
   function input(key: "agencyName" | "location" | "website" | "years" | "volume" | "fullName" | "phone" | "email", label: string, type = "text") {
-    return <label className="field bg-surface-input rounded-radius-sm">{label}<input data-agency-field={key} type={type} value={fields[key]} onChange={(event) => set(key, event.target.value)} onBlur={() => touch(key)} aria-invalid={invalid(key)} autoComplete={key === "fullName" ? "name" : key === "phone" ? "tel" : key === "email" ? "email" : undefined} min={key === "years" ? 0 : undefined} max={key === "years" ? 150 : undefined} maxLength={key === "phone" ? 24 : 120} />{message(key)}</label>;
+    return <label className="field bg-sf-input rounded-radius-sm">{label}<input data-agency-field={key} type={type} value={fields[key]} onChange={(event) => set(key, event.target.value)} onBlur={() => touch(key)} aria-invalid={invalid(key)} autoComplete={key === "fullName" ? "name" : key === "phone" ? "tel" : key === "email" ? "email" : undefined} min={key === "years" ? 0 : undefined} max={key === "years" ? 150 : undefined} maxLength={key === "phone" ? 24 : 120} />{message(key)}</label>;
   }
   function select(key: "applicationType" | "businessStatus" | "requirement" | "contactMethod", label: string, options: [string, string, string][]) {
-    return <label className="field bg-surface-input rounded-radius-sm">{label}<select data-agency-field={key} value={fields[key]} onChange={(event) => set(key, event.target.value)} onBlur={() => touch(key)} aria-invalid={invalid(key)}><option value="">{bn ? "নির্বাচন করুন" : "Select"}</option>{options.map(([value, b, e]) => <option value={value} key={value}>{bn ? b : e}</option>)}</select>{message(key)}</label>;
+    return <label className="field bg-sf-input rounded-radius-sm">{label}<select data-agency-field={key} value={fields[key]} onChange={(event) => set(key, event.target.value)} onBlur={() => touch(key)} aria-invalid={invalid(key)}><option value="">{bn ? "নির্বাচন করুন" : "Select"}</option>{options.map(([value, b, e]) => <option value={value} key={value}>{bn ? b : e}</option>)}</select>{message(key)}</label>;
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
