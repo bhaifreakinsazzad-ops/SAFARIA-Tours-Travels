@@ -57,6 +57,7 @@ async function main() {
     await page.getByRole("dialog").locator('input[type="date"]').first().fill(date);
     await page.getByRole("dialog").locator('input[autocomplete="name"]').fill("Atlas Test");
     await page.getByRole("dialog").locator('input[type="tel"]').fill("+8801700000000");
+    await page.getByRole("dialog").getByRole("checkbox", { name: /I agree to use my details/i }).check();
     let whatsappUrl = "";
     await context.route("https://wa.me/**", (route) => { whatsappUrl = route.request().url(); return route.abort(); });
     const popupPromise = page.waitForEvent("popup");
