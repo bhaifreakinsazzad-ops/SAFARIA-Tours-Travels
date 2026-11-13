@@ -58,10 +58,10 @@ export const UNIVERSAL_BENEFITS: readonly UniversalBenefit[] = [
   {
     id: "aftercare",
     offerId: "after-sales",
-    title: { bn: "বুকিং-পরবর্তী সহায়তা", en: "After-sales assistance" },
+    title: { bn: "২৪/৭ সাপোর্ট টিম", en: "24/7 support team" },
     description: {
-      bn: "টিকিট-পরবর্তী প্রয়োজন বা ফলো-আপের জন্য অনুরোধ জানান।",
-      en: "Send a post-booking support or follow-up enquiry.",
+      bn: "প্রশ্ন ও ফলো-আপে আমাদের ২৪/৭ সাপোর্ট টিমের সাথে যোগাযোগ করুন। এয়ারলাইন-সংক্রান্ত সিদ্ধান্ত ও প্রক্রিয়া সংশ্লিষ্ট কর্তৃপক্ষের শর্তসাপেক্ষে।",
+      en: "Contact our staffed 24/7 team for questions and follow-up. Airline actions and resolution depend on the relevant provider.",
     },
   },
 ];
