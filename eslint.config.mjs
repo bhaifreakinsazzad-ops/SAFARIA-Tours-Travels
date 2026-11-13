@@ -7,18 +7,6 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Ignore the legacy class replacement script
-    "scripts/replace-legacy-classes.ts",
-    "scripts/replace-legacy-classes.js",
-    "scripts/replace-legacy-classes.js",
-
-    // Ignore the legacy class replacement script
-    "scripts/replace-legacy-classes.ts",
-    "scripts/replace-legacy-classes.js",
-
-    // Ignore the legacy class replacement script
-    "scripts/replace-legacy-classes.ts",
-
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",

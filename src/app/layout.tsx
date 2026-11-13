@@ -1,16 +1,34 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter, Noto_Sans_Bengali } from "next/font/google";
 import { SAFARIA_CONFIG } from "@/config/constants";
+import { PWARegistrar } from "@/components/pwa-registrar";
+import { OfflineIndicator } from "@/components/offline-indicator";
+import { MobilePwaNav } from "@/components/mobile-pwa-nav";
 import "./globals.css";
 
 const display = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-display", display: "swap", preload: false });
 const ui = Inter({ subsets: ["latin"], variable: "--font-ui", display: "swap", preload: true });
 const bengali = Noto_Sans_Bengali({ subsets: ["bengali"], variable: "--font-bengali", display: "swap", preload: true });
 
+export const viewport: Viewport = {
+  themeColor: "#031412",
+  width: "device-width",
+  initialScale: 1,
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SAFARIA_CONFIG.siteUrl),
   title: "SAFARIA Tours & Travels | Your Gateway to Global Travel",
   description: "Premium domestic & international flight quotations, visa assistance, and B2B travel agency subscriptions in Bangladesh.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "SAFARIA B2B",
+  },
+  icons: {
+    apple: "/apple-touch-icon.png",
+  },
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
@@ -27,5 +45,14 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="bn" className={`${display.variable} ${ui.variable} ${bengali.variable}`}><body className="font-bn">{children}</body></html>;
+  return (
+    <html lang="bn" className={`${display.variable} ${ui.variable} ${bengali.variable}`}>
+      <body className="font-bn pb-14 sm:pb-0">
+        <PWARegistrar />
+        <OfflineIndicator />
+        {children}
+        <MobilePwaNav />
+      </body>
+    </html>
+  );
 }

@@ -1,0 +1,6 @@
+{
+  "name": "SAFARIA Tours & Travels",
+  "description": "Premium domestic & international flight quotations, visa assistance, and B2B travel agency subscriptions in Bangladesh.",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
