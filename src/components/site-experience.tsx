@@ -1,15 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "motion/react";
-import { Compass } from "lucide-react";
+import { Compass, Plane, Navigation, Sparkles, ArrowUpRight, Radio } from "lucide-react";
+import { animate, stagger } from "animejs";
 import { AtlasFallback } from "./atlas-fallback";
 import { DeferredSection } from "./deferred-section";
 import { copy } from "@/lib/copy";
 import { origin, routes } from "@/lib/atlas-data";
+import { getRouteTelemetry } from "@/lib/threeui";
 import { useSiteStore } from "@/lib/site-store";
 import { SAFARIA_CONFIG } from "@/config/constants";
 import { PWAInstallButton } from "./pwa-install-button";
@@ -46,12 +48,61 @@ const DestinationExplorer = dynamic(() =>
 const TravelStudio = dynamic(() => import("./travel-studio").then((module) => module.TravelStudio));
 const AgencyPortal = dynamic(() => import("./agency-portal").then((module) => module.AgencyPortal));
 
+const HERO_QUICK_DESKS = [
+  {
+    id: "corridors",
+    bnLabel: "গ্লোবাল ফ্লাইট রুট",
+    enLabel: "3D Flight Corridors",
+    targetCode: "DXB",
+    offerId: "fare-options",
+    bnSub: "ঢাকা থেকে ৮টি প্রাইম করিডোরে রিয়েল-টাইম থ্রিডি রাউটিং",
+    enSub: "Real-time 3D globe lock across 8 flagship Dhaka corridors",
+  },
+  {
+    id: "student",
+    bnLabel: "স্টুডেন্ট মোবিলিটি",
+    enLabel: "Student Mobility",
+    targetCode: "KUL",
+    offerId: "malaysia-student",
+    bnSub: "মালয়েশিয়া, চীন, ইউকে ও কানাডা স্টুডেন্ট ব্যাগেজ ও ফেয়ার",
+    enSub: "Verified student fares & extra baggage for Malaysia, China & UK",
+  },
+  {
+    id: "saudi",
+    bnLabel: "সৌদি ও ওমরাহ",
+    enLabel: "Saudi & Umrah",
+    targetCode: "JED",
+    offerId: "umrah",
+    bnSub: "জেদ্দা, রিয়াদ ও মদিনা রুটে ফ্যামিলি, ওমরাহ ও প্রবাসী কোটেশন",
+    enSub: "Dedicated Jeddah & Riyadh Umrah, family & workforce desk",
+  },
+  {
+    id: "premium",
+    bnLabel: "বিজনেস ক্লাস",
+    enLabel: "Business Class",
+    targetCode: "LON",
+    offerId: "business-class",
+    bnSub: "প্রিমিয়াম কেবিন ও কমপ্লিমেন্টারি ট্রানজিট হোটেল সহায়তা",
+    enSub: "Executive cabin itineraries & transit lounge eligibility",
+  },
+] as const;
+
 export function SiteExperience() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [atlasInteractive, setAtlasInteractive] = useState(false);
   const [mobile3DAvailable, setMobile3DAvailable] = useState(true);
   const [dialogVisited, setDialogVisited] = useState(false);
   const [tickerIdx, setTickerIdx] = useState(0);
+  const [heroFocusedCode, setHeroFocusedCode] = useState<string>("DXB");
+  const [activeHeroDesk, setActiveHeroDesk] = useState<string>("corridors");
+  const [autoCycleHero, setAutoCycleHero] = useState<boolean>(true);
+  const [animatedNm, setAnimatedNm] = useState<number>(1920);
+  const [animatedHdg, setAnimatedHdg] = useState<number>(282);
+
+  const heroCopyRef = useRef<HTMLDivElement>(null);
+  const heroConsoleRef = useRef<HTMLDivElement>(null);
+  const heroArcPathRef = useRef<SVGPathElement>(null);
+  const heroPlaneDotRef = useRef<SVGCircleElement>(null);
 
   const language = useSiteStore((state) => state.language);
   const setLanguage = useSiteStore((state) => state.setLanguage);
@@ -101,35 +152,113 @@ export function SiteExperience() {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [menuOpen]);
 
-  // anime.js staggered entrance on destination buttons (compositor-only opacity + translateY)
+  // anime.js kinetic entrance choreography on hero copy, command console & destination buttons (compositor-only)
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    import("animejs").then(({ animate, stagger }) => {
-      const buttons = document.querySelectorAll<HTMLElement>(".destination-button");
-      if (buttons.length > 0) {
-        animate(buttons, {
+
+    if (heroCopyRef.current) {
+      const heroTargets = heroCopyRef.current.querySelectorAll<HTMLElement>(".hero-kinetic-item");
+      if (heroTargets.length > 0) {
+        animate(heroTargets, {
           opacity: [0, 1],
-          translateY: [8, 0],
-          delay: stagger(35, { start: 150 }),
-          duration: 400,
+          translateY: [14, 0],
+          delay: stagger(65, { start: 60 }),
+          duration: 520,
+          ease: "outExpo",
+        });
+      }
+    }
+
+    const buttons = document.querySelectorAll<HTMLElement>(".destination-button");
+    if (buttons.length > 0) {
+      animate(buttons, {
+        opacity: [0, 1],
+        translateY: [8, 0],
+        delay: stagger(35, { start: 140 }),
+        duration: 420,
+        ease: "outQuad",
+      });
+    }
+  }, []);
+
+  // Automatic Route Intelligence Ticker & 3D Globe Synchronizer in Hero
+  useEffect(() => {
+    if (!autoCycleHero) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const interval = window.setInterval(() => {
+      setTickerIdx((prev) => {
+        const nextIdx = (prev + 1) % routes.length;
+        const nextRoute = routes[nextIdx];
+        if (nextRoute) {
+          setHeroFocusedCode(nextRoute.code);
+        }
+        return nextIdx;
+      });
+    }, 3800);
+    return () => window.clearInterval(interval);
+  }, [autoCycleHero]);
+
+  const activeRouteObj = routes.find((r) => r.code === heroFocusedCode) || routes[tickerIdx] || routes[0];
+  const activeTelemetry = getRouteTelemetry(activeRouteObj.code, activeRouteObj[language]);
+
+  // anime.js numeric odometer & SVG vector trajectory animation when heroFocusedCode changes
+  useEffect(() => {
+    const isReduced =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const stateObj = { nm: animatedNm, hdg: animatedHdg };
+    const numAnim = animate(stateObj, {
+      nm: activeTelemetry.distanceNm,
+      hdg: activeTelemetry.headingDeg,
+      duration: isReduced ? 1 : 480,
+      ease: "outExpo",
+      onUpdate: () => {
+        setAnimatedNm(Math.round(stateObj.nm));
+        setAnimatedHdg(Math.round(stateObj.hdg));
+      },
+    });
+
+    if (!isReduced && heroArcPathRef.current) {
+      animate(heroArcPathRef.current, {
+        strokeDashoffset: [180, 0],
+        duration: 620,
+        ease: "outQuart",
+      });
+    }
+
+    if (!isReduced && heroPlaneDotRef.current) {
+      animate(heroPlaneDotRef.current, {
+        scale: [1.6, 1],
+        duration: 480,
+        ease: "outBack",
+      });
+    }
+
+    return () => {
+      numAnim.pause();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [heroFocusedCode]);
+
+  const handleHeroRouteFocus = (code: string) => {
+    setAutoCycleHero(false);
+    setHeroFocusedCode(code);
+    if (heroConsoleRef.current) {
+      const isReduced =
+        typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!isReduced) {
+        animate(heroConsoleRef.current, {
+          scale: [0.99, 1],
+          duration: 240,
           ease: "outQuad",
         });
       }
-    });
-  }, []);
+    }
+  };
 
-  // Automatic Route Intelligence Ticker in Hero (compositor-only, zero CLS)
-  useEffect(() => {
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const interval = window.setInterval(() => {
-      setTickerIdx((prev) => (prev + 1) % routes.length);
-    }, 3400);
-    return () => window.clearInterval(interval);
-  }, []);
-
-  const currentTickerRoute = routes[tickerIdx] || routes[0];
   const bn = language === "bn";
+  const currentDeskMeta = HERO_QUICK_DESKS.find((d) => d.id === activeHeroDesk) || HERO_QUICK_DESKS[0];
 
   return (
     <>
@@ -137,7 +266,14 @@ export function SiteExperience() {
       <div className="site-shell" id="sf-home">
         <header className="site-header">
           <a className="brand" href="#sf-home">
-            <Image src="/images/logo-inverted.webp" width={56} height={56} alt="" priority />
+            <Image
+              src="/images/logo-inverted.webp"
+              width={56}
+              height={56}
+              alt=""
+              priority
+              referrerPolicy="no-referrer"
+            />
             <span className="brand-wordmark">
               SAFARIA<small>TOURS &amp; TRAVELS</small>
             </span>
@@ -221,58 +357,235 @@ export function SiteExperience() {
         </header>
 
         <main>
-          <section className="hero" aria-labelledby="hero-title">
+          <section
+            className="hero"
+            aria-labelledby="hero-title"
+            onMouseEnter={() => setAutoCycleHero(false)}
+            onMouseLeave={() => setAutoCycleHero(true)}
+          >
             <div className="hero-skyline" aria-hidden="true">
-              <Image src="/images/skyline.webp" fill priority sizes="100vw" alt="" />
+              <Image
+                src="/images/skyline.webp"
+                fill
+                priority
+                sizes="100vw"
+                alt=""
+                referrerPolicy="no-referrer"
+              />
             </div>
             <div className="hero-inner">
-              <div className="hero-copy">
-                {/* Fixed-height Automatic Route Intelligence Bar (Zero CLS) */}
-                <div className="mb-5 flex h-9 items-center justify-between gap-2 rounded-xl border border-[rgba(207,181,124,0.3)] bg-[rgba(4,23,19,0.78)] px-3 text-xs overflow-hidden max-w-[490px]">
+              <div className="hero-copy" ref={heroCopyRef}>
+                {/* Fixed-height Automatic Route Intelligence Bar synchronized with 3D Globe (Zero CLS) */}
+                <div className="hero-kinetic-item mb-4 flex h-9 items-center justify-between gap-2 rounded-xl border border-[rgba(207,181,124,0.34)] bg-[rgba(4,23,19,0.84)] px-3 text-xs overflow-hidden max-w-[540px]">
                   <div className="flex items-center gap-2 min-w-0">
                     <Compass className="h-3.5 w-3.5 text-[#10b981] shrink-0" />
                     <span className="font-mono text-[10px] font-bold text-[#cfb57c] uppercase shrink-0">
-                      {bn ? "লাইভ রুট:" : "LIVE CORRIDOR:"}
+                      {bn ? "থ্রিডি রুট লক:" : "3D CORRIDOR LOCK:"}
                     </span>
                     <AnimatePresence mode="wait">
                       <motion.span
-                        key={currentTickerRoute.code}
+                        key={activeRouteObj.code}
                         initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
-                        transition={{ duration: 0.2 }}
-                        className="truncate text-[#f3f0e7] font-medium"
+                        transition={{ duration: 0.18 }}
+                        className="truncate text-[#f3f0e7] font-semibold"
                       >
-                        {origin[language]} (DAC) ➔ {currentTickerRoute[language]} ({currentTickerRoute.code})
+                        {origin[language]} (DAC) ➔ {activeRouteObj[language]} ({activeRouteObj.code})
                       </motion.span>
                     </AnimatePresence>
                   </div>
                   <button
                     type="button"
-                    onClick={() => openRoute(currentTickerRoute.code)}
+                    onClick={() => openRoute(activeRouteObj.code)}
                     className="font-mono text-[11px] font-bold text-[#cfb57c] hover:underline whitespace-nowrap shrink-0"
                   >
                     {bn ? "কোটেশন ↗" : "Quote ↗"}
                   </button>
                 </div>
 
-                <h1 id="hero-title" className="display-heading">
+                <h1 id="hero-title" className="display-heading hero-kinetic-item">
                   {t.title}
                 </h1>
-                <p>{t.intro}</p>
-                <button
-                  className="button button-gold hero-cta"
-                  type="button"
-                  onClick={() => openRoute()}
+                <p className="hero-kinetic-item">{t.intro}</p>
+
+                {/* Primary Hero CTA + B2B Wholesale Quick Action */}
+                <div className="hero-kinetic-item flex flex-wrap items-center gap-3">
+                  <button
+                    className="button button-gold hero-cta"
+                    type="button"
+                    onClick={() => openRoute(activeRouteObj.code)}
+                  >
+                    {t.request}
+                    <span aria-hidden="true">→</span>
+                  </button>
+                  <Link
+                    href="/b2b"
+                    className="inline-flex min-h-[57px] items-center justify-center gap-2 rounded-lg border border-[rgba(207,181,124,0.42)] bg-[rgba(6,43,39,0.75)] px-5 py-3.5 text-xs sm:text-sm font-bold text-[#cfb57c] hover:border-[#cfb57c] hover:bg-[#092c27] transition-all whitespace-nowrap"
+                  >
+                    <Radio className="h-4 w-4 text-[#10b981]" />
+                    <span>{bn ? "বি২বি এজেন্সি ডেস্ক (০% মার্কআপ)" : "B2B Agency Desk (0% Markup)"}</span>
+                    <ArrowUpRight className="h-4 w-4" />
+                  </Link>
+                </div>
+
+                {/* Anime.js + Three.js Synchronized Interactive Spatial Command Console */}
+                <div
+                  ref={heroConsoleRef}
+                  className="hero-kinetic-item mt-6 max-w-[560px] rounded-2xl border border-[rgba(207,181,124,0.32)] bg-[rgba(4,23,19,0.86)] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.42)] space-y-3.5"
                 >
-                  {t.request}
-                  <span aria-hidden="true">→</span>
-                </button>
+                  {/* Quick Desk Mode Selector */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[rgba(207,181,124,0.18)] pb-2.5">
+                    <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label={bn ? "হিরো কুইক ডেস্ক" : "Hero quick desks"}>
+                      {HERO_QUICK_DESKS.map((desk) => {
+                        const isCurrent = activeHeroDesk === desk.id;
+                        return (
+                          <button
+                            key={desk.id}
+                            type="button"
+                            role="tab"
+                            aria-selected={isCurrent}
+                            onClick={() => {
+                              setActiveHeroDesk(desk.id);
+                              handleHeroRouteFocus(desk.targetCode);
+                            }}
+                            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors whitespace-nowrap shrink-0 ${
+                              isCurrent
+                                ? "bg-[#cfb57c] text-[#041713]"
+                                : "text-[#b1c3bc] hover:bg-[#092c27] hover:text-[#f3f0e7]"
+                            }`}
+                          >
+                            {bn ? desk.bnLabel : desk.enLabel}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openOffer(currentDeskMeta.offerId)}
+                      className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-[#10b981] hover:underline whitespace-nowrap shrink-0"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      <span>{bn ? "ডেস্ক কোটেশন ↗" : "Desk Quote ↗"}</span>
+                    </button>
+                  </div>
+
+                  {/* Live Animated Vector Trajectory & Odometer Readout */}
+                  <div className="grid grid-cols-1 sm:grid-cols-12 items-center gap-3">
+                    <div className="sm:col-span-5 flex items-center gap-3 rounded-xl border border-[rgba(207,181,124,0.2)] bg-[#06241e] p-2.5">
+                      <svg
+                        className="h-10 w-20 shrink-0 overflow-visible"
+                        viewBox="0 0 96 42"
+                        fill="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M 8 34 Q 48 4 88 34"
+                          stroke="rgba(207,181,124,0.22)"
+                          strokeWidth="1.5"
+                          strokeDasharray="3 3"
+                        />
+                        <path
+                          ref={heroArcPathRef}
+                          d="M 8 34 Q 48 4 88 34"
+                          stroke="#10b981"
+                          strokeWidth="2.2"
+                          strokeDasharray="180"
+                          strokeDashoffset="0"
+                        />
+                        <circle cx="8" cy="34" r="3.5" fill="#cfb57c" />
+                        <circle ref={heroPlaneDotRef} cx="88" cy="34" r="4" fill="#10b981" />
+                      </svg>
+                      <div className="min-w-0">
+                        <span className="block font-mono text-[10px] font-bold text-[#cfb57c]">
+                          DAC ➔ {activeRouteObj.code}
+                        </span>
+                        <strong className="block truncate text-xs font-bold text-[#f3f0e7]">
+                          {activeRouteObj[language]}
+                        </strong>
+                        <span className="block truncate text-[10px] text-[#10b981] font-mono">
+                          {bn ? activeTelemetry.durationBn : activeTelemetry.durationEn}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="sm:col-span-7 grid grid-cols-3 gap-2 text-center">
+                      <div className="rounded-xl border border-[rgba(207,181,124,0.18)] bg-[#06241e]/80 p-2">
+                        <span className="block font-mono text-[9px] uppercase text-[#b1c3bc]">
+                          {bn ? "দূরত্ব" : "DISTANCE"}
+                        </span>
+                        <strong className="font-mono text-xs sm:text-sm font-bold text-[#f3f0e7] tabular-nums">
+                          {animatedNm.toLocaleString()} NM
+                        </strong>
+                      </div>
+                      <div className="rounded-xl border border-[rgba(207,181,124,0.18)] bg-[#06241e]/80 p-2">
+                        <span className="block font-mono text-[9px] uppercase text-[#b1c3bc]">
+                          {bn ? "ফ্লাইট লেভেল" : "CRUISE"}
+                        </span>
+                        <strong className="font-mono text-xs sm:text-sm font-bold text-[#cfb57c] tabular-nums">
+                          {activeTelemetry.flightLevel} · {activeTelemetry.mach}
+                        </strong>
+                      </div>
+                      <div className="rounded-xl border border-[rgba(207,181,124,0.18)] bg-[#06241e]/80 p-2">
+                        <span className="block font-mono text-[9px] uppercase text-[#b1c3bc]">
+                          {bn ? "হেডিং" : "HEADING"}
+                        </span>
+                        <strong className="font-mono text-xs sm:text-sm font-bold text-[#10b981] tabular-nums">
+                          {animatedHdg}° TRUE
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Interactive 8-Corridor 3D Globe Target Selector Bar */}
+                  <div className="flex items-center justify-between gap-2 pt-0.5">
+                    <div className="flex flex-wrap items-center gap-1">
+                      <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#b1c3bc] mr-1">
+                        <Navigation className="h-3 w-3 text-[#cfb57c]" />
+                        <span>{bn ? "3D ফোকাস:" : "3D Focus:"}</span>
+                      </span>
+                      {routes.map((r) => {
+                        const isFocused = heroFocusedCode === r.code;
+                        return (
+                          <button
+                            key={r.code}
+                            type="button"
+                            onClick={() => handleHeroRouteFocus(r.code)}
+                            className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${
+                              isFocused
+                                ? "bg-[#10b981] text-[#041713] shadow-[0_0_10px_rgba(16,185,129,0.45)]"
+                                : "bg-[#092c27] text-[#cfb57c] hover:bg-[#12423a]"
+                            }`}
+                          >
+                            {r.code}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => openRoute(activeRouteObj.code)}
+                      className="inline-flex items-center gap-1 rounded-lg bg-[#cfb57c]/15 border border-[#cfb57c]/40 px-2.5 py-1 text-[11px] font-bold text-[#cfb57c] hover:bg-[#cfb57c] hover:text-[#041713] transition-colors whitespace-nowrap shrink-0"
+                    >
+                      <Plane className="h-3 w-3" />
+                      <span>{bn ? `${activeRouteObj.code} কোটেশন` : `Quote ${activeRouteObj.code}`}</span>
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="hero-atlas" id="sf-atlas">
                 {atlasInteractive ? (
-                  <JourneyAtlas language={language} onSelect={openRoute} />
+                  <JourneyAtlas
+                    language={language}
+                    onSelect={openRoute}
+                    externalFocusCode={heroFocusedCode}
+                    onHoverRoute={(code) => {
+                      setAutoCycleHero(false);
+                      setHeroFocusedCode(code);
+                    }}
+                  />
                 ) : (
                   <div
                     className="atlas-visual"
@@ -297,21 +610,28 @@ export function SiteExperience() {
                 <div className="atlas-destinations">
                   <p>{t.choose}</p>
                   <div className="destination-list" role="list" aria-label={t.atlas}>
-                    {routes.map((route) => (
-                      <div role="listitem" key={route.code}>
-                        <button
-                          type="button"
-                          className="destination-button"
-                          onClick={() => openRoute(route.code)}
-                        >
-                          <span>{route[language]}</span>
-                          <small>{route.code}</small>
-                          <span className="sr-only">
-                            {origin[language]} (DAC) → {t.request}
-                          </span>
-                        </button>
-                      </div>
-                    ))}
+                    {routes.map((route) => {
+                      const isRouteActive = heroFocusedCode === route.code;
+                      return (
+                        <div role="listitem" key={route.code}>
+                          <button
+                            type="button"
+                            className={`destination-button ${
+                              isRouteActive ? "ring-1 ring-[#cfb57c] bg-[#125547]" : ""
+                            }`}
+                            onPointerEnter={() => handleHeroRouteFocus(route.code)}
+                            onFocus={() => handleHeroRouteFocus(route.code)}
+                            onClick={() => openRoute(route.code)}
+                          >
+                            <span>{route[language]}</span>
+                            <small>{route.code}</small>
+                            <span className="sr-only">
+                              {origin[language]} (DAC) → {t.request}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                   <p className="atlas-help">{t.atlasHelp}</p>
                 </div>

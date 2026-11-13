@@ -5,8 +5,8 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { animate } from "animejs";
 
 /**
- * ThreeUI (threeui.js) — Spatial 3D Interface, Composite Procedural Fleet &
- * Holographic Telemetry Engine for SAFARIA Tours & Travels.
+ * ThreeUI (threeui.js) — Spatial 3D Interface, Composite Procedural Fleet,
+ * Instanced Starfield & Holographic Telemetry Engine for SAFARIA Tours & Travels.
  */
 
 export interface SpatialTelemetryData {
@@ -15,27 +15,130 @@ export interface SpatialTelemetryData {
   flightLevel: string;
   mach: string;
   distanceNm: number;
+  durationEn: string;
+  durationBn: string;
+  corridorTagEn: string;
+  corridorTagBn: string;
+  headingDeg: number;
 }
 
-const ROUTE_TELEMETRY: Record<string, { fl: string; mach: string; nm: number }> = {
-  RUH: { fl: "FL380", mach: "M0.84", nm: 2340 },
-  JED: { fl: "FL390", mach: "M0.85", nm: 2780 },
-  CXB: { fl: "FL210", mach: "M0.68", nm: 165 },
-  KUL: { fl: "FL360", mach: "M0.82", nm: 1420 },
-  SIN: { fl: "FL370", mach: "M0.83", nm: 1550 },
-  DXB: { fl: "FL380", mach: "M0.84", nm: 1920 },
-  CAN: { fl: "FL350", mach: "M0.81", nm: 1290 },
-  LON: { fl: "FL400", mach: "M0.86", nm: 4320 },
+const ROUTE_TELEMETRY: Record<
+  string,
+  {
+    fl: string;
+    mach: string;
+    nm: number;
+    durEn: string;
+    durBn: string;
+    tagEn: string;
+    tagBn: string;
+    hdg: number;
+  }
+> = {
+  RUH: {
+    fl: "FL380",
+    mach: "M0.84",
+    nm: 2340,
+    durEn: "5h 35m",
+    durBn: "৫ ঘণ্টা ৩৫ মি.",
+    tagEn: "Saudi Royal & Workforce Corridor",
+    tagBn: "সৌদি ও প্রবাসী রুট",
+    hdg: 278,
+  },
+  JED: {
+    fl: "FL390",
+    mach: "M0.85",
+    nm: 2780,
+    durEn: "6h 25m",
+    durBn: "৬ ঘণ্টা ২৫ মি.",
+    tagEn: "Umrah & Red Sea Gateway",
+    tagBn: "ওমরাহ ও জেদ্দা গেটওয়ে",
+    hdg: 274,
+  },
+  CXB: {
+    fl: "FL210",
+    mach: "M0.68",
+    nm: 165,
+    durEn: "0h 55m",
+    durBn: "৫৫ মিনিট",
+    tagEn: "Domestic Coastal Express",
+    tagBn: "কক্সবাজার কোস্টাল এক্সপ্রেস",
+    hdg: 152,
+  },
+  KUL: {
+    fl: "FL360",
+    mach: "M0.82",
+    nm: 1420,
+    durEn: "3h 55m",
+    durBn: "৩ ঘণ্টা ৫৫ মি.",
+    tagEn: "Student & ASEAN Mobility Hub",
+    tagBn: "মালয়েশিয়া স্টুডেন্ট ও আসিয়ান হাব",
+    hdg: 148,
+  },
+  SIN: {
+    fl: "FL370",
+    mach: "M0.83",
+    nm: 1550,
+    durEn: "4h 15m",
+    durBn: "৪ ঘণ্টা ১৫ মি.",
+    tagEn: "Executive & Medical Care Hub",
+    tagBn: "সিঙ্গাপুর প্রিমিয়াম ও মেডিকেল রুট",
+    hdg: 146,
+  },
+  DXB: {
+    fl: "FL380",
+    mach: "M0.84",
+    nm: 1920,
+    durEn: "4h 50m",
+    durBn: "৪ ঘণ্টা ৫০ মি.",
+    tagEn: "Global Transit & Gulf Hub",
+    tagBn: "দুবাই ও গ্লোবাল ট্রানজিট হাব",
+    hdg: 282,
+  },
+  CAN: {
+    fl: "FL350",
+    mach: "M0.81",
+    nm: 1290,
+    durEn: "3h 40m",
+    durBn: "৩ ঘণ্টা ৪০ মি.",
+    tagEn: "China Student & Trade Corridor",
+    tagBn: "চীন স্টুডেন্ট ও বাণিজ্যিক রুট",
+    hdg: 86,
+  },
+  LON: {
+    fl: "FL400",
+    mach: "M0.86",
+    nm: 4320,
+    durEn: "10h 30m",
+    durBn: "১০ ঘণ্টা ৩০ মি.",
+    tagEn: "UK Long-Haul & Diaspora Route",
+    tagBn: "যুক্তরাজ্য লং-হল ও প্রবাসী রুট",
+    hdg: 312,
+  },
 };
 
 export function getRouteTelemetry(code: string, city: string): SpatialTelemetryData {
-  const spec = ROUTE_TELEMETRY[code] || { fl: "FL370", mach: "M0.83", nm: 1850 };
+  const spec = ROUTE_TELEMETRY[code] || {
+    fl: "FL370",
+    mach: "M0.83",
+    nm: 1850,
+    durEn: "4h 30m",
+    durBn: "৪ ঘণ্টা ৩০ মি.",
+    tagEn: "International Corridor",
+    tagBn: "আন্তর্জাতিক রুট",
+    hdg: 270,
+  };
   return {
     code,
     city,
     flightLevel: spec.fl,
     mach: spec.mach,
     distanceNm: spec.nm,
+    durationEn: spec.durEn,
+    durationBn: spec.durBn,
+    corridorTagEn: spec.tagEn,
+    corridorTagBn: spec.tagBn,
+    headingDeg: spec.hdg,
   };
 }
 
@@ -136,7 +239,7 @@ export function createCompositeAircraft(
   const plumeMat = new THREE.MeshBasicMaterial({
     color: 0xffd58a,
     transparent: true,
-    opacity: 0.22,
+    opacity: 0.24,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
   });
@@ -148,6 +251,123 @@ export function createCompositeAircraft(
   sharedMats.push(fuselageMat, wingMat, engineMat, plumeMat);
 
   return jet;
+}
+
+/**
+ * Creates an InstancedMesh orbital starfield & spatial telemetry dust cloud around the globe
+ * (single draw call, precomputed bounding sphere, deterministic golden-spiral distribution).
+ */
+export function createInstancedStarfield(
+  sharedGeos: THREE.BufferGeometry[],
+  sharedMats: THREE.Material[],
+  count = 135
+): THREE.InstancedMesh {
+  const starGeo = new THREE.OctahedronGeometry(0.0065, 0);
+  const starMat = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    transparent: true,
+    opacity: 0.55,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+
+  const mesh = new THREE.InstancedMesh(starGeo, starMat, count);
+  const dummy = new THREE.Object3D();
+  const color = new THREE.Color();
+
+  for (let i = 0; i < count; i++) {
+    const phi = Math.acos(1 - (2 * (i + 0.5)) / count);
+    const theta = Math.PI * (1 + Math.sqrt(5)) * i;
+    const radius = 1.28 + ((i * 17) % 19) * 0.022;
+
+    dummy.position.set(
+      radius * Math.sin(phi) * Math.cos(theta),
+      radius * Math.cos(phi),
+      radius * Math.sin(phi) * Math.sin(theta)
+    );
+    const scale = 0.65 + ((i * 13) % 7) * 0.14;
+    dummy.scale.setScalar(scale);
+    dummy.rotation.set(i * 0.3, i * 0.5, 0);
+    dummy.updateMatrix();
+    mesh.setMatrixAt(i, dummy.matrix);
+
+    color.setHex(i % 3 === 0 ? 0x10b981 : i % 2 === 0 ? 0xcfb57c : 0xf3f0e7);
+    mesh.setColorAt(i, color);
+  }
+
+  mesh.instanceMatrix.needsUpdate = true;
+  if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+  mesh.computeBoundingSphere();
+
+  sharedGeos.push(starGeo);
+  sharedMats.push(starMat);
+
+  return mesh;
+}
+
+/**
+ * Creates a multi-part 3D Radar Beacon & Expanding Pulse Ring at the Dhaka (DAC) origin hub.
+ */
+export function createOriginRadarBeacon(
+  originPos: THREE.Vector3,
+  sharedGeos: THREE.BufferGeometry[],
+  sharedMats: THREE.Material[]
+): {
+  group: THREE.Group;
+  pulseRing: THREE.Mesh;
+  pulseMat: THREE.MeshBasicMaterial;
+} {
+  const group = new THREE.Group();
+  group.position.copy(originPos);
+
+  const normal = originPos.clone().normalize();
+  const lookTarget = originPos.clone().add(normal);
+  group.lookAt(lookTarget);
+
+  // Outer radar ring
+  const ringGeo = new THREE.RingGeometry(0.028, 0.036, 32);
+  const ringMat = new THREE.MeshBasicMaterial({
+    color: 0xcfb57c,
+    transparent: true,
+    opacity: 0.85,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const baseRing = new THREE.Mesh(ringGeo, ringMat);
+  group.add(baseRing);
+
+  // Animated expanding pulse wave ring
+  const pulseGeo = new THREE.RingGeometry(0.032, 0.04, 32);
+  const pulseMat = new THREE.MeshBasicMaterial({
+    color: 0x10b981,
+    transparent: true,
+    opacity: 0.75,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const pulseRing = new THREE.Mesh(pulseGeo, pulseMat);
+  group.add(pulseRing);
+
+  // Vertical holographic spire along normal
+  const spireGeo = new THREE.CylinderGeometry(0.001, 0.004, 0.085, 8);
+  spireGeo.rotateX(Math.PI / 2);
+  spireGeo.translate(0, 0, 0.042);
+  const spireMat = new THREE.MeshBasicMaterial({
+    color: 0xcfb57c,
+    transparent: true,
+    opacity: 0.65,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const spire = new THREE.Mesh(spireGeo, spireMat);
+  group.add(spire);
+
+  sharedGeos.push(ringGeo, pulseGeo, spireGeo);
+  sharedMats.push(ringMat, pulseMat, spireMat);
+
+  return { group, pulseRing, pulseMat };
 }
 
 /**
@@ -164,7 +384,7 @@ export function createOrbitalTelemetryRings(
   const eqRingMat = new THREE.MeshBasicMaterial({
     color: 0xcfb57c,
     transparent: true,
-    opacity: 0.16,
+    opacity: 0.18,
     side: THREE.DoubleSide,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
@@ -174,11 +394,11 @@ export function createOrbitalTelemetryRings(
   orbitalGroup.add(eqRing);
 
   // Inclined Polar Radar Ring
-  const polarRingGeo = new THREE.RingGeometry(1.23, 1.234, 96);
+  const polarRingGeo = new THREE.RingGeometry(1.23, 1.235, 96);
   const polarRingMat = new THREE.MeshBasicMaterial({
     color: 0x10b981,
     transparent: true,
-    opacity: 0.12,
+    opacity: 0.14,
     side: THREE.DoubleSide,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
@@ -188,8 +408,23 @@ export function createOrbitalTelemetryRings(
   polarRing.rotation.y = THREE.MathUtils.degToRad(24);
   orbitalGroup.add(polarRing);
 
-  sharedGeos.push(eqRingGeo, polarRingGeo);
-  sharedMats.push(eqRingMat, polarRingMat);
+  // Counter-rotating Meridian Telemetry Arc Ring
+  const meridianRingGeo = new THREE.RingGeometry(1.14, 1.144, 96);
+  const meridianRingMat = new THREE.MeshBasicMaterial({
+    color: 0xf3f0e7,
+    transparent: true,
+    opacity: 0.08,
+    side: THREE.DoubleSide,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const meridianRing = new THREE.Mesh(meridianRingGeo, meridianRingMat);
+  meridianRing.rotation.x = THREE.MathUtils.degToRad(-48);
+  meridianRing.rotation.z = THREE.MathUtils.degToRad(18);
+  orbitalGroup.add(meridianRing);
+
+  sharedGeos.push(eqRingGeo, polarRingGeo, meridianRingGeo);
+  sharedMats.push(eqRingMat, polarRingMat, meridianRingMat);
 
   return orbitalGroup;
 }
@@ -207,12 +442,12 @@ export function createTargetLockReticle(
 } {
   const group = new THREE.Group();
 
-  const innerGeo = new THREE.RingGeometry(0.032, 0.039, 24);
-  const outerGeo = new THREE.RingGeometry(0.048, 0.053, 24);
+  const innerGeo = new THREE.RingGeometry(0.032, 0.04, 24);
+  const outerGeo = new THREE.RingGeometry(0.05, 0.056, 24);
   const mat = new THREE.MeshBasicMaterial({
     color: 0x10b981,
     transparent: true,
-    opacity: 0.85,
+    opacity: 0.9,
     side: THREE.DoubleSide,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
@@ -229,8 +464,8 @@ export function createTargetLockReticle(
   const pulseWithAnime = () => {
     try {
       animate(scaleState, {
-        s: [1.45, 1],
-        duration: 520,
+        s: [1.55, 1],
+        duration: 540,
         ease: "outElastic(1, .6)",
         onUpdate: () => {
           group.scale.setScalar(scaleState.s);
@@ -258,7 +493,7 @@ export class ThreeUISpatialCallout {
   constructor(maxAnisotropy = 4) {
     this.canvas = document.createElement("canvas");
     this.canvas.width = 512;
-    this.canvas.height = 160;
+    this.canvas.height = 176;
     this.ctx = this.canvas.getContext("2d");
 
     this.texture = new THREE.CanvasTexture(this.canvas);
@@ -273,7 +508,7 @@ export class ThreeUISpatialCallout {
     });
 
     this.sprite = new THREE.Sprite(this.material);
-    this.sprite.scale.set(0.56, 0.175, 1);
+    this.sprite.scale.set(0.58, 0.195, 1);
     this.sprite.renderOrder = 25;
     this.sprite.visible = false;
   }
@@ -282,35 +517,40 @@ export class ThreeUISpatialCallout {
     const ctx = this.ctx;
     if (!ctx) return;
 
-    ctx.clearRect(0, 0, 512, 160);
+    ctx.clearRect(0, 0, 512, 176);
 
     // Background dark emerald glass card
-    ctx.fillStyle = "rgba(4, 23, 19, 0.92)";
-    ctx.strokeStyle = "rgba(207, 181, 124, 0.85)";
+    ctx.fillStyle = "rgba(4, 23, 19, 0.94)";
+    ctx.strokeStyle = "rgba(207, 181, 124, 0.9)";
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.roundRect(8, 8, 496, 144, 20);
+    ctx.roundRect(8, 8, 496, 160, 20);
     ctx.fill();
     ctx.stroke();
 
     // Accent top bar
     ctx.fillStyle = "#10b981";
-    ctx.fillRect(28, 8, 96, 4);
+    ctx.fillRect(28, 8, 120, 4);
 
     // Header route string
     ctx.fillStyle = "#cfb57c";
-    ctx.font = "bold 24px monospace";
-    ctx.fillText(`DAC ➔ ${data.code} // ${data.flightLevel}`, 28, 52);
+    ctx.font = "bold 22px monospace";
+    ctx.fillText(`DAC ➔ ${data.code} · ${data.flightLevel} · HDG ${data.headingDeg}°`, 28, 48);
 
-    // City & distance
+    // City & duration
     ctx.fillStyle = "#f3f0e7";
-    ctx.font = "bold 30px sans-serif";
-    ctx.fillText(data.city, 28, 96);
+    ctx.font = "bold 29px sans-serif";
+    ctx.fillText(`${data.city} (${data.durationEn})`, 28, 92);
+
+    // Corridor tag
+    ctx.fillStyle = "#b1c3bc";
+    ctx.font = "600 18px sans-serif";
+    ctx.fillText(data.corridorTagEn, 28, 124);
 
     // Telemetry footer
     ctx.fillStyle = "#10b981";
-    ctx.font = "bold 20px monospace";
-    ctx.fillText(`${data.distanceNm} NM · ${data.mach} · CLICK TO QUOTE`, 28, 132);
+    ctx.font = "bold 19px monospace";
+    ctx.fillText(`${data.distanceNm} NM · ${data.mach} · CLICK TO QUOTE ↗`, 28, 152);
 
     this.texture.needsUpdate = true;
     this.sprite.visible = true;

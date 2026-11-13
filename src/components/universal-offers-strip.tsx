@@ -1,5 +1,9 @@
+"use client";
+
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Headphones, ReceiptText, RefreshCw, SlidersHorizontal } from "lucide-react";
+import { animate, stagger } from "animejs";
 import {
   SPECIALIST_CAMPAIGNS,
   UNIVERSAL_BENEFITS,
@@ -21,9 +25,39 @@ export function UniversalOffersStrip({
   onSelect: (offerId: string) => void;
 }) {
   const bn = language === "bn";
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const el = sectionRef.current;
+    if (!el) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        const cards = el.querySelectorAll<HTMLElement>("[data-campaign-id]");
+        if (cards.length > 0) {
+          animate(cards, {
+            opacity: [0, 1],
+            translateY: [14, 0],
+            scale: [0.98, 1],
+            delay: stagger(45),
+            duration: 460,
+            ease: "outQuad",
+          });
+        }
+      },
+      { threshold: 0.12 },
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="sf-universal"
       aria-labelledby="sf-universal-heading"
       className="relative mx-auto w-full max-w-[1420px] px-5 py-12 sm:px-9 lg:px-[68px] lg:py-16"

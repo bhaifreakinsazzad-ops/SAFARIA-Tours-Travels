@@ -15,11 +15,14 @@ import {
   useTransform,
   useMotionValueEvent,
 } from "motion/react";
+import { animate } from "animejs";
 import { origin, routes, type Language } from "@/lib/atlas-data";
 import {
   applyStudioEnvironment,
   createCompositeAircraft,
+  createInstancedStarfield,
   createOrbitalTelemetryRings,
+  createOriginRadarBeacon,
   createTargetLockReticle,
   detectSoftwareWebGL,
   getRouteTelemetry,
@@ -27,8 +30,22 @@ import {
 } from "@/lib/threeui";
 import { AtlasFallback } from "./atlas-fallback";
 
-type Props = { language: Language; onSelect: (code: string) => void };
-type NodeEntry = { mesh: THREE.Mesh; label: HTMLElement; code: string; pos: THREE.Vector3; city: string };
+type Props = {
+  language: Language;
+  onSelect: (code: string) => void;
+  externalFocusCode?: string | null;
+  onHoverRoute?: (code: string) => void;
+};
+
+type NodeEntry = {
+  mesh: THREE.Mesh;
+  visibleMesh: THREE.Mesh;
+  halo: THREE.Mesh;
+  label: HTMLElement;
+  code: string;
+  pos: THREE.Vector3;
+  city: string;
+};
 
 const DEFAULT_ROT_X = THREE.MathUtils.degToRad(17);
 const DEFAULT_ROT_Y = THREE.MathUtils.degToRad(-55);
@@ -81,19 +98,31 @@ function arc(from: THREE.Vector3, to: THREE.Vector3) {
   return new THREE.CatmullRomCurve3(points);
 }
 
-export function JourneyAtlas({ language, onSelect }: Props) {
+export function JourneyAtlas({
+  language,
+  onSelect,
+  externalFocusCode,
+  onHoverRoute,
+}: Props) {
   const hostRef = useRef<HTMLDivElement>(null);
+  const dockRef = useRef<HTMLDivElement>(null);
   const onSelectRef = useRef(onSelect);
+  const onHoverRouteRef = useRef(onHoverRoute);
+
   const [ready, setReady] = useState(false);
   const [hudCollapsed, setHudCollapsed] = useState(false);
   const [autoOrbit, setAutoOrbit] = useState(false);
+  const [fleetWarp, setFleetWarp] = useState(false);
   const [focusedCode, setFocusedCode] = useState<string>("DAC");
   const [scrollZoomPct, setScrollZoomPct] = useState<number>(100);
   const [pinnedTargetCode, setPinnedTargetCode] = useState<string | null>(null);
 
   const autoOrbitRef = useRef(false);
+  const fleetWarpRef = useRef(false);
   const pinnedTargetRef = useRef<string | null>(null);
+  const focusedCodeRef = useRef<string>("DAC");
   const targetRotRef = useRef<{ x: number; y: number; zCam?: number } | null>(null);
+  const pointerParallaxRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const scrollOrbitStateRef = useRef<{
     progress: number;
     rotX: number;
@@ -123,12 +152,35 @@ export function JourneyAtlas({ language, onSelect }: Props) {
   }, [onSelect]);
 
   useEffect(() => {
+    onHoverRouteRef.current = onHoverRoute;
+  }, [onHoverRoute]);
+
+  useEffect(() => {
     autoOrbitRef.current = autoOrbit;
   }, [autoOrbit]);
 
   useEffect(() => {
+    fleetWarpRef.current = fleetWarp;
+  }, [fleetWarp]);
+
+  useEffect(() => {
     pinnedTargetRef.current = pinnedTargetCode;
   }, [pinnedTargetCode]);
+
+  useEffect(() => {
+    focusedCodeRef.current = focusedCode;
+  }, [focusedCode]);
+
+  // Synchronize external focus code from Hero interactive command console or destination buttons
+  useEffect(() => {
+    if (!externalFocusCode) return;
+    pinnedTargetRef.current = externalFocusCode === "DAC" ? null : externalFocusCode;
+    const rafId = window.requestAnimationFrame(() => {
+      setPinnedTargetCode(externalFocusCode === "DAC" ? null : externalFocusCode);
+      focusRouteControlRef.current?.(externalFocusCode, false);
+    });
+    return () => window.cancelAnimationFrame(rafId);
+  }, [externalFocusCode]);
 
   // Listen to motion.dev spring-smoothed scroll progress to drive 3D camera orbit & destination zoom
   useMotionValueEvent(smoothScrollProgress, "change", (progress) => {
@@ -147,7 +199,6 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       return;
     }
 
-    // If user pinned a specific destination node, orbit & zoom directly into that node on scroll
     const pinnedCode = pinnedTargetRef.current;
     if (pinnedCode && pinnedCode !== "DAC") {
       const pinnedRoute = routes.find((r) => r.code === pinnedCode);
@@ -166,7 +217,6 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       }
     }
 
-    // Otherwise, interpolate smoothly across the hero destination waypoint sequence on scroll
     const waypoints = SCROLL_WAYPOINT_CODES.map((code) => {
       if (code === "DAC") return { code: "DAC", x: DEFAULT_ROT_X, y: DEFAULT_ROT_Y };
       const r = routes.find((item) => item.code === code);
@@ -231,12 +281,16 @@ export function JourneyAtlas({ language, onSelect }: Props) {
     const keyLight = new THREE.DirectionalLight(0xf6d9a7, 2.2);
     keyLight.position.set(-3, 3, 5);
     scene.add(keyLight);
-    const rimLight = new THREE.DirectionalLight(0x10b981, 0.9);
+    const rimLight = new THREE.DirectionalLight(0x10b981, 0.95);
     rimLight.position.set(3, -2, -4);
     scene.add(rimLight);
 
     const sharedGeos: THREE.BufferGeometry[] = [];
     const sharedMats: THREE.Material[] = [];
+
+    // Instanced Orbital Starfield & Spatial Telemetry Dust
+    const starfield = createInstancedStarfield(sharedGeos, sharedMats, 135);
+    scene.add(starfield);
 
     // Globe Core Mesh
     const globeGeometry = new THREE.SphereGeometry(1, 64, 48);
@@ -311,28 +365,38 @@ export function JourneyAtlas({ language, onSelect }: Props) {
     originHalo.position.copy(originPosition);
     group.add(originHalo);
 
+    // Multi-part 3D Origin Radar Beacon at Dhaka (DAC)
+    const originBeacon = createOriginRadarBeacon(originPosition, sharedGeos, sharedMats);
+    group.add(originBeacon.group);
+
     const originLabel = document.createElement("div");
     originLabel.className = "atlas-node-label atlas-origin-label";
     originLabel.textContent = "DAC";
     const originLabelObject = new CSS2DObject(originLabel);
-    originLabelObject.position.copy(originPosition.clone().multiplyScalar(1.08).add(new THREE.Vector3(-0.07, -0.08, 0)));
+    originLabelObject.position.copy(
+      originPosition.clone().multiplyScalar(1.08).add(new THREE.Vector3(-0.07, -0.08, 0)),
+    );
     group.add(originLabelObject);
 
     const arcs: {
+      code: string;
       curve: THREE.CatmullRomCurve3;
       aircraft: THREE.Group;
       material: THREE.ShaderMaterial;
+      glowMaterial: THREE.MeshBasicMaterial;
       phase: number;
     }[] = [];
 
     for (const [index, route] of routes.entries()) {
       const pos = position(route.lat, route.lon);
-      const visibleMesh = new THREE.Mesh(nodeGeometry, nodeMaterial);
+      const visibleMesh = new THREE.Mesh(nodeGeometry, nodeMaterial.clone());
       visibleMesh.position.copy(pos);
       group.add(visibleMesh);
-      const halo = new THREE.Mesh(haloGeometry, haloMaterial);
+      const halo = new THREE.Mesh(haloGeometry, haloMaterial.clone());
       halo.position.copy(pos);
       group.add(halo);
+      sharedMats.push(visibleMesh.material as THREE.Material, halo.material as THREE.Material);
+
       const mesh = new THREE.Mesh(hitGeometry, hitMaterial);
       mesh.position.copy(pos);
       mesh.userData.code = route.code;
@@ -341,11 +405,15 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       const curve = arc(originPosition, pos);
       const tube = new THREE.TubeGeometry(curve, 96, 0.0045, 5, false);
       const material = new THREE.ShaderMaterial({
-        uniforms: { uTime: { value: 0 }, uPhase: { value: index * 0.17 } },
+        uniforms: {
+          uTime: { value: 0 },
+          uPhase: { value: index * 0.17 },
+          uHighlight: { value: 0 },
+        },
         vertexShader:
           "varying vec2 vUv; void main(){vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}",
         fragmentShader:
-          "uniform float uTime; uniform float uPhase; varying vec2 vUv; void main(){float dash=step(0.26,fract(vUv.x*19.0-uTime*0.45+uPhase)); float pulse=0.75+0.25*sin(uTime*1.8+uPhase*6.28); gl_FragColor=vec4(0.94,0.77,0.48,dash*pulse);}",
+          "uniform float uTime; uniform float uPhase; uniform float uHighlight; varying vec2 vUv; void main(){float dash=step(0.24 - uHighlight*0.14, fract(vUv.x*19.0 - uTime*(0.45 + uHighlight*0.35) + uPhase)); float pulse=0.75 + 0.25*sin(uTime*1.8 + uPhase*6.28); vec3 baseCol=mix(vec3(0.94,0.77,0.48), vec3(0.06,0.92,0.65), uHighlight*0.55); gl_FragColor=vec4(baseCol, dash*(pulse + uHighlight*0.35));}",
         transparent: true,
         depthWrite: false,
       });
@@ -367,7 +435,7 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       const initT = index / routes.length;
       aircraft.position.copy(curve.getPointAt(initT));
       group.add(aircraft);
-      arcs.push({ curve, aircraft, material, phase: initT });
+      arcs.push({ code: route.code, curve, aircraft, material, glowMaterial, phase: initT });
 
       const label = document.createElement("div");
       label.className = "atlas-node-label";
@@ -382,7 +450,7 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       if (route.code === "SIN") labelObject.position.add(new THREE.Vector3(0, -0.11, 0));
       if (route.code === "CAN") labelObject.position.add(new THREE.Vector3(-0.06, 0.06, 0));
       group.add(labelObject);
-      nodes.push({ mesh, label, code: route.code, pos, city: route[language] });
+      nodes.push({ mesh, visibleMesh, halo, label, code: route.code, pos, city: route[language] });
     }
 
     let composer: EffectComposer | null = null;
@@ -425,10 +493,26 @@ export function JourneyAtlas({ language, onSelect }: Props) {
     let contextLost = false;
     let lastLockedCode = "";
 
+    function highlightCorridor(activeCode: string) {
+      for (const item of arcs) {
+        const isMatch = item.code === activeCode;
+        item.material.uniforms.uHighlight.value = isMatch ? 1 : 0;
+        item.glowMaterial.opacity = isMatch ? 0.28 : 0.09;
+        item.glowMaterial.color.setHex(isMatch ? 0x10b981 : 0xffd78b);
+        item.aircraft.scale.setScalar(isMatch ? 1.45 : 1);
+      }
+      for (const n of nodes) {
+        const isMatch = n.code === activeCode;
+        n.visibleMesh.scale.setScalar(isMatch ? 1.55 : 1);
+        (n.halo.material as THREE.MeshBasicMaterial).opacity = isMatch ? 0.35 : 0.11;
+      }
+    }
+
     function lockReticleOnNode(node: NodeEntry | undefined, pulse = true) {
       if (!node) {
         reticle.group.visible = false;
         spatialCallout.hide();
+        highlightCorridor("");
         lastLockedCode = "";
         return;
       }
@@ -437,6 +521,8 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       _lookTarget.copy(reticle.group.position).add(_normalVec);
       reticle.group.lookAt(_lookTarget);
       reticle.group.visible = true;
+      highlightCorridor(node.code);
+
       if (pulse && lastLockedCode !== node.code) {
         reticle.pulseWithAnime();
       }
@@ -484,14 +570,22 @@ export function JourneyAtlas({ language, onSelect }: Props) {
     function animateLoop() {
       const delta = Math.min(clock.getDelta(), 0.1);
       const time = clock.getElapsedTime();
+      const speedMult = fleetWarpRef.current ? 2.2 : 1.0;
 
-      // Animate orbital telemetry rings
-      orbitalRings.rotation.y = time * 0.08;
+      // Animate orbital telemetry rings & instanced starfield parallax
+      orbitalRings.rotation.y = time * 0.08 * speedMult;
       orbitalRings.rotation.z = Math.sin(time * 0.25) * 0.05;
+      starfield.rotation.y = time * 0.018 + pointerParallaxRef.current.x * 0.12;
+      starfield.rotation.x = pointerParallaxRef.current.y * 0.08;
+
+      // Animate Dhaka Origin Radar Beacon expanding pulse wave
+      const pulsePhase = (time * 0.85) % 1;
+      originBeacon.pulseRing.scale.setScalar(1 + pulsePhase * 1.9);
+      originBeacon.pulseMat.opacity = (1 - pulsePhase) * 0.75;
 
       // Rotate reticle if visible
       if (reticle.group.visible) {
-        reticle.group.rotateZ(delta * 1.4);
+        reticle.group.rotateZ(delta * 1.4 * speedMult);
       }
 
       const scrollState = scrollOrbitStateRef.current;
@@ -517,15 +611,17 @@ export function JourneyAtlas({ language, onSelect }: Props) {
         } else {
           camera.position.z = THREE.MathUtils.damp(camera.position.z, DEFAULT_CAM_Z, 5, delta);
           if (autoOrbitRef.current) {
-            group.rotation.y += delta * 0.18;
+            group.rotation.y += delta * 0.2 * speedMult;
           }
         }
       }
 
       // Advance composite 3D aircraft fleet along great-circle curves with tangent orientation
+      const activeCode = focusedCodeRef.current;
       for (const item of arcs) {
-        item.material.uniforms.uTime.value = time;
-        const t = (time * 0.11 + item.phase) % 1;
+        item.material.uniforms.uTime.value = time * speedMult;
+        const routeBoost = item.code === activeCode ? 1.35 : 1.0;
+        const t = (time * 0.11 * speedMult * routeBoost + item.phase) % 1;
         const nextT = Math.min(t + 0.02, 1);
         item.curve.getPointAt(t, item.aircraft.position);
         item.curve.getPointAt(nextT, _tangentPos);
@@ -559,10 +655,10 @@ export function JourneyAtlas({ language, onSelect }: Props) {
 
     function hit(event: PointerEvent) {
       const bounds = renderer.domElement.getBoundingClientRect();
-      pointer.set(
-        ((event.clientX - bounds.left) / bounds.width) * 2 - 1,
-        -((event.clientY - bounds.top) / bounds.height) * 2 + 1,
-      );
+      const nx = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
+      const ny = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
+      pointerParallaxRef.current = { x: nx, y: ny };
+      pointer.set(nx, ny);
       raycaster.setFromCamera(pointer, camera);
       const found = raycaster.intersectObjects(nodes.map((node) => node.mesh))[0];
       return nodes.find((node) => node.mesh === found?.object);
@@ -587,7 +683,10 @@ export function JourneyAtlas({ language, onSelect }: Props) {
         next?.label.classList.add("is-hovered");
         hovering = next;
         lockReticleOnNode(next, true);
-        if (next) setFocusedCode(next.code);
+        if (next) {
+          setFocusedCode(next.code);
+          onHoverRouteRef.current?.(next.code);
+        }
         renderer.domElement.style.cursor = next ? "pointer" : "grab";
       }
     }
@@ -672,6 +771,22 @@ export function JourneyAtlas({ language, onSelect }: Props) {
 
   const bn = language === "bn";
 
+  const handleDockNodeSelect = (code: string) => {
+    setAutoOrbit(false);
+    setPinnedTargetCode(code === "DAC" ? null : code);
+    focusRouteControlRef.current?.(code, false);
+    if (code !== "DAC") {
+      onHoverRouteRef.current?.(code);
+    }
+    if (dockRef.current) {
+      animate(dockRef.current, {
+        scale: [0.985, 1],
+        duration: 240,
+        ease: "outQuad",
+      });
+    }
+  };
+
   return (
     <div className="atlas-visual" aria-label="Interactive globe of enquiry destinations from Dhaka">
       <div className="atlas-stage" ref={hostRef} aria-hidden="true" />
@@ -682,7 +797,8 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       {/* Collapsible Bottom ThreeUI Spatial Control Dock (No backdrop-filter over WebGL) */}
       {ready && (
         <div
-          className="pointer-events-auto absolute bottom-8 left-1/2 z-10 -translate-x-1/2 flex flex-col items-center max-w-[92%]"
+          ref={dockRef}
+          className="pointer-events-auto absolute bottom-8 left-1/2 z-10 -translate-x-1/2 flex flex-col items-center max-w-[95%]"
           aria-label={bn ? "থ্রিডি গ্লোব কন্ট্রোল ডক" : "3D Globe Spatial Control Dock"}
         >
           <button
@@ -712,40 +828,49 @@ export function JourneyAtlas({ language, onSelect }: Props) {
                   type="button"
                   onClick={() => setAutoOrbit((prev) => !prev)}
                   aria-pressed={autoOrbit}
-                  className={`px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition-colors whitespace-nowrap shrink-0 ${
+                  className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-colors whitespace-nowrap shrink-0 ${
                     autoOrbit
                       ? "bg-[#10b981] text-[#041713]"
                       : "bg-[#092c27] text-[#cfb57c] hover:bg-[#12423a]"
                   }`}
                 >
-                  {autoOrbit ? (bn ? "অটো-অরবিট: চালু" : "Auto-Orbit: ON") : bn ? "অটো-অরবিট" : "Auto-Orbit"}
+                  {autoOrbit ? (bn ? "অরবিট: চালু" : "Orbit: ON") : bn ? "অটো-অরবিট" : "Auto-Orbit"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setFleetWarp((prev) => !prev)}
+                  aria-pressed={fleetWarp}
+                  className={`px-2 py-1 rounded-lg text-[10px] font-mono font-bold transition-colors whitespace-nowrap shrink-0 ${
+                    fleetWarp
+                      ? "bg-[#cfb57c] text-[#041713]"
+                      : "bg-[#092c27] text-[#10b981] hover:bg-[#12423a]"
+                  }`}
+                >
+                  {fleetWarp ? "2X WARP" : "1X FLEET"}
                 </button>
 
                 <span
                   className="rounded bg-[#092c27] border border-[rgba(16,185,129,0.35)] px-2 py-0.5 text-[9px] font-mono font-bold text-[#10b981] whitespace-nowrap shrink-0 tabular-nums"
                   title={bn ? "স্ক্রল করলে গন্তব্য নোডে ক্যামেরা জুম হয়" : "Scroll-linked camera orbit & node zoom"}
                 >
-                  {bn ? `স্ক্রল জুম ${scrollZoomPct}%` : `SCROLL ZOOM ${scrollZoomPct}%`}
+                  {bn ? `জুম ${scrollZoomPct}%` : `ZOOM ${scrollZoomPct}%`}
                 </span>
 
                 <span className="text-[rgba(207,181,129,0.3)] text-xs select-none">|</span>
 
-                {(["DAC", "RUH", "DXB", "KUL", "LON"] as const).map((code) => (
+                {(["DAC", "RUH", "JED", "DXB", "KUL", "LON"] as const).map((code) => (
                   <button
                     key={code}
                     type="button"
-                    onClick={() => {
-                      setAutoOrbit(false);
-                      setPinnedTargetCode(code === "DAC" ? null : code);
-                      focusRouteControlRef.current?.(code, false);
-                    }}
+                    onClick={() => handleDockNodeSelect(code)}
                     className={`px-2 py-1 rounded-md text-[10px] font-mono font-semibold transition-colors whitespace-nowrap shrink-0 ${
                       focusedCode === code
                         ? "bg-[#cfb57c] text-[#041713] font-bold"
                         : "text-[#b1c3bc] hover:bg-[#092c27] hover:text-[#f3f0e7]"
                     }`}
                   >
-                    {code === "DAC" ? (bn ? "রিসেট (DAC)" : "Reset (DAC)") : code}
+                    {code === "DAC" ? (bn ? "রিসেট" : "DAC") : code}
                   </button>
                 ))}
               </motion.div>
