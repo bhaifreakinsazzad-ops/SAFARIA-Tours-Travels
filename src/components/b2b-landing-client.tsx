@@ -171,51 +171,51 @@ const FAQS: FAQItem[] = [
   {
     id: "pilot-what-included",
     category: "pilot",
-    questionBn: "৭২ ঘণ্টার পাইলট ট্রায়ালে কী কী অন্তর্ভুক্ত এবং কোনো অগ্রিম ফি প্রয়োজন কি?",
-    questionEn: "What is included in the 72-Hour Pilot Trial, and is any upfront payment required?",
-    answerBn: `৭২ ঘণ্টার পাইলট ট্রায়াল সম্পূর্ণ ফ্রি এবং কোনো ক্রেডিট কার্ড বা অগ্রিম পেমেন্টের প্রয়োজন নেই। ট্রায়াল অনুমোদন হলে আপনি ${PILOT_ENTITLEMENTS.fareRequestsLimit}টি FareDesk™ হোলসেল কোটেশন রিকোয়েস্ট, ${PILOT_ENTITLEMENTS.bookingRequestsLimit}টি BookingDesk™ পিএনআর প্রসেসিং, ${PILOT_ENTITLEMENTS.afterCareLimit}টি AfterCare Desk™ জরুরি সাপোর্ট এবং ${PILOT_ENTITLEMENTS.seatsLimit}টি টিম সিট ব্যবহার করতে পারবেন।`,
-    answerEn: `The 72-hour pilot is 100% free with no credit card or advance payment required. Upon manual staff approval, your agency receives ${PILOT_ENTITLEMENTS.fareRequestsLimit} FareDesk™ wholesale quotation requests, ${PILOT_ENTITLEMENTS.bookingRequestsLimit} BookingDesk™ assisted PNR holds, ${PILOT_ENTITLEMENTS.afterCareLimit} AfterCare Desk™ support cases, and ${PILOT_ENTITLEMENTS.seatsLimit} team seats to evaluate all 6 desks.`,
-  },
+    questionBn: "৭২ ঘণ্টার পাইলট ডেমো কীভাবে পাওয়া যাবে?",
+    questionEn: "How can I request the 72-hour pilot demo?",
+    answerBn: "আগে এজেন্সির আগ্রহ নিবন্ধন করুন। টিম যাচাই করে উপযুক্ত হলে ৬টি অপারেশনাল ডেস্কের সীমিত পাইলট ডেমো অনুমোদন করতে পারে। এটি লাইভ এয়ারলাইন ইনভেন্টরি, বুকিং, টিকিট বা কমার্শিয়াল সাবস্ক্রিপশন সক্রিয় করে না।",
+    answerEn: "Register interest first. Following manual review, an eligible agency may be invited to a limited demonstration of the six desks. A demo does not grant live airline inventory, booking, ticket issuance or an activated paid subscription.",
+  }
   {
     id: "how-desks-work",
     category: "desks",
-    questionBn: "SAFARIA-এর ৬টি অপারেশনাল ডেস্ক দৈনন্দিন এজেন্সি পরিচালনায় কীভাবে কাজ করে?",
-    questionEn: "How do the 6 Operational Desks function in daily travel agency operations?",
-    answerBn: "প্রতিটি ডেস্ক আপনার এজেন্সির একটি নির্দিষ্ট কাজের দায়িত্ব নেয়: FareDesk™ দ্রুততম হোলসেল ফেয়ার এনে দেয়; BookingDesk™ নির্ভুল পিএনআর ও স্প্লিট টিকেট তৈরি করে; ClearMargin™ স্বচ্ছ লাইভ লেজার পরিচালনা করে; AfterCare Desk™ ফ্লাইট পরিবর্তন, ওয়েভার ও রিফান্ড হ্যান্ডেল করে; Verified Workflow™ টিকিট ইস্যুর আগে নাম ও পাসপোর্ট অডিট করে পেনাল্টি আটকায়; এবং PartnerGrowth™ টিকেট ভলিউমের ভিত্তিতে টায়ার ইনসেন্টিভ প্রদান করে।",
-    answerEn: "Each desk specializes in a critical operational pillar: FareDesk™ sources rapid wholesale net fares; BookingDesk™ coordinates error-free PNRs and split tickets; ClearMargin™ provides real-time transparent ledgers; AfterCare Desk™ handles 24/7 reissues, waivers, and refunds; Verified Workflow™ audits passenger names and passport validity to prevent airline penalties; and PartnerGrowth™ rewards monthly ticket volume with tiered incentives.",
-  },
+    questionBn: "SAFARIA-এর ৬টি অপারেশনাল ডেস্ক কী কাজে সহায়তা করে?",
+    questionEn: "What can the six SAFARIA operational desks help organize?",
+    answerBn: "FareDesk™ ফেয়ার অনুরোধ, BookingDesk™ বুকিং অনুরোধ ও অবস্থা, ClearMargin™ খরচ ও ফি রেকর্ড, AfterCare Desk™ সহায়তা কেস, Verified Workflow™ যাত্রীর নাম ও ডকুমেন্ট চেক এবং PartnerGrowth™ এজেন্সি কার্যক্রমের রেকর্ড সংগঠনে সহায়তা করে। বাস্তব বুকিং, রিফান্ড, কমিশন ও এয়ারলাইন কার্যক্রম অনুমোদন এবং সরবরাহকারী চুক্তিসাপেক্ষ।",
+    answerEn: "FareDesk™ organizes quotation requests; BookingDesk™ records booking requests and status; ClearMargin™ structures fee records; AfterCare Desk™ tracks support cases; Verified Workflow™ assists name and document checks; and PartnerGrowth™ records agency activity. Airline bookings, refunds and commissions require authorized supplier arrangements.",
+  }
   {
     id: "iata-gds-requirement",
     category: "commercial",
-    questionBn: "আমাদের কি নিজস্ব আয়াটা (IATA) লাইসেন্স বা জিডিএস (GDS) টার্মিনাল থাকতে হবে?",
-    questionEn: "Do we need an IATA license or an expensive GDS terminal to use SAFARIA?",
-    answerBn: "না, একেবারেই না। SAFARIA বিশেষভাবে তৈরি করা হয়েছে নন-আয়াটা (Non-IATA) এবং স্বাধীন ট্রাভেল এজেন্সিদের ক্ষমতায়নের জন্য। কোনো লক্ষাধিক টাকার টার্মিনাল বা মাসিক জিডিএস ফি ছাড়াই আপনি বৈশ্বিক এয়ারলাইন্সের ইনভেন্টরি ও হোলসেল ফেয়ারের সুবিধা পাবেন।",
-    answerEn: "No, absolutely not. SAFARIA is purpose-built to empower non-IATA and independent travel agencies across Bangladesh. You gain direct access to wholesale global inventory and net fare quotes without costly GDS terminal leases or monthly software maintenance overhead.",
-  },
+    questionBn: "ডেমো ব্যবহার করতে নিজস্ব IATA বা GDS কি প্রয়োজন?",
+    questionEn: "Do I need an IATA license or GDS terminal to enquire about the demo?",
+    answerBn: "না, প্রাথমিক আগ্রহ নিবন্ধন বা ডেমোর জন্য নিজস্ব GDS টার্মিনাল প্রয়োজন নেই। বাস্তব টিকিটিং, এজেন্সির যোগ্যতা ও দায়িত্ব প্রযোজ্য আইন এবং ভবিষ্যৎ অনুমোদিত সরবরাহকারী চুক্তি অনুযায়ী নির্ধারিত হবে।",
+    answerEn: "You do not need your own GDS terminal to register interest or discuss a workflow demo. Eligibility for actual ticketing and commercial services will depend on applicable law and finalized authorized supplier agreements.",
+  }
   {
     id: "whatsapp-handover",
     category: "desks",
-    questionBn: "হোয়াটসঅ্যাপ-ফার্স্ট ওয়ার্কফ্লো কীভাবে কাজ করে এবং ডেটা কীভাবে সুরক্ষিত থাকে?",
-    questionEn: "How does the WhatsApp-first workflow operate and ensure enquiry tracking?",
-    answerBn: "প্রতিটি কোটেশন বা বুকিং রিকোয়েস্টে একটি অনন্য ট্র্যাকিং রেফারেন্স (SF-...) তৈরি হয়। রিকোয়েস্টটি আমাদের সেন্ট্রাল ডেটাবেজে সংরক্ষিত হওয়ার পর হোয়াটসঅ্যাপে একটি স্ট্রাকচার্ড ড্রাফট তৈরি হয়। ফলে কোনো চ্যাট হারিয়ে যায় না এবং আপনার এজেন্সির তথ্য সম্পূর্ণ সুরক্ষিত ও আইসোলেটেড থাকে।",
-    answerEn: "Every enquiry generates a unique alphanumeric reference (SF-...). Valid agency leads and specifications are logged into our secure outbox before preparing the structured WhatsApp message, ensuring zero lost communications, verifiable audit trails, and strict agency data isolation.",
-  },
+    questionBn: "হোয়াটসঅ্যাপ-ফার্স্ট আবেদন কীভাবে কাজ করে?",
+    questionEn: "How does the WhatsApp-first partnership enquiry work?",
+    answerBn: "আবেদন সাবমিট হলে সিস্টেম উপলব্ধ থাকলে একটি রেফারেন্স তৈরি হয় এবং WhatsApp-এ বার্তার ড্রাফট খোলে। আপনার পক্ষ থেকে Send করতে হবে। টিম পরবর্তী ধাপ জানাবে; ড্রাফট খোলা মানেই বার্তা পাঠানো বা অনুমোদন নয়।",
+    answerEn: "When the intake service is available, submitting may create an enquiry reference and prepare a WhatsApp draft. You must press Send yourself. Opening a draft does not prove delivery, approval or a confirmed booking.",
+  }
   {
     id: "post-trial-transition",
     category: "pilot",
-    questionBn: "৭২ ঘণ্টার পাইলট ট্রায়াল শেষ হওয়ার পর কী হবে?",
-    questionEn: "What happens once the 72-hour pilot trial period concludes?",
-    answerBn: "ট্রায়াল শেষে আপনি সরাসরি মান্থলি (Monthly) বা বাৎসরিক (Annual) প্ল্যানে আপগ্রেড করতে পারবেন। আপনার আগের সব রিকোয়েস্ট ইতিহাস, লেজার ব্যালেন্স এবং টিম মেম্বার ক্রেডেনশিয়াল আপনার পার্টনার পোর্টালে অপরিবর্তিত থাকবে। কোনো স্বয়ংক্রিয় বা অযাচিত চার্জ কাটা হবে না।",
-    answerEn: "Once your pilot expires, your agency can activate either the Monthly or Annual partnership plan with a single click. All historical quotations, ledger records, and team credentials remain fully intact in your authenticated Partner Desk without disruption.",
-  },
+    questionBn: "ডেমো শেষে পার্টনারশিপ কীভাবে চলবে?",
+    questionEn: "What happens after a pilot demo?",
+    answerBn: "ডেমোর পর চুক্তি, অনুমোদন, সেবার পরিধি এবং মূল্য লিখিতভাবে নিশ্চিত হলে সদস্যপদ বিষয়ে আলোচনা করা যাবে। বর্তমানে কোনো স্বয়ংক্রিয় পেইড অ্যাক্টিভেশন বা টিকিটিং অনুমোদন নেই।",
+    answerEn: "After a demo, membership can be discussed once approvals, service scope, supplier agreements and prices are confirmed in writing. There is no automatic paid activation or ticket issuance at this stage.",
+  }
   {
     id: "zero-markup-guarantee",
     category: "commercial",
-    questionBn: "০% নিজস্ব মার্কআপ গ্যারান্টি কীভাবে নিশ্চিত করা হয়?",
-    questionEn: "How does SAFARIA guarantee 0% markup and transparent ledger accounting?",
-    answerBn: "ClearMargin™ লেজারে এয়ারলাইন্সের প্রকৃত নেট ফেয়ার, সরকারি ট্যাক্স এবং আপনার নিজস্ব সাব-এজেন্ট প্রফিট আলাদাভাবে প্রদর্শিত হয়। SAFARIA কোনো গোপন কমিশন বা হিডেন মার্কআপ যোগ করে না—আমরা কেবল একটি স্বচ্ছ, নির্দিষ্ট সাবস্ক্রিপশন মডেলে কাজ করি।",
-    answerEn: "Through the ClearMargin™ live ledger, you view the exact airline wholesale net fare, government taxes, and your customized agency markup. SAFARIA never embeds hidden surcharges into tickets—our revenue stems purely from predictable SaaS subscription tiers.",
-  },
+    questionBn: "ফি, কমিশন ও মার্কআপ কীভাবে নির্ধারিত হবে?",
+    questionEn: "How will fees, commissions and markups be determined?",
+    answerBn: "বর্তমানে সরবরাহকারী ও কমার্শিয়াল চুক্তি আলোচনা পর্যায়ে। ভবিষ্যতে যোগ্য ফেয়ার, ট্যাক্স, সরবরাহকারী চার্জ, SAFARIA সার্ভিস ফি ও এজেন্সির কমিশন থাকলে সেগুলো লিখিত কোটেশন বা চুক্তিতে আলাদা করে জানানো হবে। এখন কোনো সর্বোচ্চ কমিশন বা ০% মার্কআপ গ্যারান্টি দেওয়া হচ্ছে না।",
+    answerEn: "Supplier and commercial agreements are still under negotiation. Applicable fare, taxes, supplier charges, SAFARIA service fees and any agency commissions will be disclosed in written quotations or contracts. No highest-commission or zero-markup guarantee is offered at this stage.",
+  }
 ];
 
 export default function B2BLandingPage() {
@@ -1081,12 +1081,12 @@ export default function B2BLandingPage() {
 
             <div className="rounded-xl border border-[#c5a059]/20 bg-[#031412] p-4 space-y-2">
               <strong className="text-[#f7f2ea] font-bold block">
-                {bn ? "০% মার্কআপের আইনি শর্ত:" : "0% Markup Commercial Scope:"}
+                {bn ? "ভবিষ্যৎ কমার্শিয়াল শর্ত:" : "Proposed Commercial Terms:"}
               </strong>
               <p className="text-[#a3b8b0] leading-relaxed">
                 {bn
-                  ? "শুধু যোগ্য এয়ার টিকিটে SAFARIA-এর নিজস্ব মার্কআপ ০%; এয়ারলাইন কর ও সরবরাহকারীর ফি এর বাইরে। বুকিং ও ক্রেডিট সুবিধা আলাদা লিখিত শর্ত সাপেক্ষে।"
-                  : "0% SAFARIA markup applies solely to eligible air tickets. Airline taxes and third-party supplier fees are excluded. Ticket issuance requires verified settlement."}
+                  ? "সাপ্লায়ার চুক্তি ও অনুমোদন সম্পন্ন হওয়ার আগে মার্কআপ, কমিশন, টিকিট ইস্যু বা ক্রেডিট সুবিধার কোনো নিশ্চয়তা নেই। চূড়ান্ত ফি ও শর্ত লিখিতভাবে জানানো হবে।"
+                  : "No markups, commissions, ticket issuance or credit terms are guaranteed until supplier agreements and approvals are finalized. Final charges and conditions will be disclosed in writing."}
               </p>
             </div>
           </div>
