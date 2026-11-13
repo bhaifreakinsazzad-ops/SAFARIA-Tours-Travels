@@ -10,6 +10,8 @@ import { copy } from "@/lib/copy";
 import { origin, routes } from "@/lib/atlas-data";
 import { useSiteStore } from "@/lib/site-store";
 import { PWAInstallButton } from "./pwa-install-button";
+import { FlightProgressHUD } from "./flight-progress-hud";
+import { FlightRouteCanvas } from "./flight-route-canvas";
 
 const JourneyAtlas = dynamic(() => import("./journey-atlas").then((module) => module.JourneyAtlas), {
   ssr: false,
@@ -54,8 +56,26 @@ export function SiteExperience() {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [menuOpen]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    import("animejs").then(({ animate, stagger }) => {
+      const buttons = document.querySelectorAll<HTMLElement>(".destination-button");
+      if (buttons.length > 0) {
+        animate(buttons, {
+          opacity: [0, 1],
+          translateY: [8, 0],
+          delay: stagger(35, { start: 150 }),
+          duration: 400,
+          ease: "outQuad",
+        });
+      }
+    });
+  }, []);
+
   return (
     <>
+      <FlightProgressHUD language={language} />
       <div className="site-shell" id="sf-home">
         <header className="site-header">
           <a className="brand" href="#sf-home">
@@ -109,6 +129,9 @@ export function SiteExperience() {
               </div>
             </div>
           </section>
+          <div className="site-corridor-wrapper max-w-6xl mx-auto px-4 sm:px-6">
+            <FlightRouteCanvas language={language} onSelectRoute={openRoute} />
+          </div>
           <DeferredSection id="sf26-offers" title={language === "bn" ? "যাত্রার প্রতিটি পর্যায়ে" : "Every part of the journey"}><OffersBento language={language} onSelect={openOffer} /></DeferredSection>
           <DeferredSection id="sf-destinations" title={language === "bn" ? "আপনার পরের গন্তব্য" : "Find your next destination"}><DestinationExplorer language={language} onEnquire={openRoute} /></DeferredSection>
           <DeferredSection id="sf-travel-form" title={language === "bn" ? "আপনার যাত্রা, আপনার মতো" : "Shape your next journey"}><TravelStudio language={language} /></DeferredSection>

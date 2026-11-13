@@ -11,6 +11,60 @@ import { generateTemporaryPassword, hashPassword, verifyPassword } from "@server
 import { PILOT_ENTITLEMENTS, PAID_ENTITLEMENTS } from "@/config/constants";
 import crypto from "node:crypto";
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
+function mapAgencyRow(d: any): StoredAgencyApplication {
+  return {
+    id: d.id,
+    referenceNo: d.reference_no,
+    agencyName: d.agency_name,
+    contactPerson: d.contact_person,
+    phone: d.phone,
+    email: d.email,
+    city: d.city,
+    tradeLicenseNumber: d.trade_license_number,
+    yearsInBusiness: d.years_in_business,
+    monthlyTicketVolume: d.monthly_ticket_volume,
+    status: d.status,
+    plan: d.plan ?? undefined,
+    subscriptionStartedAt: d.subscription_started_at ?? null,
+    subscriptionExpiresAt: d.subscription_expires_at ?? null,
+    trialActivatedAt: d.trial_activated_at ?? null,
+    trialExpiresAt: d.trial_expires_at ?? null,
+    approvedBy: d.approved_by ?? null,
+    assignedStaffOwner: d.assigned_staff_owner ?? null,
+    whatsappDraftOpened: Boolean(d.whatsapp_draft_opened),
+    whatsappInboundConfirmed: Boolean(d.whatsapp_inbound_confirmed),
+    painCategory: d.pain_category ?? undefined,
+    district: d.district ?? d.city ?? undefined,
+    notes: d.internal_notes ?? undefined,
+    passwordHash: d.password_hash ?? null,
+    passwordSalt: d.password_salt ?? null,
+    createdAt: d.created_at,
+    updatedAt: d.updated_at,
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
+function mapInvoiceRow(d: any): AgencyInvoice {
+  return {
+    id: d.id,
+    invoiceNo: d.invoice_no,
+    agencyId: d.agency_id,
+    agencyName: d.agency_name,
+    amountBdt: d.amount_bdt,
+    plan: d.plan,
+    status: d.status,
+    paymentMethod: d.payment_method,
+    paymentReference: d.payment_reference ?? undefined,
+    issuedAt: d.issued_at,
+    verifiedAt: d.verified_at ?? null,
+    verifiedBy: d.verified_by ?? null,
+    notes: d.notes ?? undefined,
+  };
+}
+
 export interface StoredFlightLeg {
   id: string;
   enquiryId: string;
@@ -473,7 +527,13 @@ export const enquiriesRepository = {
   /**
    * Create B2B Agency Application with strict persistence
    */
-  async createAgencyApplication(input: AgencyApplicationInput): Promise<StoredAgencyApplication> {
+  async createAgencyApplication(
+    input: AgencyApplicationInput & {
+      painCategory?: string;
+      district?: string;
+      plan?: "MONTHLY" | "ANNUAL" | "TRIAL";
+    }
+  ): Promise<StoredAgencyApplication> {
     const supabase = getSupabaseServiceClient();
     if (!supabase && process.env.NODE_ENV === "production") {
       throw new Error("Persistent storage unavailable for agency applications");
@@ -481,6 +541,7 @@ export const enquiriesRepository = {
     const referenceNo = generateReferenceCode("B2B");
     const now = new Date().toISOString();
     const id = crypto.randomUUID();
+    const district = input.district || input.city;
 
     const record: StoredAgencyApplication = {
       id,
@@ -494,9 +555,17 @@ export const enquiriesRepository = {
       yearsInBusiness: input.yearsInBusiness ?? 1,
       monthlyTicketVolume: input.monthlyTicketVolume ?? "20_TO_50",
       status: "PENDING_VERIFICATION",
+      plan: input.plan,
+      subscriptionStartedAt: null,
+      subscriptionExpiresAt: null,
       trialActivatedAt: null,
       trialExpiresAt: null,
       approvedBy: null,
+      assignedStaffOwner: null,
+      whatsappDraftOpened: false,
+      whatsappInboundConfirmed: false,
+      painCategory: input.painCategory,
+      district,
       notes: input.notes || "",
       createdAt: now,
       updatedAt: now,
@@ -516,6 +585,11 @@ export const enquiriesRepository = {
           years_in_business: input.yearsInBusiness,
           monthly_ticket_volume: input.monthlyTicketVolume,
           status: "PENDING_VERIFICATION",
+          plan: input.plan || null,
+          pain_category: input.painCategory || null,
+          district: district || null,
+          whatsapp_draft_opened: false,
+          whatsapp_inbound_confirmed: false,
           internal_notes: input.notes,
           created_at: now,
           updated_at: now,
@@ -556,28 +630,7 @@ export const enquiriesRepository = {
           .order("created_at", { ascending: false });
 
         if (!error && data) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any -- untyped Supabase row shape
-          return data.map((d: any) => ({
-            id: d.id,
-            referenceNo: d.reference_no,
-            agencyName: d.agency_name,
-            contactPerson: d.contact_person,
-            phone: d.phone,
-            email: d.email,
-            city: d.city,
-            tradeLicenseNumber: d.trade_license_number,
-            yearsInBusiness: d.years_in_business,
-            monthlyTicketVolume: d.monthly_ticket_volume,
-            status: d.status,
-            trialActivatedAt: d.trial_activated_at,
-            trialExpiresAt: d.trial_expires_at,
-            approvedBy: d.approved_by,
-            notes: d.internal_notes,
-            passwordHash: d.password_hash,
-            passwordSalt: d.password_salt,
-            createdAt: d.created_at,
-            updatedAt: d.updated_at,
-          }));
+          return data.map(mapAgencyRow);
         }
 
         if (error && process.env.NODE_ENV === "production") {
@@ -602,7 +655,7 @@ export const enquiriesRepository = {
   async getAgencyApplicationById(id: string): Promise<StoredAgencyApplication | null> {
     const supabase = getSupabaseServiceClient();
 
-    if (supabase) {
+    if (supabase && UUID_RE.test(id)) {
       try {
         const { data, error } = await supabase
           .from("agency_applications")
@@ -611,27 +664,7 @@ export const enquiriesRepository = {
           .single();
 
         if (!error && data) {
-          return {
-            id: data.id,
-            referenceNo: data.reference_no,
-            agencyName: data.agency_name,
-            contactPerson: data.contact_person,
-            phone: data.phone,
-            email: data.email,
-            city: data.city,
-            tradeLicenseNumber: data.trade_license_number,
-            yearsInBusiness: data.years_in_business,
-            monthlyTicketVolume: data.monthly_ticket_volume,
-            status: data.status,
-            trialActivatedAt: data.trial_activated_at,
-            trialExpiresAt: data.trial_expires_at,
-            approvedBy: data.approved_by,
-            notes: data.internal_notes,
-            passwordHash: data.password_hash,
-            passwordSalt: data.password_salt,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-          };
+          return mapAgencyRow(data);
         }
       } catch (err) {
         console.warn("Supabase getAgencyApplicationById error:", err);
@@ -655,27 +688,7 @@ export const enquiriesRepository = {
           .single();
 
         if (!error && data) {
-          return {
-            id: data.id,
-            referenceNo: data.reference_no,
-            agencyName: data.agency_name,
-            contactPerson: data.contact_person,
-            phone: data.phone,
-            email: data.email,
-            city: data.city,
-            tradeLicenseNumber: data.trade_license_number,
-            yearsInBusiness: data.years_in_business,
-            monthlyTicketVolume: data.monthly_ticket_volume,
-            status: data.status,
-            trialActivatedAt: data.trial_activated_at,
-            trialExpiresAt: data.trial_expires_at,
-            approvedBy: data.approved_by,
-            notes: data.internal_notes,
-            passwordHash: data.password_hash,
-            passwordSalt: data.password_salt,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-          };
+          return mapAgencyRow(data);
         }
       } catch (err) {
         console.warn("Supabase query agency by ref error:", err);
@@ -708,27 +721,7 @@ export const enquiriesRepository = {
           .single();
 
         if (!error && data) {
-          return {
-            id: data.id,
-            referenceNo: data.reference_no,
-            agencyName: data.agency_name,
-            contactPerson: data.contact_person,
-            phone: data.phone,
-            email: data.email,
-            city: data.city,
-            tradeLicenseNumber: data.trade_license_number,
-            yearsInBusiness: data.years_in_business,
-            monthlyTicketVolume: data.monthly_ticket_volume,
-            status: data.status,
-            trialActivatedAt: data.trial_activated_at,
-            trialExpiresAt: data.trial_expires_at,
-            approvedBy: data.approved_by,
-            notes: data.internal_notes,
-            passwordHash: data.password_hash,
-            passwordSalt: data.password_salt,
-            createdAt: data.created_at,
-            updatedAt: data.updated_at,
-          };
+          return mapAgencyRow(data);
         }
       } catch (err) {
         console.warn("Supabase getAgencyApplicationByEmail error:", err);
@@ -786,7 +779,7 @@ export const enquiriesRepository = {
       passwordSalt = hashed.salt;
     }
 
-    if (supabase) {
+    if (supabase && UUID_RE.test(id)) {
       try {
         const updatePayload: Record<string, unknown> = {
           status,
@@ -796,6 +789,10 @@ export const enquiriesRepository = {
           internal_notes: notes !== undefined ? notes : existing.notes,
           updated_at: nowIso,
         };
+
+        if (status === "TRIAL_APPROVED" && !existing.plan) {
+          updatePayload.plan = "TRIAL";
+        }
 
         if (passwordHash) {
           updatePayload.password_hash = passwordHash;
@@ -815,27 +812,7 @@ export const enquiriesRepository = {
           }
           console.warn("Supabase updateAgencyStatus error:", error);
         } else if (updated) {
-          const updatedRecord: StoredAgencyApplication = {
-            id: updated.id,
-            referenceNo: updated.reference_no,
-            agencyName: updated.agency_name,
-            contactPerson: updated.contact_person,
-            phone: updated.phone,
-            email: updated.email,
-            city: updated.city,
-            tradeLicenseNumber: updated.trade_license_number,
-            yearsInBusiness: updated.years_in_business,
-            monthlyTicketVolume: updated.monthly_ticket_volume,
-            status: updated.status,
-            trialActivatedAt: updated.trial_activated_at,
-            trialExpiresAt: updated.trial_expires_at,
-            approvedBy: updated.approved_by,
-            notes: updated.internal_notes,
-            passwordHash: updated.password_hash,
-            passwordSalt: updated.password_salt,
-            createdAt: updated.created_at,
-            updatedAt: updated.updated_at,
-          };
+          const updatedRecord = mapAgencyRow(updated);
           memoryStore.agencyApplications.set(id, updatedRecord);
           return { agency: updatedRecord, issuedPassword };
         }
@@ -851,6 +828,7 @@ export const enquiriesRepository = {
     const record = memoryStore.agencyApplications.get(id);
     if (record) {
       record.status = status;
+      if (status === "TRIAL_APPROVED" && !record.plan) record.plan = "TRIAL";
       if (trialActivatedAt) record.trialActivatedAt = trialActivatedAt;
       if (trialExpiresAt) record.trialExpiresAt = trialExpiresAt;
       if (approvedBy) record.approvedBy = approvedBy;
@@ -1173,7 +1151,7 @@ export const enquiriesRepository = {
    */
   async isAgencyActive(agencyId: string): Promise<boolean> {
     const supabase = getSupabaseServiceClient();
-    if (supabase) {
+    if (supabase && UUID_RE.test(agencyId)) {
       try {
         const { data, error } = await supabase
           .from("agency_applications")
@@ -1221,7 +1199,7 @@ export const enquiriesRepository = {
     };
 
     // 1. Scoped Direct Postgres Connection with RLS (authenticated role + app.current_agency_id)
-    if (isScopedConnectionConfigured()) {
+    if (UUID_RE.test(agencyId) && isScopedConnectionConfigured()) {
       try {
         await withAgencyScope(agencyId, async (client) => {
           await client.query(
@@ -1241,7 +1219,7 @@ export const enquiriesRepository = {
 
     // 2. Fallback to Supabase client when DATABASE_URL is not configured (e.g. test environments)
     const supabase = getSupabaseServiceClient();
-    if (supabase) {
+    if (supabase && UUID_RE.test(agencyId)) {
       try {
         const { error } = await supabase.from("b2b_desk_records").insert({
           id,
@@ -1276,7 +1254,7 @@ export const enquiriesRepository = {
     agencyId?: string
   ): Promise<StoredB2BDeskRecord[]> {
     // 1. Agency-scoped reads go through the real RLS boundary when available
-    if (agencyId && isScopedConnectionConfigured()) {
+    if (agencyId && UUID_RE.test(agencyId) && isScopedConnectionConfigured()) {
       try {
         return await withAgencyScope(agencyId, async (client) => {
           const params: unknown[] = [];
@@ -1308,7 +1286,7 @@ export const enquiriesRepository = {
 
     // 2. Supabase path (used by staff or non-scoped environments)
     const supabase = getSupabaseServiceClient();
-    if (supabase) {
+    if (supabase && (!agencyId || UUID_RE.test(agencyId))) {
       try {
         let query = supabase.from("b2b_desk_records").select("*").order("created_at", { ascending: false });
         if (agencyId) query = query.eq("agency_id", agencyId);
@@ -1666,7 +1644,7 @@ export const enquiriesRepository = {
   },
 
   /**
-   * Create billing invoice for an agency
+   * Create billing invoice for an agency — persisted to Supabase when configured
    */
   async createAgencyInvoice(input: {
     agencyId: string;
@@ -1678,10 +1656,14 @@ export const enquiriesRepository = {
     status?: AgencyInvoice["status"];
     verifiedBy?: string;
   }): Promise<AgencyInvoice> {
+    const supabase = getSupabaseServiceClient();
     const agency = await this.getAgencyApplicationById(input.agencyId);
-    const id = `inv-${crypto.randomUUID().slice(0, 8)}`;
+    const id = crypto.randomUUID();
     const now = new Date();
-    const invoiceNo = `INV-${now.toISOString().slice(0, 7).replace("-", "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const nowIso = now.toISOString();
+    const invoiceNo = `INV-${nowIso.slice(0, 7).replace("-", "")}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const status = input.status || "PENDING_VERIFICATION";
+    const verifiedAt = status === "VERIFIED_PAID" ? nowIso : null;
 
     const invoice: AgencyInvoice = {
       id,
@@ -1690,14 +1672,54 @@ export const enquiriesRepository = {
       agencyName: agency?.agencyName || "Partner Agency",
       amountBdt: input.amountBdt,
       plan: input.plan,
-      status: input.status || "PENDING_VERIFICATION",
+      status,
       paymentMethod: input.paymentMethod,
       paymentReference: input.paymentReference,
-      issuedAt: now.toISOString(),
-      verifiedAt: input.status === "VERIFIED_PAID" ? now.toISOString() : null,
+      issuedAt: nowIso,
+      verifiedAt,
       verifiedBy: input.verifiedBy || null,
       notes: input.notes,
     };
+
+    if (supabase && UUID_RE.test(input.agencyId)) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_invoices")
+          .insert({
+            id,
+            invoice_no: invoiceNo,
+            agency_id: input.agencyId,
+            agency_name: invoice.agencyName,
+            amount_bdt: input.amountBdt,
+            plan: input.plan,
+            status,
+            payment_method: input.paymentMethod,
+            payment_reference: input.paymentReference || null,
+            issued_at: nowIso,
+            verified_at: verifiedAt,
+            verified_by: input.verifiedBy || null,
+            notes: input.notes || null,
+            created_at: nowIso,
+            updated_at: nowIso,
+          })
+          .select("*")
+          .single();
+
+        if (error) {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error creating agency invoice: ${error.message}`);
+          }
+          console.warn("Supabase createAgencyInvoice failed, falling back to memory:", error);
+        } else if (data) {
+          const persisted = mapInvoiceRow(data);
+          memoryStore.agencyInvoices.set(id, persisted);
+          return persisted;
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
+        console.warn("Supabase createAgencyInvoice exception fallback:", err);
+      }
+    }
 
     memoryStore.agencyInvoices.set(id, invoice);
     return invoice;
@@ -1707,11 +1729,36 @@ export const enquiriesRepository = {
    * List invoices optionally filtered by agencyId
    */
   async listAgencyInvoices(agencyId?: string): Promise<AgencyInvoice[]> {
-    const list = Array.from(memoryStore.agencyInvoices.values());
-    if (agencyId) {
-      return list.filter((inv) => inv.agencyId === agencyId);
+    const supabase = getSupabaseServiceClient();
+
+    if (supabase && (!agencyId || UUID_RE.test(agencyId))) {
+      try {
+        let query = supabase
+          .from("agency_invoices")
+          .select("*")
+          .order("issued_at", { ascending: false });
+
+        if (agencyId) {
+          query = query.eq("agency_id", agencyId);
+        }
+
+        const { data, error } = await query;
+        if (!error && data) {
+          return data.map(mapInvoiceRow);
+        }
+
+        if (error && process.env.NODE_ENV === "production") {
+          throw new Error(`Failed to list agency invoices from database: ${error.message}`);
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
+        console.warn("Supabase listAgencyInvoices fallback to memory:", err);
+      }
     }
-    return list.sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime());
+
+    const list = Array.from(memoryStore.agencyInvoices.values());
+    const filtered = agencyId ? list.filter((inv) => inv.agencyId === agencyId) : list;
+    return filtered.sort((a, b) => new Date(b.issuedAt).getTime() - new Date(a.issuedAt).getTime());
   },
 
   /**
@@ -1723,11 +1770,49 @@ export const enquiriesRepository = {
     verifiedBy?: string,
     notes?: string
   ): Promise<AgencyInvoice | null> {
+    const supabase = getSupabaseServiceClient();
+    const nowIso = new Date().toISOString();
+
+    if (supabase && UUID_RE.test(id)) {
+      try {
+        const updatePayload: Record<string, unknown> = {
+          status,
+          updated_at: nowIso,
+        };
+        if (status === "VERIFIED_PAID") {
+          updatePayload.verified_at = nowIso;
+          if (verifiedBy) updatePayload.verified_by = verifiedBy;
+        }
+        if (notes !== undefined) {
+          updatePayload.notes = notes;
+        }
+
+        const { data, error } = await supabase
+          .from("agency_invoices")
+          .update(updatePayload)
+          .eq("id", id)
+          .select("*")
+          .single();
+
+        if (!error && data) {
+          const persisted = mapInvoiceRow(data);
+          memoryStore.agencyInvoices.set(id, persisted);
+          return persisted;
+        }
+        if (error && process.env.NODE_ENV === "production") {
+          throw new Error(`Database error updating invoice status: ${error.message}`);
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
+        console.warn("Supabase updateAgencyInvoiceStatus fallback:", err);
+      }
+    }
+
     const invoice = memoryStore.agencyInvoices.get(id);
     if (!invoice) return null;
     invoice.status = status;
     if (status === "VERIFIED_PAID") {
-      invoice.verifiedAt = new Date().toISOString();
+      invoice.verifiedAt = nowIso;
       if (verifiedBy) invoice.verifiedBy = verifiedBy;
     }
     if (notes) invoice.notes = notes;
@@ -1743,19 +1828,72 @@ export const enquiriesRepository = {
     durationDays: number = 30,
     approvedBy: string = "SYSTEM"
   ): Promise<StoredAgencyApplication | null> {
+    const supabase = getSupabaseServiceClient();
     const agency = await this.getAgencyApplicationById(agencyId);
     if (!agency) return null;
 
     const days = typeof durationDays === "number" && !isNaN(durationDays) && durationDays > 0 ? durationDays : (plan === "ANNUAL" ? 365 : 30);
     const now = new Date();
-    const expires = new Date(now.getTime() + days * 86400 * 1000);
+    const nowIso = now.toISOString();
+    const expiresIso = new Date(now.getTime() + days * 86400 * 1000).toISOString();
+
+    let passwordHash: string | undefined;
+    let passwordSalt: string | undefined;
+    if (!agency.passwordHash) {
+      const generated = generateTemporaryPassword();
+      const hashed = hashPassword(generated);
+      passwordHash = hashed.hash;
+      passwordSalt = hashed.salt;
+    }
+
+    if (supabase && UUID_RE.test(agencyId)) {
+      try {
+        const updatePayload: Record<string, unknown> = {
+          status: "ACTIVE_PARTNER",
+          plan,
+          subscription_started_at: nowIso,
+          subscription_expires_at: expiresIso,
+          approved_by: approvedBy,
+          updated_at: nowIso,
+        };
+        if (passwordHash) {
+          updatePayload.password_hash = passwordHash;
+          updatePayload.password_salt = passwordSalt;
+        }
+
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .update(updatePayload)
+          .eq("id", agencyId)
+          .select("*")
+          .single();
+
+        if (error) {
+          if (process.env.NODE_ENV === "production") {
+            throw new Error(`Database error updating agency subscription: ${error.message}`);
+          }
+          console.warn("Supabase updateAgencySubscription failed, falling back to memory:", error);
+        } else if (data) {
+          const persisted = mapAgencyRow(data);
+          memoryStore.agencyApplications.set(agencyId, persisted);
+          return persisted;
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
+        console.warn("Supabase updateAgencySubscription exception fallback:", err);
+      }
+    }
 
     agency.status = "ACTIVE_PARTNER";
     agency.plan = plan;
-    agency.subscriptionStartedAt = now.toISOString();
-    agency.subscriptionExpiresAt = expires.toISOString();
+    agency.subscriptionStartedAt = nowIso;
+    agency.subscriptionExpiresAt = expiresIso;
     agency.approvedBy = approvedBy;
-    agency.updatedAt = now.toISOString();
+    if (passwordHash) {
+      agency.passwordHash = passwordHash;
+      agency.passwordSalt = passwordSalt;
+    }
+    agency.updatedAt = nowIso;
 
     memoryStore.agencyApplications.set(agencyId, agency);
     return agency;
@@ -1765,24 +1903,74 @@ export const enquiriesRepository = {
    * Telemetry: Record that the user opened the WhatsApp draft link
    */
   async recordWhatsAppDraftOpened(refOrId: string): Promise<boolean> {
+    const supabase = getSupabaseServiceClient();
+    const nowIso = new Date().toISOString();
+    let updatedRemote = false;
+
+    if (supabase) {
+      try {
+        const column = UUID_RE.test(refOrId) ? "id" : "reference_no";
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .update({ whatsapp_draft_opened: true, updated_at: nowIso })
+          .eq(column, refOrId)
+          .select("id");
+
+        if (!error && data && data.length > 0) {
+          updatedRemote = true;
+        }
+      } catch (err) {
+        console.warn("Supabase recordWhatsAppDraftOpened error:", err);
+      }
+    }
+
     for (const app of memoryStore.agencyApplications.values()) {
       if (app.referenceNo === refOrId || app.id === refOrId) {
         app.whatsappDraftOpened = true;
-        app.updatedAt = new Date().toISOString();
+        app.updatedAt = nowIso;
         return true;
       }
     }
-    return false;
+    return updatedRemote;
   },
 
   /**
    * Staff toggle: mark whether the agency actually replied on WhatsApp
    */
   async setWhatsAppInboundConfirmed(agencyId: string, confirmed: boolean): Promise<boolean> {
+    const supabase = getSupabaseServiceClient();
+    const nowIso = new Date().toISOString();
+
+    if (supabase && UUID_RE.test(agencyId)) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .update({ whatsapp_inbound_confirmed: confirmed, updated_at: nowIso })
+          .eq("id", agencyId)
+          .select("id");
+
+        if (error && process.env.NODE_ENV === "production") {
+          throw new Error(`Database error updating WhatsApp inbound flag: ${error.message}`);
+        }
+        if (!error && data && data.length > 0) {
+          const cached = memoryStore.agencyApplications.get(agencyId);
+          if (cached) {
+            cached.whatsappInboundConfirmed = confirmed;
+            cached.updatedAt = nowIso;
+          }
+          return true;
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
+        console.warn("Supabase setWhatsAppInboundConfirmed fallback:", err);
+      }
+    }
+
     const agency = await this.getAgencyApplicationById(agencyId);
     if (!agency) return false;
     agency.whatsappInboundConfirmed = confirmed;
-    agency.updatedAt = new Date().toISOString();
+    agency.updatedAt = nowIso;
+    memoryStore.agencyApplications.set(agencyId, agency);
     return true;
   },
 
@@ -1790,10 +1978,39 @@ export const enquiriesRepository = {
    * Staff owner assignment
    */
   async assignAgencyStaffOwner(agencyId: string, staffEmail: string): Promise<boolean> {
+    const supabase = getSupabaseServiceClient();
+    const nowIso = new Date().toISOString();
+
+    if (supabase && UUID_RE.test(agencyId)) {
+      try {
+        const { data, error } = await supabase
+          .from("agency_applications")
+          .update({ assigned_staff_owner: staffEmail, updated_at: nowIso })
+          .eq("id", agencyId)
+          .select("id");
+
+        if (error && process.env.NODE_ENV === "production") {
+          throw new Error(`Database error assigning staff owner: ${error.message}`);
+        }
+        if (!error && data && data.length > 0) {
+          const cached = memoryStore.agencyApplications.get(agencyId);
+          if (cached) {
+            cached.assignedStaffOwner = staffEmail;
+            cached.updatedAt = nowIso;
+          }
+          return true;
+        }
+      } catch (err) {
+        if (process.env.NODE_ENV === "production") throw err;
+        console.warn("Supabase assignAgencyStaffOwner fallback:", err);
+      }
+    }
+
     const agency = await this.getAgencyApplicationById(agencyId);
     if (!agency) return false;
     agency.assignedStaffOwner = staffEmail;
-    agency.updatedAt = new Date().toISOString();
+    agency.updatedAt = nowIso;
+    memoryStore.agencyApplications.set(agencyId, agency);
     return true;
   },
 

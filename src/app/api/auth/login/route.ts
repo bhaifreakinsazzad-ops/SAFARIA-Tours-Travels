@@ -56,7 +56,17 @@ export async function POST(req: NextRequest) {
     }
 
     // 3. Attempt Staff User Authentication first (Individual account lookup)
-    const staffUser = await staffService.getStaffUserByEmail(cleanEmail);
+    let staffUser = await staffService.getStaffUserByEmail(cleanEmail);
+    const bootstrapEmail = process.env.BOOTSTRAP_ADMIN_EMAIL?.trim().toLowerCase();
+    if (!staffUser && bootstrapEmail && cleanEmail === bootstrapEmail && process.env.BOOTSTRAP_ADMIN_PASSWORD) {
+      await staffService.bootstrapInitialStaffUser({
+        email: cleanEmail,
+        password: process.env.BOOTSTRAP_ADMIN_PASSWORD,
+        role: "SUPER_ADMIN",
+      });
+      staffUser = await staffService.getStaffUserByEmail(cleanEmail);
+    }
+
     if (staffUser) {
       const verifyResult = await staffService.verifyStaffCredentials(
         cleanEmail,

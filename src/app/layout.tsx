@@ -2,8 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter, Noto_Sans_Bengali } from "next/font/google";
 import { SAFARIA_CONFIG } from "@/config/constants";
 import { PWARegistrar } from "@/components/pwa-registrar";
-import { OfflineIndicator } from "@/components/offline-indicator";
-import { MobilePwaNav } from "@/components/mobile-pwa-nav";
+import { PwaClientShell } from "@/components/pwa-client-shell";
 import "./globals.css";
 
 const display = Cormorant_Garamond({ subsets: ["latin"], variable: "--font-display", display: "swap", preload: false });
@@ -49,9 +48,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     <html lang="bn" className={`${display.variable} ${ui.variable} ${bengali.variable}`}>
       <body className="font-bn pb-14 sm:pb-0">
         <PWARegistrar />
-        <OfflineIndicator />
         {children}
-        <MobilePwaNav />
+        <PwaClientShell />
       </body>
     </html>
   );

@@ -9,8 +9,8 @@ import { whatsappHrefFor } from "@/config/constants";
 export function MobilePwaNav() {
   const pathname = usePathname();
 
-  // Hide in full admin desktop view
-  if (pathname.startsWith("/admin")) return null;
+  // Hide in full admin desktop view or during unmounted prerender
+  if (!pathname || pathname.startsWith("/admin")) return null;
 
   const b2bWhatsappUrl = whatsappHrefFor(
     "SAFARIA B2B ENQUIRY\nRequest: Hello SAFARIA Ops, I would like to enquire about travel agency partnership and pilot trial."
