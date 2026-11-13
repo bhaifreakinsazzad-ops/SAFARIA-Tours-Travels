@@ -42,6 +42,23 @@ describe("Flight Enquiry Zod Schemas", () => {
     expect(parsed.success).toBe(true);
   });
 
+  it("accepts Bengali passenger names in retail requests", () => {
+    const input = {
+      tripType: "ONE_WAY",
+      legs: [validLeg1],
+      passengers: { adults: 1, children: 0, infants: 0 },
+      leadPassengerName: "মোহাম্মদ রহিম",
+      phoneCountryCode: "+880",
+      phoneNumber: "1711223344",
+      consentAgreed: true,
+    };
+    expect(FlightEnquiryInputSchema.safeParse(input).success).toBe(true);
+  });
+
+  it("rejects more than nine passengers including infants", () => {
+    expect(PassengersSchema.safeParse({ adults: 5, children: 4, infants: 1 }).success).toBe(false);
+  });
+
   it("should validate a valid ROUND_TRIP flight enquiry", () => {
     const input = {
       tripType: "ROUND_TRIP",

@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import { AtlasFallback } from "./atlas-fallback";
 import { DeferredSection } from "./deferred-section";
 import { copy } from "@/lib/copy";
 import { origin, routes } from "@/lib/atlas-data";
 import { useSiteStore } from "@/lib/site-store";
+import { PWAInstallButton } from "./pwa-install-button";
 
 const JourneyAtlas = dynamic(() => import("./journey-atlas").then((module) => module.JourneyAtlas), {
   ssr: false,
@@ -66,12 +68,17 @@ export function SiteExperience() {
             <a href="#sf-destinations" onClick={() => setMenuOpen(false)}>{language === "bn" ? "গন্তব্য" : "Destinations"}</a>
             <a href="#sf-travel-form" onClick={() => setMenuOpen(false)}>{language === "bn" ? "ট্রাভেল স্টুডিও" : "Travel Studio"}</a>
             <a href="#sf-agency" onClick={() => setMenuOpen(false)}>{language === "bn" ? "এজেন্সি" : "Agency"}</a>
+            <Link href="/b2b" onClick={() => setMenuOpen(false)} className="text-safaria-gold font-medium">{language === "bn" ? "বি২বি সল্যুশন" : "B2B Platform"}</Link>
             <button type="button" onClick={() => { setMenuOpen(false); openRoute(); }}>{t.request}</button>
+            <Link href="/login" onClick={() => setMenuOpen(false)} className="text-safaria-gold hover:underline">{language === "bn" ? "পোর্টাল" : "Portal"}</Link>
           </nav>
-          <div className="language-switch" role="group" aria-label="Language / ভাষা">
-            <button lang="bn" type="button" aria-pressed={language === "bn"} onClick={() => setLanguage("bn")}>বাংলা</button>
-            <span aria-hidden="true">/</span>
-            <button lang="en" type="button" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button>
+          <div className="flex items-center gap-2">
+            <PWAInstallButton variant="header" />
+            <div className="language-switch" role="group" aria-label="Language / ভাষা">
+              <button lang="bn" type="button" aria-pressed={language === "bn"} onClick={() => setLanguage("bn")}>বাংলা</button>
+              <span aria-hidden="true">/</span>
+              <button lang="en" type="button" aria-pressed={language === "en"} onClick={() => setLanguage("en")}>EN</button>
+            </div>
           </div>
           <button className="mobile-menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="sf-navigation" aria-label={menuOpen ? t.close : (language === "bn" ? "মেনু খুলুন" : "Open menu")} onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? "×" : "☰"}</button>
         </header>
@@ -107,7 +114,18 @@ export function SiteExperience() {
           <DeferredSection id="sf-travel-form" title={language === "bn" ? "আপনার যাত্রা, আপনার মতো" : "Shape your next journey"}><TravelStudio language={language} /></DeferredSection>
           <DeferredSection id="sf-agency" title={language === "bn" ? "এজেন্সির জন্য নতুন সম্ভাবনা" : "Built for travel agencies"}><AgencyPortal language={language} /></DeferredSection>
         </main>
-        <footer className="site-footer"><p>{t.footer}</p><span>© 2026 SAFARIA Tours &amp; Travels</span></footer>
+        <footer className="site-footer">
+          <p>{t.footer}</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
+            <Link href="/b2b" style={{ color: "var(--sf-gold)", textDecoration: "underline" }}>
+              {language === "bn" ? "বি২বি পার্টনারশিপ" : "B2B Agency Membership"}
+            </Link>
+            <Link href="/login" style={{ color: "var(--sf-gold)", textDecoration: "underline" }}>
+              {language === "bn" ? "পার্টনার ও স্টাফ লগইন" : "Partner & Staff Portal"}
+            </Link>
+            <span>© 2026 SAFARIA Tours &amp; Travels</span>
+          </div>
+        </footer>
       </div>
       {dialogVisited && <RouteEnquiryDialog open={enquiryOpen} selectedCode={selectedCode} selectedOfferId={selectedOfferId} language={language} onClose={closeEnquiry} />}
     </>
