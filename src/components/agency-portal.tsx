@@ -486,7 +486,7 @@ export function AgencyPortal({ language }: { language: Language }) {
           </div>
 
           <div className="price-display">
-            <span>{bn ? "এজেন্সি সাবস্ক্রিপশন" : "Agency subscription"}</span>
+            <span>{bn ? "প্রস্তাবিত এজেন্সি প্ল্যান" : "Proposed agency plan"}</span>
             <strong ref={priceRef}>
               ৳{number(annual ? AGENCY_PRICING.annual : AGENCY_PRICING.monthly)}
             </strong>
@@ -504,7 +504,7 @@ export function AgencyPortal({ language }: { language: Language }) {
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-1.5 font-bold text-[#cfb57c]">
                 <Calculator className="h-3.5 w-3.5 text-[#10b981]" />
-                <span>{bn ? "মাসিক মার্জিন সিমুলেটর" : "Monthly Margin Simulator"}</span>
+                <span>{bn ? "কাল্পনিক মার্জিন উদাহরণ" : "Illustrative Margin Model"}</span>
               </span>
               <span className="font-mono font-bold text-[#f3f0e7] tabular-nums">
                 {number(simTickets)} {bn ? "টিকেট/মাস" : "Tickets/mo"}
@@ -529,7 +529,7 @@ export function AgencyPortal({ language }: { language: Language }) {
             <div className="flex items-center justify-between pt-1 border-t border-[rgba(207,181,124,0.18)] text-xs">
               <span className="text-[#b1c3bc] flex items-center gap-1">
                 <TrendingUp className="h-3.5 w-3.5 text-[#10b981]" />
-                <span>{bn ? "সম্ভাব্য সাশ্রয় ও মার্জিন:" : "Est. Protected Margin:"}</span>
+                <span>{bn ? "হিসাবের উদাহরণ (নিশ্চিত নয়):" : "Illustrative arithmetic only:"}</span>
               </span>
               <strong className="font-mono text-sm text-[#10b981] tabular-nums">
                 +৳{number(animatedSavings)} / {bn ? "মাস" : "mo"}
@@ -559,7 +559,7 @@ export function AgencyPortal({ language }: { language: Language }) {
                 </svg>
                 <div>
                   <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
-                    {bn ? "লাইভ ট্রেড কমিউনিটি" : "LIVE B2B TRADE CHANNEL"}
+                    {bn ? "SAFARIA আপডেট চ্যানেল" : "SAFARIA UPDATE CHANNEL"}
                   </span>
                   <strong className="text-xs font-bold text-[#f3f0e7]">
                     {bn ? "SAFARIA এজেন্সি নেটওয়ার্ক হাব" : "SAFARIA Bangladesh Agency Hub"}
@@ -571,8 +571,8 @@ export function AgencyPortal({ language }: { language: Language }) {
 
             <p className="text-xs text-[#b1c3bc] leading-relaxed">
               {bn
-                ? "প্রতিদিনের ঢাকা-জেদ্দা/দুবাই হোলসেল ফেয়ার ড্রপ, গ্রুপ ব্লক সিট অ্যালার্ট এবং এয়ারলাইন সার্কুলার সবার আগে পেতে আমাদের অফিসিয়াল হোয়াটসঅ্যাপ চ্যানেলে ফলো করুন।"
-                : "Get daily Dhaka wholesale fare drops, Umrah seat block alerts, and instant airline waiver circulars in our official Bangladesh B2B WhatsApp channel."}
+                ? "SAFARIA-এর সেবা, পার্টনারশিপ অগ্রগতি ও নতুন আপডেট জানতে অফিসিয়াল WhatsApp চ্যানেল ফলো করুন। সরবরাহকারী চুক্তি চলমান।"
+                : "Follow SAFARIA's official WhatsApp channel for service, partnership and launch updates. Supplier agreements are currently under negotiation."}
             </p>
 
             <a
@@ -614,8 +614,8 @@ export function AgencyPortal({ language }: { language: Language }) {
 
           <p className="agency-fineprint">
             {bn
-              ? "দাম প্রদর্শন আবেদন বা ট্রায়াল সক্রিয় করে না। বুকিং, ক্রেডিট ও সাবস্ক্রিপশন আলাদা লিখিত শর্ত সাপেক্ষে।"
-              : "Displayed prices do not activate a subscription or trial. Booking, credits and subscription terms require written confirmation."}
+              ? "প্রদর্শিত মূল্য এবং সিমুলেটরের আয় সম্পূর্ণ প্রস্তাবিত/কাল্পনিক; বাস্তব কমিশন, বুকিং বা সাবস্ক্রিপশন চুক্তি ও অনুমোদন ছাড়া নিশ্চিত নয়।"
+              : "Plan prices are proposed and simulator values are hypothetical, not actual or guaranteed earnings. Bookings, credits and subscriptions require written agreements and authorization."}
           </p>
         </div>
 
