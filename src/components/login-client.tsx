@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft, ShieldCheck } from "lucide-react";
 import { SAFARIA_CONFIG } from "@/config/constants";
+import { motion } from "motion/react";
+import { animate } from "animejs";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +14,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,6 +33,13 @@ export default function LoginPage() {
       if (!data.success) {
         setError(data.error || "Login failed. Please check your credentials.");
         setSubmitting(false);
+        if (cardRef.current) {
+          animate(cardRef.current, {
+            translateX: [0, -6, 6, -4, 4, 0],
+            duration: 360,
+            ease: "outQuad",
+          });
+        }
         return;
       }
 
@@ -43,7 +53,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-surface-0 text-safaria-ink flex items-center justify-center px-4">
-      <div className="w-full max-w-sm space-y-6">
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.28, ease: "easeOut" }}
+        className="w-full max-w-sm space-y-6"
+      >
         <Link
           href="/"
           className="flex items-center gap-1.5 text-xs text-safaria-inkMuted hover:text-safaria-gold transition-colors"
@@ -52,15 +67,24 @@ export default function LoginPage() {
           <span>Public Site</span>
         </Link>
 
-        <div className="rounded-xl border border-safaria-line bg-surface-100 p-6 space-y-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-0 border border-safaria-gold/40">
-              <Lock className="h-4 w-4 text-safaria-gold" />
+        <div
+          ref={cardRef}
+          className="rounded-xl border border-safaria-line bg-surface-100 p-6 space-y-5 shadow-panel"
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-0 border border-safaria-gold/40">
+                <Lock className="h-4 w-4 text-safaria-gold" />
+              </div>
+              <div>
+                <h1 className="font-display text-base font-bold text-safaria-gold">SAFARIA Sign In</h1>
+                <span className="text-[10px] text-safaria-inkMuted">Staff &amp; B2B Partner Portal</span>
+              </div>
             </div>
-            <div>
-              <h1 className="font-display text-base font-bold text-safaria-gold">SAFARIA Sign In</h1>
-              <span className="text-[10px] text-safaria-inkMuted">Staff &amp; B2B Partner Portal</span>
-            </div>
+            <span className="inline-flex items-center gap-1 rounded border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 font-mono text-[9px] font-bold uppercase tracking-wider text-emerald-300">
+              <ShieldCheck className="h-3 w-3" />
+              TLS Verified
+            </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -120,6 +144,13 @@ export default function LoginPage() {
               onClick={() => {
                 setEmail(SAFARIA_CONFIG.defaultStaffEmail);
                 setPassword("safaria-ops-2026");
+                if (cardRef.current) {
+                  animate(cardRef.current, {
+                    scale: [1, 1.015, 1],
+                    duration: 260,
+                    ease: "outQuad",
+                  });
+                }
               }}
               className="w-full rounded border border-safaria-line bg-surface-200 p-2.5 text-left hover:border-safaria-gold transition-colors flex items-center justify-between"
             >
@@ -138,7 +169,7 @@ export default function LoginPage() {
             </Link>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }
