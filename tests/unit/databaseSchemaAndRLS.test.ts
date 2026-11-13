@@ -78,13 +78,13 @@ describe("Database Schema & Strict RLS Audit (001_safaria_core_schema.sql)", () 
   });
 });
 
-describe("B2B Subscription & Invoices Migration (005_b2b_subscriptions_and_invoices.sql)", () => {
-  const migration005Path = path.resolve(
+describe("B2B Subscription & Invoices Migration (006_b2b_subscriptions_and_invoices.sql)", () => {
+  const migration006Path = path.resolve(
     __dirname,
-    "../../supabase/migrations/005_b2b_subscriptions_and_invoices.sql"
+    "../../supabase/migrations/006_b2b_subscriptions_and_invoices.sql"
   );
   const fullSchemaPath = path.resolve(__dirname, "../../supabase/FULL_PRODUCTION_SCHEMA.sql");
-  const sql005 = fs.readFileSync(migration005Path, "utf-8");
+  const sql005 = fs.readFileSync(migration006Path, "utf-8");
   const fullSql = fs.readFileSync(fullSchemaPath, "utf-8");
 
   it("extends agency_applications with SUSPENDED status and Directive 005 subscription/telemetry columns", () => {
