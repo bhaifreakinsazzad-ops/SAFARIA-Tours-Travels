@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import { Compass, Radio, ArrowUpRight } from "lucide-react";
 import { offers, offerCategories, type OfferCategory } from "@/data/catalog";
+import { OFFER_CATEGORY_MEDIA, STUDIO_AND_B2B_MEDIA } from "@/data/marketing-assets";
 import { SAFARIA_CONFIG } from "@/config/constants";
 import type { Language } from "@/lib/atlas-data";
 
@@ -192,6 +194,7 @@ export function OffersBento({
 
       {offerCategories.map((category, groupIndex) => {
         const categoryOffers = offers.filter((item) => item.category === category);
+        const categoryMedia = OFFER_CATEGORY_MEDIA[category];
         const isDimmed = activeCategory !== "all" && activeCategory !== category;
         return (
           <div
@@ -199,10 +202,16 @@ export function OffersBento({
             key={category}
             data-offer-group={category}
           >
-            <h3>
-              {labels[category][bn ? 0 : 1]}{" "}
-              <span>{String(categoryOffers.length).padStart(2, "0")}</span>
-            </h3>
+            <div className="mb-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <h3 className="!mb-0">
+                {labels[category][bn ? 0 : 1]}{" "}
+                <span>{String(categoryOffers.length).padStart(2, "0")}</span>
+              </h3>
+              <span className="text-xs text-[#b1c3bc]">
+                {bn ? categoryMedia.captionBn : categoryMedia.captionEn}
+              </span>
+            </div>
+
             <div className="offer-grid">
               {categoryOffers.map((offer, index) => {
                 const isSpotlighted = currentSpotlightOffer.id === offer.id;
@@ -243,6 +252,29 @@ export function OffersBento({
                     whileHover={reduceMotion ? undefined : "hover"}
                     whileFocus={reduceMotion ? undefined : "focus"}
                   >
+                    {isFeatured && (
+                      <div className="relative mb-3 h-36 sm:h-40 w-full overflow-hidden rounded-xl border border-[rgba(207,181,124,0.28)] bg-[#041713] shrink-0">
+                        <Image
+                          src={categoryMedia.src}
+                          alt={bn ? categoryMedia.altBn : categoryMedia.altEn}
+                          fill
+                          sizes="(max-width: 768px) 100vw, 480px"
+                          referrerPolicy="no-referrer"
+                          className="object-cover transition-transform duration-500 group-hover:scale-105"
+                          style={{ objectPosition: categoryMedia.objectPosition || "center" }}
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-0"
+                          style={{
+                            background:
+                              "linear-gradient(180deg, rgba(4, 23, 19, 0.14) 0%, rgba(4, 23, 19, 0.56) 55%, rgba(4, 23, 19, 0.90) 100%)",
+                          }}
+                        />
+                        <span className="absolute bottom-2.5 left-2.5 rounded-md border border-[rgba(207,181,124,0.4)] bg-[#041713]/85 px-2 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[#cfb57c]">
+                          {bn ? categoryMedia.badgeBn : categoryMedia.badgeEn}
+                        </span>
+                      </div>
+                    )}
                     <div className="w-full flex items-center justify-between text-[11px]">
                       <span className="offer-index">{String(index + 1).padStart(2, "0")}</span>
                       {offer.badge && (
@@ -271,26 +303,38 @@ export function OffersBento({
       })}
 
       {/* B2B Sub-Agent Wholesale Hook & Official WhatsApp Community Channel Callout */}
-      <div className="mt-10 rounded-2xl border border-[rgba(207,181,124,0.34)] bg-gradient-to-r from-[#06241e] via-[#041713] to-[#06241e] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
-            <Radio className="h-3.5 w-3.5" />
-            <span>
-              {bn
-                ? "ট্রাভেল এজেন্সি ও বি২বি পার্টনার স্পেশাল"
-                : "FOR BANGLADESHI TRAVEL AGENCIES & SUB-AGENTS"}
+      <div className="mt-10 rounded-2xl border border-[rgba(207,181,124,0.34)] bg-gradient-to-r from-[#06241e] via-[#041713] to-[#06241e] p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl border border-[rgba(207,181,124,0.35)] bg-[#041713]">
+            <Image
+              src={STUDIO_AND_B2B_MEDIA.b2bHero.src}
+              alt={bn ? STUDIO_AND_B2B_MEDIA.b2bHero.altBn : STUDIO_AND_B2B_MEDIA.b2bHero.altEn}
+              fill
+              sizes="160px"
+              referrerPolicy="no-referrer"
+              className="object-cover"
+            />
+          </div>
+          <div className="space-y-1">
+            <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
+              <Radio className="h-3.5 w-3.5" />
+              <span>
+                {bn
+                  ? "ট্রাভেল এজেন্সি ও বি২বি পার্টনার স্পেশাল"
+                  : "FOR BANGLADESHI TRAVEL AGENCIES & SUB-AGENTS"}
+              </span>
             </span>
-          </span>
-          <h4 className="font-display text-base sm:text-lg font-bold text-[#f3f0e7]">
-            {bn
-              ? "এই ২৬টি সেবায় ০% SAFARIA মার্কআপে বি২বি হোলসেল রেট ও ডেইলি ফেয়ার আপডেট চান?"
-              : "Want 0% SAFARIA Markup on All 26 Services + Daily Dhaka Net Fare Drops?"}
-          </h4>
-          <p className="text-xs text-[#b1c3bc]">
-            {bn
-              ? "৭২ ঘণ্টার পাইলট ট্রায়ালের জন্য আবেদন করুন অথবা আমাদের অফিসিয়াল WhatsApp চ্যানেলে যুক্ত থাকুন।"
-              : "Enquire for a 72-hour B2B subscription pilot or follow our official WhatsApp community broadcast channel."}
-          </p>
+            <h4 className="font-display text-base sm:text-lg font-bold text-[#f3f0e7]">
+              {bn
+                ? "এই ২৬টি সেবায় ০% SAFARIA মার্কআপে বি২বি হোলসেল রেট ও ডেইলি ফেয়ার আপডেট চান?"
+                : "Want 0% SAFARIA Markup on All 26 Services + Daily Dhaka Net Fare Drops?"}
+            </h4>
+            <p className="text-xs text-[#b1c3bc]">
+              {bn
+                ? "৭২ ঘণ্টার পাইলট ট্রায়ালের জন্য আবেদন করুন অথবা আমাদের অফিসিয়াল WhatsApp চ্যানেলে যুক্ত থাকুন।"
+                : "Enquire for a 72-hour B2B subscription pilot or follow our official WhatsApp community broadcast channel."}
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 shrink-0">

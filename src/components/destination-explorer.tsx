@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
+import Image from "next/image";
 import { createPortal } from "react-dom";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
 import { animate, stagger } from "animejs";
 import { cityName, countryName, destinations, type Destination } from "@/data/catalog";
+import { getDestinationMedia } from "@/data/marketing-assets";
 import { useFavoriteStore } from "@/lib/favorites-store";
 import type { Language } from "@/lib/atlas-data";
 
@@ -311,6 +313,53 @@ export function DestinationExplorer({
           </div>
         </div>
 
+        {/* Featured Destination Corridors Visual Strip (W09–W12) */}
+        <div className="mb-6 grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {(["CXB", "ZYL", "JED", "DXB"] as const).map((code) => {
+            const dest = destinations.find((d) => d.code === code);
+            if (!dest) return null;
+            const media = getDestinationMedia(dest.code, dest.country, dest.region);
+            return (
+              <button
+                key={code}
+                type="button"
+                onClick={() => setSelected(dest)}
+                className="group relative h-28 sm:h-32 overflow-hidden rounded-2xl border border-[rgba(207,181,124,0.28)] bg-[#041713] text-left transition-all hover:border-[#cfb57c]"
+              >
+                <Image
+                  src={media.src}
+                  alt={bn ? media.altBn : media.altEn}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 280px"
+                  referrerPolicy="no-referrer"
+                  className="object-cover transition-transform duration-500 group-hover:scale-105"
+                  style={{ objectPosition: media.objectPosition || "center" }}
+                />
+                <div
+                  className="pointer-events-none absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, rgba(4, 23, 19, 0.18) 0%, rgba(4, 23, 19, 0.65) 55%, rgba(4, 23, 19, 0.92) 100%)",
+                  }}
+                />
+                <div className="absolute inset-x-3 bottom-2.5 flex items-end justify-between gap-2">
+                  <div>
+                    <span className="block font-mono text-[10px] font-bold text-[#cfb57c]">
+                      DAC ➔ {dest.code}
+                    </span>
+                    <strong className="block text-xs sm:text-sm font-bold text-[#f3f0e7] leading-tight">
+                      {cityName(dest, language)}
+                    </strong>
+                  </div>
+                  <span className="text-xs font-bold text-[#cfb57c]" aria-hidden="true">
+                    ↗
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
         <p className="explorer-count" aria-live="polite">
           {bn ? `${matches.length}টি গন্তব্য` : `${matches.length} destinations`}
         </p>
@@ -403,6 +452,38 @@ export function DestinationExplorer({
               >
                 ×
               </button>
+
+              {(() => {
+                const selectedMedia = getDestinationMedia(
+                  selected.code,
+                  selected.country,
+                  selected.region,
+                );
+                return (
+                  <div className="relative mb-4 h-40 sm:h-48 w-full overflow-hidden rounded-xl border border-[#d6c59e] bg-[#041713]">
+                    <Image
+                      src={selectedMedia.src}
+                      alt={bn ? selectedMedia.altBn : selectedMedia.altEn}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 560px"
+                      referrerPolicy="no-referrer"
+                      className="object-cover"
+                      style={{ objectPosition: selectedMedia.objectPosition || "center" }}
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, rgba(4, 23, 19, 0.14) 0%, rgba(4, 23, 19, 0.50) 55%, rgba(4, 23, 19, 0.88) 100%)",
+                      }}
+                    />
+                    <span className="absolute bottom-2.5 left-3 rounded-md border border-[rgba(207,181,124,0.45)] bg-[#041713]/85 px-2.5 py-0.5 font-mono text-[10px] font-bold tracking-wider text-[#cfb57c]">
+                      {bn ? selectedMedia.badgeBn : selectedMedia.badgeEn}
+                    </span>
+                  </div>
+                );
+              })()}
+
               <p className="eyebrow">DAC → {selected.code}</p>
               <h3 id="destination-detail-title" className="display-heading">
                 {cityName(selected, language)}
