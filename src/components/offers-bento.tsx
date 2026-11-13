@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
 import { Compass } from "lucide-react";
 import { offers, offerCategories, type OfferCategory } from "@/data/catalog";
 import type { Language } from "@/lib/atlas-data";
@@ -28,6 +28,24 @@ export function OffersBento({
   const [spotlightIndex, setSpotlightIndex] = useState<number>(0);
   const [autoSpotlight, setAutoSpotlight] = useState<boolean>(true);
   const bn = language === "bn";
+
+  // motion.dev scroll-linked parallax pipeline for .offer-card elements
+  const { scrollYProgress } = useScroll({
+    target: root,
+    offset: ["start end", "end start"],
+  });
+  const smoothScrollProgress = useSpring(scrollYProgress, {
+    stiffness: 90,
+    damping: 26,
+    restDelta: 0.001,
+  });
+
+  // Multi-depth parallax motion values so featured, even, and odd .offer-card elements shift smoothly on scroll
+  const parallaxFeaturedY = useTransform(smoothScrollProgress, [0, 0.5, 1], [16, 0, -16]);
+  const parallaxEvenY = useTransform(smoothScrollProgress, [0, 0.5, 1], [11, 0, -11]);
+  const parallaxOddY = useTransform(smoothScrollProgress, [0, 0.5, 1], [-11, 0, 11]);
+  const parallaxEvenX = useTransform(smoothScrollProgress, [0, 0.5, 1], [-3, 0, 3]);
+  const parallaxOddX = useTransform(smoothScrollProgress, [0, 0.5, 1], [3, 0, -3]);
 
   // IntersectionObserver + anime.js staggered card reveal
   useEffect(() => {
@@ -171,7 +189,7 @@ export function OffersBento({
         </div>
       </div>
 
-      {offerCategories.map((category) => {
+      {offerCategories.map((category, groupIndex) => {
         const categoryOffers = offers.filter((item) => item.category === category);
         const isDimmed = activeCategory !== "all" && activeCategory !== category;
         return (
@@ -187,17 +205,34 @@ export function OffersBento({
             <div className="offer-grid">
               {categoryOffers.map((offer, index) => {
                 const isSpotlighted = currentSpotlightOffer.id === offer.id;
+                const isFeatured = index === 0;
+                const isEvenCard = (groupIndex + index) % 2 === 0;
+                const cardParallaxY = isFeatured
+                  ? parallaxFeaturedY
+                  : isEvenCard
+                    ? parallaxEvenY
+                    : parallaxOddY;
+                const cardParallaxX = isFeatured ? 0 : isEvenCard ? parallaxEvenX : parallaxOddX;
+
                 return (
                   <motion.button
                     key={offer.id}
                     type="button"
-                    className={`offer-card ${index === 0 ? "offer-card-featured" : ""} ${
+                    className={`offer-card ${isFeatured ? "offer-card-featured" : ""} ${
                       isSpotlighted ? "ring-1 ring-[#cfb57c]/70" : ""
                     }`}
+                    style={
+                      reduceMotion
+                        ? undefined
+                        : {
+                            y: cardParallaxY,
+                            x: cardParallaxX,
+                          }
+                    }
                     onClick={() => onSelect(offer.id)}
                     variants={{
                       hover: {
-                        y: -5,
+                        scale: 1.015,
                         borderColor: "#cfb57c",
                         boxShadow:
                           "0 20px 52px rgba(0,0,0,.32), inset 0 0 0 1px rgba(207,181,124,.32)",

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { LayoutGroup, motion, useReducedMotion } from "motion/react";
+import { animate, stagger } from "animejs";
 import { cityName, countryName, destinations, type Destination } from "@/data/catalog";
 import { useFavoriteStore } from "@/lib/favorites-store";
 import type { Language } from "@/lib/atlas-data";
@@ -11,6 +12,7 @@ type Filter = "all" | "domestic" | "international" | "favorites";
 
 const DAC_LAT = 23.84;
 const DAC_LON = 90.4;
+const PARTICLE_POOL_SIZE = 18;
 
 function computeFlightMetrics(dest: Destination) {
   if (dest.origin || dest.code === "DAC") {
@@ -44,8 +46,16 @@ export function DestinationExplorer({
   const [filter, setFilter] = useState<Filter>("all");
   const [selected, setSelected] = useState<Destination | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [hoveredCode, setHoveredCode] = useState<string | null>(null);
+
   const modalRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
+  const cursorDotRef = useRef<HTMLDivElement>(null);
+  const cursorRingRef = useRef<HTMLDivElement>(null);
+  const particleRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const particleIndexRef = useRef<number>(0);
+  const lastSpawnRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   const reduceMotion = useReducedMotion();
   const favorites = useFavoriteStore((state) => state.favorites);
   const toggleFavorite = useFavoriteStore((state) => state.toggle);
@@ -60,16 +70,116 @@ export function DestinationExplorer({
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const wraps = Array.from(gridRef.current.querySelectorAll<HTMLElement>(".destination-card-wrap"));
     if (!wraps.length) return;
-    void import("animejs").then(({ animate, stagger }) => {
-      animate(wraps, {
-        opacity: [0.4, 1],
-        translateY: [10, 0],
-        delay: stagger(16),
-        duration: 320,
-        ease: "outQuad",
-      });
+    animate(wraps, {
+      opacity: [0.4, 1],
+      translateY: [10, 0],
+      delay: stagger(16),
+      duration: 320,
+      ease: "outQuad",
     });
   }, [filter, reduceMotion]);
+
+  // Custom anime.js interactive cursor + trailing particle emitter for .explorer-card hover
+  const handleCardPointerEnter = (code: string, event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (reduceMotion) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    setHoveredCode(code);
+
+    const { clientX, clientY } = event;
+    if (cursorDotRef.current) {
+      animate(cursorDotRef.current, {
+        translateX: clientX,
+        translateY: clientY,
+        scale: [0.4, 1],
+        opacity: 1,
+        duration: 180,
+        ease: "outQuad",
+      });
+    }
+    if (cursorRingRef.current) {
+      animate(cursorRingRef.current, {
+        translateX: clientX,
+        translateY: clientY,
+        scale: [0.75, 1],
+        opacity: 1,
+        duration: 260,
+        ease: "outBack",
+      });
+    }
+  };
+
+  const handleCardPointerMove = (code: string, event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (reduceMotion) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (hoveredCode !== code) setHoveredCode(code);
+
+    const { clientX, clientY } = event;
+
+    if (cursorDotRef.current) {
+      animate(cursorDotRef.current, {
+        translateX: clientX,
+        translateY: clientY,
+        opacity: 1,
+        duration: 65,
+        ease: "outQuad",
+      });
+    }
+    if (cursorRingRef.current) {
+      animate(cursorRingRef.current, {
+        translateX: clientX,
+        translateY: clientY,
+        opacity: 1,
+        duration: 210,
+        ease: "outExpo",
+      });
+    }
+
+    // Spawn trailing anime.js particle from pooled DOM nodes when cursor travels >= 6px
+    const dx = clientX - lastSpawnRef.current.x;
+    const dy = clientY - lastSpawnRef.current.y;
+    if (dx * dx + dy * dy < 36) return;
+
+    lastSpawnRef.current = { x: clientX, y: clientY };
+    const seq = particleIndexRef.current;
+    const idx = seq % PARTICLE_POOL_SIZE;
+    particleIndexRef.current = seq + 1;
+    const particleEl = particleRefs.current[idx];
+    if (!particleEl) return;
+
+    const goldenAngle = seq * 2.3999632;
+    const spread = 14 + (seq % 5) * 4.5;
+    const driftX = Math.cos(goldenAngle) * spread;
+    const driftY = Math.sin(goldenAngle) * spread - 8;
+
+    animate(particleEl, {
+      translateX: [clientX, clientX + driftX],
+      translateY: [clientY, clientY + driftY],
+      scale: [1.2, 0],
+      opacity: [0.9, 0],
+      duration: 540,
+      ease: "outExpo",
+    });
+  };
+
+  const handleCardPointerLeave = () => {
+    setHoveredCode(null);
+    if (cursorDotRef.current) {
+      animate(cursorDotRef.current, {
+        scale: 0.4,
+        opacity: 0,
+        duration: 180,
+        ease: "outQuad",
+      });
+    }
+    if (cursorRingRef.current) {
+      animate(cursorRingRef.current, {
+        scale: 0.75,
+        opacity: 0,
+        duration: 220,
+        ease: "outQuad",
+      });
+    }
+  };
 
   useEffect(() => {
     if (!selected) return;
@@ -128,6 +238,42 @@ export function DestinationExplorer({
   return (
     <LayoutGroup>
       <section id="sf-destinations" className="content-section explorer-section" aria-labelledby="explorer-title">
+        {/* Custom anime.js Interactive Cursor & Trailing Particle Layer (Fixed, Zero CLS) */}
+        <div
+          className="pointer-events-none fixed inset-0 z-40 overflow-hidden"
+          aria-hidden="true"
+        >
+          {Array.from({ length: PARTICLE_POOL_SIZE }).map((_, idx) => (
+            <span
+              key={idx}
+              ref={(el) => {
+                particleRefs.current[idx] = el;
+              }}
+              className={`explorer-trail-particle absolute left-0 top-0 -ml-1 -mt-1 h-2 w-2 rounded-full opacity-0 will-change-transform ${
+                idx % 2 === 0
+                  ? "bg-[#cfb57c] shadow-[0_0_8px_#cfb57c]"
+                  : "bg-[#10b981] shadow-[0_0_8px_#10b981]"
+              }`}
+            />
+          ))}
+
+          <div
+            ref={cursorDotRef}
+            className="explorer-custom-cursor-dot absolute left-0 top-0 -ml-1.5 -mt-1.5 h-3 w-3 rounded-full bg-[#cfb57c] opacity-0 shadow-[0_0_12px_#cfb57c] will-change-transform"
+          />
+
+          <div
+            ref={cursorRingRef}
+            className="explorer-custom-cursor-ring absolute left-0 top-0 -ml-5 -mt-5 flex h-10 w-10 items-center justify-center rounded-full border border-[#10b981]/80 bg-[#041713]/40 opacity-0 shadow-[0_0_18px_rgba(16,185,129,0.35)] will-change-transform"
+          >
+            {hoveredCode && (
+              <span className=" -top-5 absolute rounded bg-[#041713] border border-[#cfb57c]/50 px-1.5 py-0.5 font-mono text-[9px] font-bold text-[#cfb57c] whitespace-nowrap">
+                DAC➔{hoveredCode}
+              </span>
+            )}
+          </div>
+        </div>
+
         <div className="section-heading">
           <p className="eyebrow">02 / DESTINATION DIRECTORY</p>
           <h2 id="explorer-title" className="display-heading">
@@ -180,7 +326,13 @@ export function DestinationExplorer({
                   layoutId={reduceMotion ? undefined : `destination-${destination.code}`}
                   whileHover={reduceMotion ? undefined : { y: -4 }}
                   transition={{ duration: 0.18 }}
-                  onClick={() => setSelected(destination)}
+                  onPointerEnter={(event) => handleCardPointerEnter(destination.code, event)}
+                  onPointerMove={(event) => handleCardPointerMove(destination.code, event)}
+                  onPointerLeave={handleCardPointerLeave}
+                  onClick={() => {
+                    handleCardPointerLeave();
+                    setSelected(destination);
+                  }}
                 >
                   <span className="explorer-code">
                     {destination.code}
