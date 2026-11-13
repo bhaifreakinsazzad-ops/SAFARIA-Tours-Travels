@@ -30,7 +30,7 @@ Uncertain relationships: "Highest Commission" appears beneath the premium airlin
 | Best Fare / Best Deal | `fare-options` | Compare fares, route, baggage, transit and terms | Enquiry-safe |
 | No Hidden Charge | `transparent-pricing` | Request a breakdown of fares, taxes and fees | Enquiry-safe; no absolute zero-fee promise |
 | Refund / Re-Issue / Void | `refund` | Ask about change/refund process and applicable conditions | Enquiry-safe |
-| After-sales support (24/7) | `after-sales` | Request assistance and follow-up | Enquiry-safe; 24/7 claim unverified |
+| After-sales support (24/7) | `after-sales` | Contact staffed 24/7 support for enquiries and follow-up | Owner-confirmed staffing; supplier actions not guaranteed |
 | SalamAir remittance offer | `salamair` | Check applicable SalamAir itineraries and fare rules | Enquiry-safe; **remittance offer requires proof** |
 | China Southern extra baggage | `china-southern` | Check student baggage eligibility | Enquiry-safe; **route, fare and verification apply** |
 | Malaysian student fare | `malaysia-student` | Check student fare and baggage conditions | Enquiry-safe; authorization and eligibility needed |
@@ -112,7 +112,7 @@ These are copy-ready **image-scene instructions**. Apply the universal visual ru
 **Headline:** "টিকিটের পরেও প্রশ্ন আছে?"  
 **Support:** "Refund, Re-Issue ও Void-এর শর্ত জানতে অনুরোধ করুন।"  
 **CTA:** "সহায়তা চান" → `refund` or `after-sales`.  
-**Restriction:** Never state "24/7" without real staffing coverage and response logs.
+**Updated decision:** Owner confirms 24/7 staffing. Say "24/7 staffed support for questions and follow-up" only; do not guarantee airline action or a specific response-time SLA.
 
 ### S04 — China Southern Student Baggage
 
@@ -172,26 +172,64 @@ These are copy-ready **image-scene instructions**. Apply the universal visual ru
 **Support:** "Fare Options · Clear Charges · After-Sales Enquiries"  
 **CTA:** "ভ্রমণের কোটেশন চান" → homepage.
 
-## 7. Social distribution sequence: 14-day initial test
+## 7. Confirmed GTM decisions — 2026-11-14
 
-| Day | Asset | Objective | Click destination |
-|---|---|---|---|
-| 1 | S10 universal cover | Brand recognition | `/` |
-| 2 | S01 fares | Broad B2C quotation | `/#sf-universal` |
-| 3 | S02 charges | Trust and clarity | `/#sf-universal` |
-| 4 | S04 China student | Student leads | `/#sf-universal` |
-| 5 | S05 Malaysia student | Student leads | `/#sf-universal` |
-| 6 | S08 agency partner | B2B lead generation | `/b2b` |
-| 7 | Review CTR and qualified conversation data | Diagnose | — |
-| 8 | S03 aftercare | Support differentiated | `/#sf-universal` |
-| 9 | S07 business class | Premium enquiry | `/#sf-universal` |
-| 10 | S06 SalamAir | Expat route interest | `/#sf-universal` |
-| 11 | S09 carousel | Explain process | `/#sf-universal` |
-| 12 | Best-performing student angle, new opener | Message test | matched CTA |
-| 13 | Best-performing B2B angle, new opener | Lead-quality test | `/b2b` |
-| 14 | Final report | Prioritization | — |
+These are direct owner selections, not market research findings:
 
-Start organic and low-budget paid tests only after the relevant landing flow and quotation desk are verified. Do not optimize on click-through rate alone; measure qualified requests and booked revenue once such downstream data is truly available.
+- **Audience mix: 50% B2C / 50% B2B** (option 1C). Split any approved test spend and lead-handling capacity 50/50. This is a starting hypothesis, not proof that the two audiences will have equal acquisition costs.
+- **24/7 staffed customer-support operation** (option 2A), confirmed by the owner. Allowed public wording: `24/7 staffed support / ২৪/৭ সাপোর্ট টিম` for enquiries and follow-up. Do **not** claim guaranteed 24/7 airline action, refunds, reissues, emergency waiver resolution or specific response times without separate evidence.
+- **Supplier agreements still under negotiation** (option 3D). Therefore airline inventory, fare guarantees, confirmed ticketing, actual commissions, airline sponsorship, package margins and automated payments must not be advertised as live. Treat B2C as an enquiry/interest funnel and B2B as early partner registration, not completed ticketing transactions or active guaranteed memberships.
+
+### Funnel emphasis
+
+**B2C (50% of testing):** Fare clarity, transparent charge breakdown, student travel eligibility, Business Class options and 24/7 support contacts. CTA: `কোটেশন / অপশন জানতে অনুরোধ করুন`. Until verified supplier fulfillment exists, qualify interest without promising a fare or confirmed seat.
+
+**B2B (50% of testing):** Agencies struggling with dispersed fare requests, inconsistent follow-up, payment reconciliation and after-sales workflows. CTA: `এজেন্সি পার্টনারশিপে আগ্রহ জানান`. Emphasize six desk workflow demos, 24/7 staffing and a verification-first commercial process. Avoid implying live reseller inventory, agent commissions or guaranteed monetary outcomes.
+
+### Six additional B2B Nano Banana Pro briefs
+
+Each prompt inherits the global SAFARIA creative rules and 1080×1350 feed crop. Place copy and CTA as editable overlay after generating text-free photorealistic imagery. Derive 1080×1920 story and 1080×1080 square variants after proofing.
+
+**S11 — Lost Requests (B2B)**: "A believable owner of a small Dhaka travel agency at a dark emerald-toned desk, carefully reviewing several printed travel request forms beside a phone, natural daylight, real workspace not a luxury call center, one human face showing quiet concentration, elegant photography with negative space in upper third, no readable private details or fictitious digital UI, no logos, no text." Headline: `কোটেশন রিকোয়েস্ট হারিয়ে যায়?` Supporting: `SAFARIA-এর সংগঠিত B2B ওয়ার্কফ্লো দেখুন।` CTA: `ডেমোর আগ্রহ জানান` → `/b2b`.
+
+**S12 — Fee Clarity (B2B)**: "Close editorial shot of a travel-agency operator reviewing generic supplier cost and service fee sheets on a desk, no numerical rates, no fictional profits, subtle champagne-gold pen, emerald and ivory tones, premium product documentary photo, no text." Headline: `ফেয়ার আর চার্জের হিসাব পরিষ্কার?` Supporting: `Cost, fee এবং margin tracking-এর ওয়ার্কফ্লো দেখুন।` CTA: `B2B জানুন` → `/b2b`.
+
+**S13 — 24/7 Contact (B2B)**: "A genuine Bangladeshi travel support coordinator working at night in a realistic modest office, warm monitor glow and understated emerald backdrop, authentic professional environment, calm focused demeanor, no airline screens or impossible emergency rescue imagery, enough negative space for typography, no text." Headline: `রাতেও যোগাযোগের প্রয়োজন?` Supporting: `SAFARIA-এর ২৪/৭ সাপোর্ট টিমের সাথে কথা বলুন।` CTA: `পার্টনারশিপ জানুন` → `/b2b`. Disclaimer in accompanying caption: airline decisions and supplier hours vary.
+
+**S14 — Six Desks Preview (B2B)**: "Premium understated editorial scene of an authentic travel-agency manager explaining a desktop operations dashboard to a colleague, monitor deliberately blank/unreadable to avoid invented SaaS capabilities, neutral contemporary workspace, dark emerald/ivory/gold grading, cinematic realism, no text." Headline: `এজেন্সির কাজ, একসাথে সংগঠিত।` Supporting: `SAFARIA-এর ৬টি অপারেশনাল ডেস্কের ডেমো সম্পর্কে জানুন।` CTA: `ডেমোতে আগ্রহ জানান` → `/b2b`.
+
+**S15 — Non-IATA Enquiry (B2B)**: "Authentic independent travel-agency owner in a Bangladesh shopping district, seated in their neat small office, travel brochures and unlabeled laptop, understated human dignity, warm real sunlight, realistic street-through-window hints, emerald/ivory color grading, clear upper headline area, no airline logos, no text." Headline: `নিজস্ব GDS নেই?` Supporting: `ওয়ার্কফ্লো ডেমোতে আগ্রহ জানাতে GDS লাগবে না।` CTA: `B2B আগ্রহ নিবন্ধন` → `/b2b`. Clarification: this does not imply ticketing rights.
+
+**S16 — Partnership Pre-Registration (B2B)**: "Editorial handshake across the desk between two professional Bangladeshi travel entrepreneurs, realistic office, no branded uniforms, contracts turned face down, natural skin tones and documentary composition, premium emerald-green and gold palette, honest collaborative atmosphere, no fake seals, no text." Headline: `SAFARIA B2B পার্টনারশিপ` Supporting: `এখন আগ্রহ নিবন্ধন করুন; শর্ত চূড়ান্ত হলে জানানো হবে।` CTA: `আগাম নিবন্ধন` → `/b2b#b2b-subscription-enquiry`.
+
+### 14-day balanced organic and paid-test sequence
+
+| Day | Audience | Asset | Objective | Destination |
+|---|---|---|---|---|
+| 1 | B2C | S10 | Trust and brand recall | `/` |
+| 2 | B2B | S11 | Agency problem recognition | `/b2b` |
+| 3 | B2C | S01 | Fare-option enquiries | `/#sf-universal` |
+| 4 | B2B | S12 | Cost clarity | `/b2b` |
+| 5 | B2C | S02 | Fee transparency | `/#sf-universal` |
+| 6 | B2B | S13 | Support differentiation | `/b2b` |
+| 7 | B2C | S03 | Aftercare interest | `/#sf-universal` |
+| 8 | B2B | S14 | Six desks / demo interest | `/b2b` |
+| 9 | B2C | S04 | China student interest | `/#sf-universal` |
+| 10 | B2B | S15 | Independent agency accessibility | `/b2b` |
+| 11 | B2C | S05 | Malaysia student interest | `/#sf-universal` |
+| 12 | B2B | S16 | Partner preregistration | `/b2b` |
+| 13 | B2C | S07 | Business Class enquiry interest | `/#sf-universal` |
+| 14 | B2B | S08 | Agency partnership | `/b2b` |
+
+Review lead quality weekly and reallocate only after sufficient qualified-lead data. An outbound WhatsApp draft is not a confirmed customer message. If any campaign induces fare purchase expectations that cannot yet be fulfilled, stop that campaign until supplier and licensing gates clear.
+
+### Success metrics (separate B2C / B2B dashboards)
+
+1. Reach, landing-page views and outbound CTA clicks by campaign ID/UTM.
+2. **B2C**: enquiries actually submitted; valid routes/dates; response acknowledgment; quote provided only where authorized; eventually completed bookings when real.
+3. **B2B**: verified agency leads, complete profile, demonstration requested/completed, written commercial terms issued after agreements, activated members only when payments and access controls are live.
+4. Operating metric: record 24/7 request timestamps and real first-human-response distribution before publishing any response-time SLA.
+5. Calculate `Cost Per Qualified Lead = Ad Spend / Qualified Leads`, not ad spend divided by clicks.
 
 ## 8. Launch checklist and measurable funnel
 
@@ -215,12 +253,11 @@ Start organic and low-budget paid tests only after the relevant landing flow and
 
 External airline documentation verifies that programs of this type exist, **not** that SAFARIA has a ticketing partnership, entitlement, guaranteed fare, commission or fulfillment capability.
 
-## 10. Open business decisions (non-blocking)
+## 10. Remaining evidence and launch gates
 
-- B2C vs. B2B budget split.
-- Whether the owner has a written SalamAir remittance-campaign circular or contract.
-- Whether SAFARIA actually operates and measures after-sales support 24/7.
-- Whether commission rates can be shown publicly under supplier agreement.
-- Whether 'Seasonal' refers to country-specific routes, holidays, student intake months or an upcoming campaign list.
-
-Until verified, ship the accurate universal gateway with its existing enquiry handoff and keep promotional superlatives in the internal research backlog.
+- Collect formal confirmation of the 24/7 staffing rota, escalation protocol and scope; owner reports it is staffed, but quantitative SLA is not independently validated.
+- Obtain written supplier/airline authorization and public-offer approval before using airline-specific promotional fares, guaranteed refund results, volume allocation claims, commission rates or guaranteed rates.
+- The handwritten SalamAir remittance benefit remains **unconfirmed**.
+- The handwritten Seasonal header has no visible offer details, so no seasonal promotion was invented.
+- The 50/50 test split applies to qualified-lead acquisition, not proof of equal unit economics.
+- Pre-register B2B interest and offer appropriate workflow demos. Never activate paid membership or booking until regulatory, supplier, payment and privacy gates pass.
