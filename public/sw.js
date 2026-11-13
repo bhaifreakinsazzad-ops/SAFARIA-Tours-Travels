@@ -1,94 +1,82 @@
-// SAFARIA Tours & Travels — Service Worker for B2B PWA
-// Strictly enforces NetworkOnly for /api/*, /admin/*, /partner/* to protect confidential agency data.
-
-const CACHE_NAME = "safaria-pwa-v1";
-const STATIC_ASSETS = [
-  "/",
-  "/b2b",
+// SAFARIA public PWA shell. Never persist enquiries, sessions or private API responses.
+const CACHE_NAME = "safaria-public-v2";
+const PUBLIC_SHELL = [
   "/offline",
-  "/globals.css",
   "/icon-192.png",
   "/icon-512.png",
   "/apple-touch-icon.png",
   "/skyline.webp",
   "/earth-emerald.webp",
-  "/earth-natural.webp",
 ];
 
 self.addEventListener("install", (event) => {
+  // A single missing asset must not invalidate all offline resources.
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      // Pre-cache static shell assets safely
-      return cache.addAll(STATIC_ASSETS).catch((err) => {
-        console.warn("PWA: failed to precache some assets", err);
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      await Promise.all(
+        PUBLIC_SHELL.map((asset) =>
+          cache.add(asset).catch(() => {
+            console.warn("SAFARIA: optional offline asset unavailable", asset);
+          })
+        )
+      );
+      await self.skipWaiting();
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith("safaria-") && key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
       );
-    })
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
 });
 
 self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
+  const request = event.request;
+  const url = new URL(request.url);
+  if (request.method !== "GET" || url.origin !== self.location.origin) return;
 
-  // STRICT SECURITY RULE (Track E):
-  // NEVER cache sensitive authenticated partner data or private APIs.
-  if (
-    url.pathname.startsWith("/api/") ||
-    url.pathname.startsWith("/admin") ||
-    url.pathname.startsWith("/partner") ||
-    url.pathname.startsWith("/login") ||
-    event.request.method !== "GET"
-  ) {
-    // Network-only, bypass cache completely
-    return;
-  }
+  // Sensitive and role-gated responses are network-only, including navigations.
+  if (/^\/(api|admin|partner|login)(\/|$)/.test(url.pathname)) return;
 
-  // Handle HTML navigation requests
-  if (event.request.mode === "navigate") {
+  if (request.mode === "navigate") {
     event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match(event.request).then((cached) => {
-          return cached || caches.match("/offline");
-        });
+      fetch(request).catch(async () => {
+        return (await caches.match("/offline")) ||
+          new Response("Offline — connect to the internet to continue.", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          });
       })
     );
     return;
   }
 
-  // Cache-first / Stale-while-revalidate for static public assets
+  // Cache only versioned/static public assets. Never cache HTML, JSON, or API data.
+  const isPublicAsset =
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/images/") ||
+    /^\/(?:icon-(?:192|512)|icon-maskable-512|apple-touch-icon)\.png$/.test(url.pathname) ||
+    /^\/(?:skyline|earth-emerald|earth-natural|logo-inverted)\.webp$/.test(url.pathname);
+  if (!isPublicAsset) return;
+
   event.respondWith(
-    caches.match(event.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
+    caches.match(request).then(async (cached) => {
+      if (cached) return cached;
+      const response = await fetch(request);
+      if (response.ok && response.type === "basic") {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
       }
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== "basic") {
-          return networkResponse;
-        }
-        // Cache fetched public images and fonts
-        if (/\.(?:png|jpg|jpeg|svg|webp|woff|woff2)$/.test(url.pathname)) {
-          const responseToCache = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseToCache);
-          });
-        }
-        return networkResponse;
-      });
+      return response;
     })
   );
 });

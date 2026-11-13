@@ -57,20 +57,18 @@ async function main() {
     await page.getByRole("dialog").locator('input[type="date"]').first().fill(date);
     await page.getByRole("dialog").locator('input[autocomplete="name"]').fill("Atlas Test");
     await page.getByRole("dialog").locator('input[type="tel"]').fill("+8801700000000");
-    let whatsappUrl = "";
-    await context.route("https://wa.me/**", (route) => { whatsappUrl = route.request().url(); return route.abort(); });
-    const popupPromise = page.waitForEvent("popup");
+    await page.getByRole("dialog").getByRole("checkbox", { name: /I agree to use my details/i }).check();
+    // Preserve the real two-step flow: save enquiry, then offer a WhatsApp draft.
     await page.getByRole("button", { name: "Continue to WhatsApp" }).click();
-    const popup = await popupPromise;
-    await popup.waitForLoadState("domcontentloaded").catch(() => undefined);
-    await page.waitForTimeout(100);
-    assert.match(whatsappUrl || popup.url(), /^https:\/\/wa\.me\/8801674178437\?text=/);
-    const message = decodeURIComponent((whatsappUrl || popup.url()).split("?text=")[1]);
-    assert.match(message, /Dhaka \(DAC\) → Riyadh \(RUH\)/);
+    const handoffLink = page.getByRole("dialog").getByRole("link", { name: /Open in WhatsApp/ });
+    await handoffLink.waitFor({ state: "visible" });
+    const whatsAppUrl = (await handoffLink.getAttribute("href")) || "";
+    assert.equal(whatsAppUrl.startsWith("https://wa.me/8801674178437?text="), true);
+    const message = decodeURIComponent(whatsAppUrl.split("?text=")[1]);
+    assert.ok(message.includes("Dhaka (DAC) → Riyadh (RUH)"));
     assert.match(message, /Atlas Test/);
     assert.match(message, /supplier confirmation/);
-    await popup.close();
-    await page.getByRole("button", { name: "Close", exact: true }).click();
+    await page.getByRole("button", { name: "Done / Close" }).click();
     await page.getByRole("dialog").waitFor({ state: "hidden" });
     assert.deepEqual(errors, []);
 
