@@ -21,7 +21,7 @@ describe("seasonal campaign landing contract", () => {
   it("links B2C themes exclusively to existing catalog offers", () => {
     const ids = new Set(offers.map((offer) => offer.id));
     for (const campaign of getSeasonalCampaigns("b2c")) {
-      expect(campaign.existingOfferId).toBeTruthy();
+      if (!campaign.existingOfferId) throw new Error(`Missing existing offer mapping: ${campaign.id}`);
       expect(ids.has(campaign.existingOfferId), campaign.id).toBe(true);
     }
     for (const campaign of getSeasonalCampaigns("b2b")) {
