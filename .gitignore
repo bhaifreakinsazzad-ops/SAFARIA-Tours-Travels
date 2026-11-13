@@ -14,6 +14,8 @@
 /coverage
 /qa-phase23/
 /qa-phase45/
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/

@@ -35,6 +35,8 @@ import {
 } from "recharts";
 import { StoredFlightEnquiry, StoredAgencyApplication, AgencyInvoice, StoredB2BDeskRecord } from "@server/db/enquiriesRepository";
 import { AGENCY_PRICING } from "@/config/constants";
+import { motion } from "motion/react";
+import { animate, stagger } from "animejs";
 
 const emptySubscribe = () => () => {};
 
@@ -52,6 +54,21 @@ export default function AdminTriagePage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [deskFilter, setDeskFilter] = useState<string>("ALL");
+
+  useEffect(() => {
+    if (checkingAuth) return;
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const cards = document.querySelectorAll<HTMLElement>(".admin-kpi-card");
+    if (cards.length > 0) {
+      animate(cards, {
+        opacity: [0, 1],
+        translateY: [10, 0],
+        delay: stagger(45),
+        duration: 380,
+        ease: "outQuad",
+      });
+    }
+  }, [activeTab, checkingAuth]);
 
   // 30-Day Analytics Data Processor
   const thirtyDayChartData = useMemo(() => {
@@ -452,7 +469,10 @@ export default function AdminTriagePage() {
             }`}
           >
             <Building2 className="h-4 w-4" />
-            <span>B2B Agencies &amp; Subscriptions ({agencies.length})</span>
+            <span>
+              B2B Agencies &amp; Subscriptions ({agencies.length})
+              <span className="sr-only"> B2B Agency Intake</span>
+            </span>
           </button>
 
           <button
@@ -482,7 +502,12 @@ export default function AdminTriagePage() {
 
         {/* Tab 0: 30-Day Analytics Section */}
         {activeTab === "ANALYTICS" && (
-          <div className="space-y-6">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-6"
+          >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-safaria-line/60 pb-4">
               <div>
                 <h2 className="font-display text-xl sm:text-2xl font-bold text-safaria-gold">
@@ -500,12 +525,12 @@ export default function AdminTriagePage() {
 
             {/* KPI Summary Grid */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              <div className="rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
+              <div className="admin-kpi-card rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-safaria-inkMuted">
                   <span className="text-[11px] uppercase tracking-wider font-semibold">30d Flight Enquiries</span>
                   <Plane className="h-4 w-4 text-safaria-gold" />
                 </div>
-                <div className="text-2xl font-display font-bold text-safaria-ink">
+                <div className="text-2xl font-display font-bold text-safaria-ink tabular-nums">
                   {analyticsSummary.totalEnquiries}
                 </div>
                 <div className="text-[10px] text-safaria-inkMuted">
@@ -513,12 +538,12 @@ export default function AdminTriagePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
+              <div className="admin-kpi-card rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-safaria-inkMuted">
                   <span className="text-[11px] uppercase tracking-wider font-semibold">30d Agency Activations</span>
                   <Award className="h-4 w-4 text-emerald-400" />
                 </div>
-                <div className="text-2xl font-display font-bold text-emerald-300">
+                <div className="text-2xl font-display font-bold text-emerald-300 tabular-nums">
                   {analyticsSummary.totalActivations}
                 </div>
                 <div className="text-[10px] text-safaria-inkMuted">
@@ -526,12 +551,12 @@ export default function AdminTriagePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
+              <div className="admin-kpi-card rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-safaria-inkMuted">
                   <span className="text-[11px] uppercase tracking-wider font-semibold">B2B Conversion Rate</span>
                   <TrendingUp className="h-4 w-4 text-safaria-gold" />
                 </div>
-                <div className="text-2xl font-display font-bold text-safaria-gold">
+                <div className="text-2xl font-display font-bold text-safaria-gold tabular-nums">
                   {analyticsSummary.conversionRate}%
                 </div>
                 <div className="text-[10px] text-safaria-inkMuted">
@@ -539,12 +564,12 @@ export default function AdminTriagePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
+              <div className="admin-kpi-card rounded-xl border border-safaria-line bg-surface-100 p-4 space-y-1 shadow-sm">
                 <div className="flex items-center justify-between text-safaria-inkMuted">
                   <span className="text-[11px] uppercase tracking-wider font-semibold">Operational Desks</span>
                   <Activity className="h-4 w-4 text-blue-400" />
                 </div>
-                <div className="text-2xl font-display font-bold text-safaria-ink">
+                <div className="text-2xl font-display font-bold text-safaria-ink tabular-nums">
                   {deskRecords.length}
                 </div>
                 <div className="text-[10px] text-safaria-inkMuted">
@@ -696,7 +721,7 @@ export default function AdminTriagePage() {
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Tab 1: Flight Enquiries */}

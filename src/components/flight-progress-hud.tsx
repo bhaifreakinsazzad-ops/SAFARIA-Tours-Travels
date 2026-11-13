@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, useScroll, useSpring, useTransform } from "motion/react";
-import { Plane, Compass, ChevronUp, ChevronDown } from "lucide-react";
+import { Plane, Compass, ChevronUp, ChevronDown, Play, Pause } from "lucide-react";
 
 interface Waypoint {
   id: string;
@@ -24,6 +24,7 @@ const WAYPOINTS: Waypoint[] = [
 export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [activeCode, setActiveCode] = useState("DAC");
+  const [autoGlide, setAutoGlide] = useState(false);
 
   const { scrollYProgress } = useScroll();
   const smoothProgress = useSpring(scrollYProgress, {
@@ -32,7 +33,6 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
     restDelta: 0.001,
   });
 
-  // Calculate dynamic flight altitude based on scroll progress
   const altitude = useTransform(smoothProgress, [0, 0.15, 0.5, 0.85, 1], [0, 24000, 39000, 31000, 0]);
   const groundSpeed = useTransform(smoothProgress, [0, 0.1, 0.9, 1], [140, 520, 560, 160]);
   const planeRotation = useTransform(smoothProgress, [0, 0.5, 1], [-5, 0, 5]);
@@ -60,7 +60,20 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
     };
   }, [altitude, groundSpeed, smoothProgress]);
 
+  // Automatic Waypoint Tour Glide when activated by user
+  useEffect(() => {
+    if (!autoGlide) return;
+    const timer = window.setInterval(() => {
+      const currentIdx = WAYPOINTS.findIndex((w) => w.code === activeCode);
+      const nextIdx = (currentIdx + 1) % WAYPOINTS.length;
+      const el = document.getElementById(WAYPOINTS[nextIdx].targetId);
+      el?.scrollIntoView({ behavior: "smooth" });
+    }, 4200);
+    return () => window.clearInterval(timer);
+  }, [autoGlide, activeCode]);
+
   const scrollToWaypoint = (targetId: string) => {
+    setAutoGlide(false);
     const el = document.getElementById(targetId);
     if (el) {
       el.scrollIntoView({ behavior: "smooth" });
@@ -74,6 +87,8 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
     return language === "bn" ? "অবতরণ পর্যায়" : "Approach & Arrival";
   };
 
+  const bn = language === "bn";
+
   return (
     <aside
       aria-label="Flight Cruise Progress HUD"
@@ -81,25 +96,20 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
     >
       <motion.div
         layout
-        className="rounded-2xl border border-[rgba(207,181,124,0.35)] bg-[rgba(4,23,19,0.92)] backdrop-blur-xl shadow-[0_18px_50px_rgba(0,0,0,0.45)] text-[#f3f0e7] overflow-hidden transition-all"
+        className="rounded-2xl border border-[rgba(207,181,124,0.35)] bg-[rgba(4,23,19,0.94)] shadow-[0_18px_50px_rgba(0,0,0,0.45)] text-[#f3f0e7] overflow-hidden transition-all"
         style={{ width: isExpanded ? 320 : "auto" }}
       >
         {/* Compact Flight Status Bar */}
         <div className="flex items-center gap-3 px-4 py-2.5">
-          {/* Animated Airplane Cruise Badge */}
           <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-[#092c27] border border-[rgba(207,181,124,0.3)] shadow-inner">
             <motion.div style={{ rotate: planeRotation }}>
               <Plane className="h-4 w-4 text-[#cfb57c]" />
             </motion.div>
-            <span className="absolute -top-1 -right-1 flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10b981] opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10b981]" />
-            </span>
           </div>
 
           {/* Quick Route Code & Telemetry */}
           <div className="flex flex-col text-left">
-            <div className="flex items-center gap-1.5 text-xs font-mono font-bold">
+            <div className="flex items-center gap-1.5 text-xs font-mono font-bold tabular-nums">
               <span className="text-[#cfb57c]">SF-2026</span>
               <span className="text-[#b1c3bc]">·</span>
               <span className="text-[#10b981]">{activeCode}</span>
@@ -107,7 +117,7 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
                 ({displayAltitude > 0 ? `${displayAltitude.toLocaleString()} FT` : "GND"})
               </span>
             </div>
-            <span className="text-[10px] text-[#b1c3bc] font-sans tracking-tight">
+            <span className="text-[10px] text-[#b1c3bc] font-sans tracking-tight tabular-nums">
               {getFlightPhase()} · {scrollPct}%
             </span>
           </div>
@@ -141,7 +151,7 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
             className="p-4 border-t border-[rgba(207,181,124,0.18)] bg-[rgba(6,43,39,0.5)] space-y-3.5 text-xs"
           >
             {/* Live Flight Telemetry Grid */}
-            <div className="grid grid-cols-3 gap-2 bg-[#041713] p-2.5 rounded-xl border border-[rgba(207,181,124,0.2)] font-mono text-[11px]">
+            <div className="grid grid-cols-3 gap-2 bg-[#041713] p-2.5 rounded-xl border border-[rgba(207,181,124,0.2)] font-mono text-[11px] tabular-nums">
               <div>
                 <span className="text-[9px] uppercase tracking-wider text-[#b1c3bc] block">Altitude</span>
                 <strong className="text-[#cfb57c] font-bold">
@@ -154,14 +164,34 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
               </div>
               <div>
                 <span className="text-[9px] uppercase tracking-wider text-[#b1c3bc] block">Mach</span>
-                <strong className="text-[#10b981] font-bold">0.82 M</strong>
+                <strong className="text-[#10b981] font-bold">0.84 M</strong>
               </div>
+            </div>
+
+            {/* Auto-Glide Tour Mode */}
+            <div className="flex items-center justify-between bg-[#041713] px-3 py-2 rounded-xl border border-[rgba(207,181,124,0.2)]">
+              <span className="text-[11px] font-semibold text-[#f3f0e7]">
+                {bn ? "অটো-গ্লাইড ট্যুর" : "Auto-Glide Section Tour"}
+              </span>
+              <button
+                type="button"
+                onClick={() => setAutoGlide((prev) => !prev)}
+                aria-pressed={autoGlide}
+                className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[10px] font-mono font-bold transition-colors ${
+                  autoGlide
+                    ? "bg-[#10b981] text-[#041713]"
+                    : "bg-[#092c27] text-[#cfb57c] hover:bg-[#12423a]"
+                }`}
+              >
+                {autoGlide ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3" />}
+                <span>{autoGlide ? (bn ? "চলমান" : "GLIDING") : bn ? "চালু করুন" : "START"}</span>
+              </button>
             </div>
 
             {/* Interactive Flight Corridor Waypoints */}
             <div className="space-y-1">
               <span className="text-[10px] uppercase font-bold tracking-wider text-[#cfb57c] block mb-1">
-                {language === "bn" ? "ফ্লাইট করিডোর ও সেকশন গ্লাইড" : "Flight Corridor & Waypoints"}
+                {bn ? "ফ্লাইট করিডোর ও সেকশন গ্লাইড" : "Flight Corridor & Waypoints"}
               </span>
 
               <div className="space-y-1">
@@ -183,10 +213,10 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
                           {wp.code}
                         </span>
                         <span className="text-[11px] truncate">
-                          {language === "bn" ? wp.nameBn : wp.nameEn}
+                          {bn ? wp.nameBn : wp.nameEn}
                         </span>
                       </div>
-                      <span className="text-[10px] text-[#b1c3bc] font-mono">
+                      <span className="text-[10px] text-[#b1c3bc] font-mono tabular-nums">
                         {Math.round(wp.progressTarget * 100)}%
                       </span>
                     </button>
@@ -198,18 +228,19 @@ export function FlightProgressHUD({ language = "en" }: { language?: "en" | "bn" 
             {/* Quick Jet Concierge Action */}
             <div className="pt-2 border-t border-[rgba(207,181,124,0.18)] flex items-center justify-between text-[11px]">
               <span className="text-[#b1c3bc] flex items-center gap-1">
-                <Compass className="h-3.5 w-3.5 text-[#cfb57c] animate-spin" style={{ animationDuration: "12s" }} />
+                <Compass className="h-3.5 w-3.5 text-[#cfb57c]" />
                 <span>Safaria Skyway™</span>
               </span>
               <button
                 type="button"
                 onClick={() => {
+                  setAutoGlide(false);
                   const el = document.getElementById("sf-home");
                   el?.scrollIntoView({ behavior: "smooth" });
                 }}
                 className="text-[#cfb57c] hover:underline font-semibold"
               >
-                {language === "bn" ? "শীর্ষে যান ↑" : "Return to Top ↑"}
+                {bn ? "শীর্ষে যান ↑" : "Return to Top ↑"}
               </button>
             </div>
           </motion.div>

@@ -12,7 +12,7 @@
 
 1. Create or open your Supabase project.
 2. Open **Supabase Dashboard → SQL Editor** and execute `/supabase/FULL_PRODUCTION_SCHEMA.sql` (idempotent; creates all 8 tables, RLS policies, indexes, and the PostgreSQL `check_and_increment_rate_limit` RPC).
-   - If upgrading an existing database that already has `001`–`004` applied, run `/supabase/migrations/005_b2b_subscriptions_and_invoices.sql`.
+   - If upgrading an existing database that already has `001`–`005` applied, run `/supabase/migrations/006_b2b_subscriptions_and_invoices.sql`.
 3. From **Project Settings → API** and **Database**, copy:
    - `NEXT_PUBLIC_SUPABASE_URL` & `SUPABASE_URL`
    - `SUPABASE_SERVICE_ROLE_KEY` (server-only secret)

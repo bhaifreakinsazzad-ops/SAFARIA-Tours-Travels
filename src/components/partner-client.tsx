@@ -26,6 +26,8 @@ import { whatsappHrefFor } from "@/config/constants";
 import type { StoredB2BDeskRecord, AgencyInvoice } from "@server/db/enquiriesRepository";
 import type { PassengerAuditResult } from "@/app/api/partner/verify-passenger/route";
 import { PWAInstallButton } from "@/components/pwa-install-button";
+import { motion, AnimatePresence } from "motion/react";
+import { animate, stagger } from "animejs";
 
 type AuditResultState = (PassengerAuditResult & { penaltyRiskLevel: string }) | null;
 
@@ -180,6 +182,19 @@ export default function PartnerWorkspacePage() {
     fetchDeskData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDesk, checkingAuth]);
+
+  useEffect(() => {
+    if (!membership) return;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches ?? false;
+    if (reduced) return;
+    animate(".partner-quota-card", {
+      translateY: [6, 0],
+      opacity: [0.6, 1],
+      delay: stagger(45),
+      duration: 300,
+      ease: "outQuad",
+    });
+  }, [membership]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
@@ -453,7 +468,7 @@ export default function PartnerWorkspacePage() {
 
             {/* Quota Usage Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
-              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+              <div className="partner-quota-card rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
                 <span className="text-safaria-inkMuted block text-[10px] uppercase">FareDesk™ Quota</span>
                 <div className="flex items-baseline justify-between">
                   <span className="font-bold text-safaria-gold text-sm">{membership.usage.fareRemaining}</span>
@@ -467,7 +482,7 @@ export default function PartnerWorkspacePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+              <div className="partner-quota-card rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
                 <span className="text-safaria-inkMuted block text-[10px] uppercase">BookingDesk™ Quota</span>
                 <div className="flex items-baseline justify-between">
                   <span className="font-bold text-safaria-gold text-sm">{membership.usage.bookingRemaining}</span>
@@ -481,7 +496,7 @@ export default function PartnerWorkspacePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+              <div className="partner-quota-card rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
                 <span className="text-safaria-inkMuted block text-[10px] uppercase">AfterCare™ Quota</span>
                 <div className="flex items-baseline justify-between">
                   <span className="font-bold text-safaria-gold text-sm">{membership.usage.afterCareRemaining}</span>
@@ -495,7 +510,7 @@ export default function PartnerWorkspacePage() {
                 </div>
               </div>
 
-              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+              <div className="partner-quota-card rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
                 <span className="text-safaria-inkMuted block text-[10px] uppercase">Team Seats</span>
                 <div className="flex items-baseline justify-between">
                   <span className="font-bold text-safaria-gold text-sm">{membership.usage.seatsUsed}</span>
@@ -577,6 +592,14 @@ export default function PartnerWorkspacePage() {
 
           {/* Right Active Desk Workspace */}
           <main className="lg:col-span-9 rounded-2xl border border-safaria-line bg-surface-100 p-6 sm:p-8 shadow-panel min-h-[500px]">
+          <AnimatePresence mode="wait">
+          <motion.div
+            key={activeDesk}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+          >
           {/* Desk 1: FareDesk */}
           {activeDesk === "FARE_DESK" && (
             <div className="space-y-6">
@@ -1263,6 +1286,8 @@ export default function PartnerWorkspacePage() {
               )}
             </div>
           )}
+          </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>

@@ -1,6 +1,6 @@
 -- ==============================================================================
 -- SAFARIA Tours & Travels — B2B Subscriptions, Billing Invoices & Telemetry
--- Migration: 005_b2b_subscriptions_and_invoices.sql
+-- Migration: 006_b2b_subscriptions_and_invoices.sql
 -- ==============================================================================
 
 -- 1. Extend agency_applications status check constraint to support SUSPENDED
@@ -64,6 +64,7 @@ ALTER TABLE agency_invoices ENABLE ROW LEVEL SECURITY;
 GRANT SELECT ON agency_invoices TO authenticated;
 GRANT ALL PRIVILEGES ON agency_invoices TO service_role;
 
+DROP POLICY IF EXISTS "Tenant isolation for agency invoices select" ON agency_invoices;
 CREATE POLICY "Tenant isolation for agency invoices select"
     ON agency_invoices FOR SELECT TO authenticated
     USING (
@@ -71,5 +72,6 @@ CREATE POLICY "Tenant isolation for agency invoices select"
         OR agency_id = (NULLIF(current_setting('request.jwt.claims', true), '')::jsonb->>'agency_id')::uuid
     );
 
+DROP POLICY IF EXISTS "Privileged service access to agency invoices" ON agency_invoices;
 CREATE POLICY "Privileged service access to agency invoices"
     ON agency_invoices FOR ALL TO service_role USING (true) WITH CHECK (true);

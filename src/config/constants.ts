@@ -1,6 +1,7 @@
 export const SAFARIA_CONFIG = Object.freeze({
   siteUrl: "https://safaria.vibing.world",
   whatsappNumber: "8801674178437",
+  whatsappChannelUrl: "https://whatsapp.com/channel/0029VbDRi8t90x2ojJ71qv1F",
   agencyMonthlyBdt: 5999,
   agencyAnnualBdt: 69999,
   trialHours: 72,
