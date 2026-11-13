@@ -381,29 +381,29 @@ export default function PartnerWorkspacePage() {
   return (
     <div className="min-h-screen bg-surface-0 text-safaria-ink">
       {/* Partner Header */}
-      <header className="border-b border-safaria-line bg-surface-100 px-4 py-3 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-safaria-line bg-surface-100 px-4 py-3 sm:px-6 lg:px-8 flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs text-safaria-inkMuted hover:text-safaria-gold transition-colors mr-4"
+            className="inline-flex min-h-[40px] items-center gap-1.5 text-xs text-safaria-inkMuted hover:text-safaria-gold transition-colors shrink-0 mr-1 sm:mr-3"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Public Site</span>
+            <span className="hidden sm:inline">Public Site</span>
           </Link>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-0 border border-safaria-gold/40">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-0 border border-safaria-gold/40">
             <Plane className="h-4 w-4 text-safaria-gold" />
           </div>
-          <div>
-            <h1 className="font-display text-base sm:text-lg font-bold text-safaria-gold">
+          <div className="min-w-0">
+            <h1 className="font-display text-sm sm:text-lg font-bold text-safaria-gold truncate">
               SAFARIA Partner Portal (B2B Workspace)
             </h1>
-            <span className="text-[10px] text-safaria-inkMuted font-mono">
+            <span className="block text-[10px] text-safaria-inkMuted font-mono truncate">
               Partner Agency: {agencyName} ({agencyId})
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-mono">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
           <PWAInstallButton variant="header" />
           <button
             onClick={() => {
@@ -411,20 +411,20 @@ export default function PartnerWorkspacePage() {
               fetchMembershipData();
               fetchAllDeskData();
             }}
-            className="flex items-center gap-1 rounded bg-surface-200 border border-safaria-line px-2.5 py-1 text-safaria-ink hover:text-safaria-gold"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-surface-200 border border-safaria-line px-3 py-1.5 text-safaria-ink hover:text-safaria-gold"
           >
-            <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isLoading ? "animate-spin" : ""}`} />
             <span>Sync</span>
           </button>
-          <div className="rounded bg-surface-0 px-3 py-1.5 border border-safaria-line/40">
-            <span className="text-safaria-inkMuted">Sub-Agent Margin: </span>
+          <div className="inline-flex min-h-[40px] items-center rounded-lg bg-surface-0 px-3 py-1.5 border border-safaria-line/40">
+            <span className="text-safaria-inkMuted hidden sm:inline mr-1">Sub-Agent Margin: </span>
             <span className="text-safaria-gold font-bold">৳{clearMarginTotalBdt.toLocaleString()} BDT</span>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1 rounded bg-surface-200 border border-safaria-line px-2.5 py-1 text-safaria-ink hover:text-red-400"
+            className="inline-flex min-h-[40px] items-center gap-1.5 rounded-lg bg-surface-200 border border-safaria-line px-3 py-1.5 text-safaria-ink hover:text-red-400"
           >
-            <LogOut className="h-3 w-3" />
+            <LogOut className="h-3.5 w-3.5" />
             <span>Sign Out</span>
           </button>
         </div>
@@ -546,52 +546,55 @@ export default function PartnerWorkspacePage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left Sidebar: 6 Desks + Membership & Audit */}
-          <aside className="lg:col-span-3 space-y-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-safaria-gold block px-2 mb-2">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8">
+          {/* Left Sidebar / Mobile Horizontal Scroll Switcher: 6 Desks + Membership & Audit */}
+          <aside className="lg:col-span-3 space-y-2 min-w-0">
+            <span className="text-xs font-bold uppercase tracking-wider text-safaria-gold block px-1 sm:px-2 mb-1 sm:mb-2">
               The 6 Operational Desks
             </span>
 
-            {([
-              { id: "FARE_DESK", label: "FareDesk™", desc: "Wholesale fare search", icon: <DollarSign className="h-4 w-4" /> },
-              { id: "BOOKING_DESK", label: "BookingDesk™", desc: "PNR & split tickets", icon: <Ticket className="h-4 w-4" /> },
-              { id: "CLEAR_MARGIN", label: "ClearMargin™", desc: "Zero hidden fee ledger", icon: <TrendingUp className="h-4 w-4" /> },
-              { id: "AFTER_CARE", label: "AfterCare Desk™", desc: "Re-issue & emergency", icon: <Headphones className="h-4 w-4" /> },
-              { id: "VERIFIED_WORKFLOW", label: "Verified Workflow™", desc: "Passenger audit gate", icon: <FileCheck className="h-4 w-4" /> },
-              { id: "PARTNER_GROWTH", label: "PartnerGrowth™", desc: "Volume tiers & incentives", icon: <Sparkles className="h-4 w-4" /> },
-              { id: "MEMBERSHIP", label: "Membership & Invoices", desc: "Entitlements & billing", icon: <CreditCard className="h-4 w-4" /> },
-              { id: "AUDIT", label: "Activity History", desc: "Cross-desk audit trail", icon: <History className="h-4 w-4" /> },
-            ] as const).map((desk) => {
-              const isActive = activeDesk === desk.id;
-              return (
-                <button
-                  key={desk.id}
-                  onClick={() => setActiveDesk(desk.id)}
-                  className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition-all border ${
-                    isActive
-                      ? "border-safaria-gold bg-safaria-gold/15 text-safaria-gold shadow-sm"
-                      : "border-safaria-line/50 bg-surface-100 text-safaria-inkMuted hover:border-safaria-gold/40 hover:text-safaria-ink"
-                  }`}
-                >
-                  <div
-                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                      isActive ? "bg-safaria-gold text-safaria-onGold" : "bg-surface-0 text-safaria-gold"
+            <div className="flex lg:flex-col overflow-x-auto no-scrollbar lg:overflow-visible gap-2 pb-1 lg:pb-0">
+              {([
+                { id: "FARE_DESK", label: "FareDesk™", desc: "Wholesale fare search", icon: <DollarSign className="h-4 w-4" /> },
+                { id: "BOOKING_DESK", label: "BookingDesk™", desc: "PNR & split tickets", icon: <Ticket className="h-4 w-4" /> },
+                { id: "CLEAR_MARGIN", label: "ClearMargin™", desc: "Zero hidden fee ledger", icon: <TrendingUp className="h-4 w-4" /> },
+                { id: "AFTER_CARE", label: "AfterCare Desk™", desc: "Re-issue & emergency", icon: <Headphones className="h-4 w-4" /> },
+                { id: "VERIFIED_WORKFLOW", label: "Verified Workflow™", desc: "Passenger audit gate", icon: <FileCheck className="h-4 w-4" /> },
+                { id: "PARTNER_GROWTH", label: "PartnerGrowth™", desc: "Volume tiers & incentives", icon: <Sparkles className="h-4 w-4" /> },
+                { id: "MEMBERSHIP", label: "Membership & Invoices", desc: "Entitlements & billing", icon: <CreditCard className="h-4 w-4" /> },
+                { id: "AUDIT", label: "Activity History", desc: "Cross-desk audit trail", icon: <History className="h-4 w-4" /> },
+              ] as const).map((desk) => {
+                const isActive = activeDesk === desk.id;
+                return (
+                  <button
+                    key={desk.id}
+                    type="button"
+                    onClick={() => setActiveDesk(desk.id)}
+                    className={`shrink-0 w-auto lg:w-full min-h-[48px] flex items-center gap-2.5 sm:gap-3 rounded-xl px-3 py-2.5 lg:p-3 text-left transition-all border ${
+                      isActive
+                        ? "border-safaria-gold bg-safaria-gold/15 text-safaria-gold shadow-sm"
+                        : "border-safaria-line/50 bg-surface-100 text-safaria-inkMuted hover:border-safaria-gold/40 hover:text-safaria-ink"
                     }`}
                   >
-                    {desk.icon}
-                  </div>
-                  <div>
-                    <strong className="block text-xs font-bold text-safaria-ink">{desk.label}</strong>
-                    <span className="text-[10px] text-safaria-inkMuted">{desk.desc}</span>
-                  </div>
-                </button>
-              );
-            })}
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                        isActive ? "bg-safaria-gold text-safaria-onGold" : "bg-surface-0 text-safaria-gold"
+                      }`}
+                    >
+                      {desk.icon}
+                    </div>
+                    <div className="min-w-0">
+                      <strong className="block text-xs font-bold text-safaria-ink whitespace-nowrap lg:whitespace-normal">{desk.label}</strong>
+                      <span className="hidden lg:block text-[10px] text-safaria-inkMuted">{desk.desc}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </aside>
 
           {/* Right Active Desk Workspace */}
-          <main className="lg:col-span-9 rounded-2xl border border-safaria-line bg-surface-100 p-6 sm:p-8 shadow-panel min-h-[500px]">
+          <main className="lg:col-span-9 rounded-2xl border border-safaria-line bg-surface-100 p-4 sm:p-6 lg:p-8 shadow-panel min-h-[420px] sm:min-h-[500px] min-w-0">
           <AnimatePresence mode="wait">
           <motion.div
             key={activeDesk}
@@ -626,7 +629,7 @@ export default function PartnerWorkspacePage() {
                   <select
                     value={fareOrigin}
                     onChange={(e) => setFareOrigin(e.target.value)}
-                    className="w-full rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-sm text-safaria-ink"
+                    className="w-full min-h-[44px] rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-base sm:text-sm text-safaria-ink"
                   >
                     {SITE_CONFIG.airports.map((a) => (
                       <option key={a.iata} value={a.iata}>
@@ -641,7 +644,7 @@ export default function PartnerWorkspacePage() {
                   <select
                     value={fareDest}
                     onChange={(e) => setFareDest(e.target.value)}
-                    className="w-full rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-sm text-safaria-ink"
+                    className="w-full min-h-[44px] rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-base sm:text-sm text-safaria-ink"
                   >
                     {SITE_CONFIG.airports.map((a) => (
                       <option key={a.iata} value={a.iata}>
@@ -659,7 +662,7 @@ export default function PartnerWorkspacePage() {
                     max={9}
                     value={farePax}
                     onChange={(e) => setFarePax(Number(e.target.value))}
-                    className="w-full rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-sm text-safaria-ink"
+                    className="w-full min-h-[44px] rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-base sm:text-sm text-safaria-ink"
                   />
                 </div>
               </div>
@@ -675,8 +678,8 @@ export default function PartnerWorkspacePage() {
                     <span className="font-bold text-sm text-safaria-ink">Biman Bangladesh Airlines (BG584)</span>
                     <span className="text-xs text-safaria-inkMuted block">Direct · Economy · 30kg baggage</span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                    <div className="text-left sm:text-right">
                       <span className="text-xs text-safaria-inkMuted block">Wholesale Net:</span>
                       <strong className="text-base font-mono text-safaria-gold">৳42,800 BDT</strong>
                       <span className="text-[10px] text-safaria-success block">+ ৳2,200 Sub-Agent Margin</span>
@@ -684,7 +687,7 @@ export default function PartnerWorkspacePage() {
                     <button
                       onClick={() => handleRequestFare("Biman Bangladesh", 42800, 2200)}
                       disabled={isLoading}
-                      className="rounded-btn bg-safaria-gold px-3.5 py-2 text-xs font-bold text-safaria-onGold hover:shadow-btn"
+                      className="min-h-[44px] rounded-btn bg-safaria-gold px-4 py-2 text-xs font-bold text-safaria-onGold hover:shadow-btn"
                     >
                       Request Quote
                     </button>
@@ -696,8 +699,8 @@ export default function PartnerWorkspacePage() {
                     <span className="font-bold text-sm text-safaria-ink">Emirates (EK583)</span>
                     <span className="text-xs text-safaria-inkMuted block">Non-Stop · Flex Economy · 35kg baggage</span>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="text-right">
+                  <div className="flex flex-wrap items-center justify-between sm:justify-end gap-3 sm:gap-4">
+                    <div className="text-left sm:text-right">
                       <span className="text-xs text-safaria-inkMuted block">Wholesale Net:</span>
                       <strong className="text-base font-mono text-safaria-gold">৳48,500 BDT</strong>
                       <span className="text-[10px] text-safaria-success block">+ ৳2,850 Sub-Agent Margin</span>
@@ -705,7 +708,7 @@ export default function PartnerWorkspacePage() {
                     <button
                       onClick={() => handleRequestFare("Emirates", 48500, 2850)}
                       disabled={isLoading}
-                      className="rounded-btn bg-safaria-gold px-3.5 py-2 text-xs font-bold text-safaria-onGold hover:shadow-btn"
+                      className="min-h-[44px] rounded-btn bg-safaria-gold px-4 py-2 text-xs font-bold text-safaria-onGold hover:shadow-btn"
                     >
                       Request Quote
                     </button>
@@ -721,9 +724,9 @@ export default function PartnerWorkspacePage() {
                   </span>
                   <div className="space-y-2">
                     {deskRecords.map((rec) => (
-                      <div key={rec.id} className="rounded-lg bg-surface-input p-2.5 text-xs font-mono flex justify-between items-center border border-safaria-line/30">
-                        <span className="text-safaria-ink">{rec.title}</span>
-                        <span className="text-safaria-gold font-bold">{rec.status}</span>
+                      <div key={rec.id} className="rounded-lg bg-surface-input p-2.5 text-xs font-mono flex flex-wrap justify-between items-center gap-2 border border-safaria-line/30">
+                        <span className="text-safaria-ink min-w-0 break-words">{rec.title}</span>
+                        <span className="text-safaria-gold font-bold shrink-0">{rec.status}</span>
                       </div>
                     ))}
                   </div>
@@ -758,19 +761,19 @@ export default function PartnerWorkspacePage() {
                   placeholder="6-Char PNR (e.g. 7K9W2X)"
                   value={pnrInput}
                   onChange={(e) => setPnrInput(e.target.value)}
-                  className="rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-sm font-mono text-safaria-ink uppercase"
+                  className="min-h-[44px] rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-base sm:text-sm font-mono text-safaria-ink uppercase"
                 />
                 <input
                   type="text"
                   placeholder="Passenger Full Name"
                   value={pnrPassenger}
                   onChange={(e) => setPnrPassenger(e.target.value)}
-                  className="rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-sm text-safaria-ink"
+                  className="min-h-[44px] rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-base sm:text-sm text-safaria-ink"
                 />
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="rounded-btn bg-safaria-gold px-4 py-2 text-xs font-bold text-safaria-onGold"
+                  className="min-h-[44px] rounded-btn bg-safaria-gold px-4 py-2 text-xs font-bold text-safaria-onGold"
                 >
                   Log PNR Hold in Database
                 </button>
@@ -786,14 +789,14 @@ export default function PartnerWorkspacePage() {
                 ) : (
                   <div className="space-y-2">
                     {deskRecords.map((r) => (
-                      <div key={r.id} className="rounded-xl border border-safaria-line bg-surface-200 p-3 text-xs font-mono flex justify-between items-center">
-                        <div>
-                          <strong className="text-safaria-gold block">{r.title}</strong>
+                      <div key={r.id} className="rounded-xl border border-safaria-line bg-surface-200 p-3 text-xs font-mono flex flex-wrap justify-between items-center gap-2">
+                        <div className="min-w-0">
+                          <strong className="text-safaria-gold block break-words">{r.title}</strong>
                           <span className="text-[11px] text-safaria-inkMuted">
                             Passenger: {(r.payload as { passenger?: string }).passenger || "Traveler"}
                           </span>
                         </div>
-                        <span className="rounded bg-surface-input px-2 py-1 text-safaria-success font-bold text-[11px]">
+                        <span className="rounded bg-surface-input px-2 py-1 text-safaria-success font-bold text-[11px] shrink-0">
                           {r.status}
                         </span>
                       </div>
@@ -877,7 +880,7 @@ export default function PartnerWorkspacePage() {
                 </div>
               )}
 
-              <form onSubmit={handleCreateCase} className="rounded-xl border border-safaria-line bg-surface-input p-5 space-y-4 text-xs">
+              <form onSubmit={handleCreateCase} className="rounded-xl border border-safaria-line bg-surface-input p-4 sm:p-5 space-y-4 text-xs">
                 <span className="font-bold text-safaria-ink block">Raise an Urgent Re-issue Ticket:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <input
@@ -885,12 +888,12 @@ export default function PartnerWorkspacePage() {
                     placeholder="PNR or Ticket Number (Optional)"
                     value={casePnr}
                     onChange={(e) => setCasePnr(e.target.value)}
-                    className="rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink font-mono uppercase"
+                    className="min-h-[44px] rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink font-mono uppercase"
                   />
                   <select
                     value={caseUrgency}
                     onChange={(e) => setCaseUrgency(e.target.value as "NORMAL" | "HIGH" | "URGENT")}
-                    className="rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink"
+                    className="min-h-[44px] rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink"
                   >
                     <option value="NORMAL">Normal (&gt; 48 hours to flight)</option>
                     <option value="HIGH">High (Within 24 hours)</option>
@@ -903,12 +906,12 @@ export default function PartnerWorkspacePage() {
                   placeholder="Describe date change requirements, passenger details, or airline cancellation..."
                   value={caseNotes}
                   onChange={(e) => setCaseNotes(e.target.value)}
-                  className="w-full rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink"
+                  className="w-full rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink"
                 />
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="rounded-btn bg-safaria-gold px-4 py-2.5 text-xs font-bold text-safaria-onGold shadow-btn hover:shadow-btnHover transition-all"
+                  className="min-h-[44px] w-full sm:w-auto rounded-btn bg-safaria-gold px-4 py-2.5 text-xs font-bold text-safaria-onGold shadow-btn hover:shadow-btnHover transition-all"
                 >
                   Log Urgent Case in AfterCare Database
                 </button>
@@ -921,14 +924,14 @@ export default function PartnerWorkspacePage() {
                     Your Open Support Cases ({deskRecords.length}):
                   </span>
                   {deskRecords.map((c) => (
-                    <div key={c.id} className="rounded-xl border border-safaria-line bg-surface-200 p-3 text-xs flex justify-between items-center">
-                      <div>
-                        <strong className="text-safaria-ink block">{c.title}</strong>
+                    <div key={c.id} className="rounded-xl border border-safaria-line bg-surface-200 p-3 text-xs flex flex-wrap justify-between items-center gap-2">
+                      <div className="min-w-0">
+                        <strong className="text-safaria-ink block break-words">{c.title}</strong>
                         <span className="text-[11px] text-safaria-inkMuted">
                           Urgency: {c.priority} · Status: {c.status}
                         </span>
                       </div>
-                      <span className="text-[10px] text-safaria-gold font-mono">
+                      <span className="text-[10px] text-safaria-gold font-mono shrink-0">
                         {new Date(c.createdAt).toLocaleDateString()}
                       </span>
                     </div>
@@ -950,7 +953,7 @@ export default function PartnerWorkspacePage() {
                 </p>
               </div>
 
-              <form onSubmit={handleAuditPassenger} className="rounded-xl border border-safaria-line bg-surface-input p-5 space-y-4 text-xs">
+              <form onSubmit={handleAuditPassenger} className="rounded-xl border border-safaria-line bg-surface-input p-4 sm:p-5 space-y-4 text-xs">
                 <span className="font-bold text-safaria-ink block">Run Pre-Issuance Passenger Audit:</span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
@@ -961,7 +964,7 @@ export default function PartnerWorkspacePage() {
                       placeholder="e.g. RAHMAN"
                       value={surname}
                       onChange={(e) => setSurname(e.target.value)}
-                      className="w-full rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink uppercase"
+                      className="w-full min-h-[44px] rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink uppercase"
                     />
                   </div>
                   <div>
@@ -972,7 +975,7 @@ export default function PartnerWorkspacePage() {
                       placeholder="e.g. TANVIR"
                       value={givenNames}
                       onChange={(e) => setGivenNames(e.target.value)}
-                      className="w-full rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink uppercase"
+                      className="w-full min-h-[44px] rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink uppercase"
                     />
                   </div>
                   <div>
@@ -980,7 +983,7 @@ export default function PartnerWorkspacePage() {
                     <select
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      className="w-full rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink"
+                      className="w-full min-h-[44px] rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink"
                     >
                       <option value="MR">MR</option>
                       <option value="MRS">MRS</option>
@@ -996,14 +999,14 @@ export default function PartnerWorkspacePage() {
                     type="date"
                     value={passportExpiry}
                     onChange={(e) => setPassportExpiry(e.target.value)}
-                    className="w-full sm:w-1/2 rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-sm text-safaria-ink"
+                    className="w-full sm:w-1/2 min-h-[44px] rounded-lg border border-safaria-line bg-surface-0 px-3 py-2 text-base sm:text-sm text-safaria-ink"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={isAuditing}
-                  className="rounded-btn bg-safaria-gold px-4 py-2.5 text-xs font-bold text-safaria-onGold shadow-btn hover:shadow-btnHover transition-all"
+                  className="min-h-[44px] w-full sm:w-auto rounded-btn bg-safaria-gold px-4 py-2.5 text-xs font-bold text-safaria-onGold shadow-btn hover:shadow-btnHover transition-all"
                 >
                   {isAuditing ? "Auditing..." : "Audit Passenger Name & Rules"}
                 </button>
@@ -1078,7 +1081,7 @@ export default function PartnerWorkspacePage() {
                     <p className="text-safaria-inkMuted">
                       Tier is computed from this agency&apos;s {count} logged BookingDesk ticket{count === 1 ? "" : "s"} this month.
                     </p>
-                    <div className="rounded-xl border border-safaria-gold bg-safaria-gold/15 p-5 flex items-center justify-between">
+                    <div className="rounded-xl border border-safaria-gold bg-safaria-gold/15 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                       <div>
                         <strong className="text-safaria-gold text-base block">{current.name} Tier (Active Agency Status)</strong>
                         <span className="text-safaria-inkMuted">
@@ -1086,20 +1089,20 @@ export default function PartnerWorkspacePage() {
                           {current.max === Infinity ? "+" : `–${current.max}`} tickets / mo · ৳{current.rebate} bonus rebate per ticket
                         </span>
                       </div>
-                      <span className="rounded-full bg-safaria-gold text-safaria-onGold px-3 py-1 font-bold text-xs">
+                      <span className="self-start sm:self-auto rounded-full bg-safaria-gold text-safaria-onGold px-3 py-1 font-bold text-xs shrink-0">
                         Current Level
                       </span>
                     </div>
 
                     {next && (
-                      <div className="rounded-xl border border-safaria-line bg-surface-200 p-5 flex items-center justify-between opacity-80">
+                      <div className="rounded-xl border border-safaria-line bg-surface-200 p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 opacity-80">
                         <div>
                           <strong className="text-safaria-ink text-base block">{next.name} Tier (Next Milestone)</strong>
                           <span className="text-safaria-inkMuted">
                             Volume: {next.min}+ tickets / mo · ৳{next.rebate} bonus rebate
                           </span>
                         </div>
-                        <span className="text-safaria-inkMuted font-mono">
+                        <span className="text-safaria-inkMuted font-mono shrink-0">
                           {Math.max(next.min - count, 0)} more ticket{next.min - count === 1 ? "" : "s"} to unlock
                         </span>
                       </div>

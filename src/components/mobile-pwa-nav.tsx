@@ -19,22 +19,34 @@ export function MobilePwaNav() {
   const navItems = [
     { href: "/", label: "Home", icon: <Home className="h-4 w-4" /> },
     { href: "/b2b", label: "B2B SaaS", icon: <Briefcase className="h-4 w-4" /> },
-    { href: "/#atlas", label: "Atlas", icon: <Globe2 className="h-4 w-4" /> },
+    { href: "/#sf-atlas", label: "Atlas", icon: <Globe2 className="h-4 w-4" /> },
     { href: "/partner", label: "Partner", icon: <ShieldCheck className="h-4 w-4" /> },
   ];
 
   return (
-    <nav aria-label="Mobile app navigation" className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#c5a059]/30 bg-[#031412]/95 backdrop-blur-md px-2 py-1.5 flex items-center justify-around text-[10px]">
+    <nav
+      aria-label="Mobile app navigation"
+      className="sm:hidden fixed bottom-0 left-0 right-0 z-40 border-t border-[#c5a059]/30 bg-[#031412]/95 backdrop-blur-md px-1.5 pt-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] flex items-center justify-around text-[10px]"
+    >
       {navItems.map((item) => {
-        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+        const isHashLink = item.href.includes("#");
+        const isActive =
+          !isHashLink &&
+          (pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href)));
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-col items-center gap-0.5 p-1.5 transition-colors ${
+            className={`relative flex min-h-[46px] min-w-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 transition-colors ${
               isActive ? "text-[#c5a059] font-bold" : "text-[#a3b8b0] hover:text-[#f7f2ea]"
             }`}
           >
+            {isActive && (
+              <span
+                aria-hidden="true"
+                className="absolute top-0 h-0.5 w-6 rounded-full bg-[#c5a059]"
+              />
+            )}
             {item.icon}
             <span>{item.label}</span>
           </Link>
@@ -44,7 +56,7 @@ export function MobilePwaNav() {
         href={b2bWhatsappUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="flex flex-col items-center gap-0.5 p-1.5 text-emerald-400 hover:text-emerald-300 transition-colors"
+        className="flex min-h-[46px] min-w-[48px] flex-col items-center justify-center gap-0.5 rounded-lg px-2 py-1 text-emerald-400 hover:text-emerald-300 transition-colors"
       >
         <MessageCircle className="h-4 w-4" />
         <span>WhatsApp</span>

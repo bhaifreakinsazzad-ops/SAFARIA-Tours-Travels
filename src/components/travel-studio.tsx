@@ -377,8 +377,11 @@ export function TravelStudio({ language }: { language: Language }) {
           aria-label={bn ? "ফর্মের অগ্রগতি" : "Form progress"}
         >
           {labels[language].map((label, index) => (
-            <div
+            <button
               key={label}
+              type="button"
+              disabled={index > step}
+              aria-current={index === step ? "step" : undefined}
               className={index === step ? "current" : index < step ? "complete" : ""}
               onClick={() => {
                 if (index < step) {
@@ -386,11 +389,10 @@ export function TravelStudio({ language }: { language: Language }) {
                   setStep(index);
                 }
               }}
-              style={{ cursor: index < step ? "pointer" : "default" }}
             >
               <span>{String(index + 1).padStart(2, "0")}</span>
               <small>{label}</small>
-            </div>
+            </button>
           ))}
         </div>
 

@@ -99,6 +99,7 @@ export function SiteExperience() {
   const [animatedNm, setAnimatedNm] = useState<number>(1920);
   const [animatedHdg, setAnimatedHdg] = useState<number>(282);
 
+  const headerRef = useRef<HTMLElement>(null);
   const heroCopyRef = useRef<HTMLDivElement>(null);
   const heroConsoleRef = useRef<HTMLDivElement>(null);
   const heroArcPathRef = useRef<SVGPathElement>(null);
@@ -148,8 +149,17 @@ export function SiteExperience() {
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMenuOpen(false);
     };
+    const closeOnOutsideClick = (event: PointerEvent) => {
+      if (headerRef.current && !headerRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
     document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
+    document.addEventListener("pointerdown", closeOnOutsideClick);
+    return () => {
+      document.removeEventListener("keydown", closeOnEscape);
+      document.removeEventListener("pointerdown", closeOnOutsideClick);
+    };
   }, [menuOpen]);
 
   // anime.js kinetic entrance choreography on hero copy, command console & destination buttons (compositor-only)
@@ -264,7 +274,7 @@ export function SiteExperience() {
     <>
       <FlightProgressHUD language={language} />
       <div className="site-shell" id="sf-home">
-        <header className="site-header">
+        <header ref={headerRef} className="site-header">
           <a className="brand" href="#sf-home">
             <Image
               src="/images/logo-inverted.webp"
@@ -321,9 +331,12 @@ export function SiteExperience() {
             >
               {bn ? "পোর্টাল" : "Portal"}
             </Link>
+            <div className="pt-2 mt-1 border-t border-safaria-line lg:hidden">
+              <PWAInstallButton variant="menu" />
+            </div>
           </nav>
-          <div className="flex items-center gap-2">
-            <PWAInstallButton variant="header" />
+          <div className="flex items-center gap-2 ml-auto lg:ml-0">
+            <PWAInstallButton variant="header" className="hidden min-[420px]:inline-flex" />
             <div className="language-switch" role="group" aria-label="Language / ভাষা">
               <button
                 lang="bn"
@@ -410,7 +423,7 @@ export function SiteExperience() {
                 <p className="hero-kinetic-item">{t.intro}</p>
 
                 {/* Primary Hero CTA + B2B Wholesale Quick Action */}
-                <div className="hero-kinetic-item flex flex-wrap items-center gap-3">
+                <div className="hero-kinetic-item flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3">
                   <button
                     className="button button-gold hero-cta"
                     type="button"
@@ -421,22 +434,26 @@ export function SiteExperience() {
                   </button>
                   <Link
                     href="/b2b"
-                    className="inline-flex min-h-[57px] items-center justify-center gap-2 rounded-lg border border-[rgba(207,181,124,0.42)] bg-[rgba(6,43,39,0.75)] px-5 py-3.5 text-xs sm:text-sm font-bold text-[#cfb57c] hover:border-[#cfb57c] hover:bg-[#092c27] transition-all whitespace-nowrap"
+                    className="inline-flex min-h-[54px] w-full sm:w-auto items-center justify-center gap-2 rounded-lg border border-[rgba(207,181,124,0.42)] bg-[rgba(6,43,39,0.75)] px-5 py-3.5 text-xs sm:text-sm font-bold text-[#cfb57c] hover:border-[#cfb57c] hover:bg-[#092c27] transition-all text-center sm:whitespace-nowrap"
                   >
-                    <Radio className="h-4 w-4 text-[#10b981]" />
+                    <Radio className="h-4 w-4 shrink-0 text-[#10b981]" />
                     <span>{bn ? "বি২বি এজেন্সি ডেস্ক (০% মার্কআপ)" : "B2B Agency Desk (0% Markup)"}</span>
-                    <ArrowUpRight className="h-4 w-4" />
+                    <ArrowUpRight className="h-4 w-4 shrink-0" />
                   </Link>
                 </div>
 
                 {/* Anime.js + Three.js Synchronized Interactive Spatial Command Console */}
                 <div
                   ref={heroConsoleRef}
-                  className="hero-kinetic-item mt-6 max-w-[560px] rounded-2xl border border-[rgba(207,181,124,0.32)] bg-[rgba(4,23,19,0.86)] p-4 shadow-[0_18px_45px_rgba(0,0,0,0.42)] space-y-3.5"
+                  className="hero-kinetic-item mt-6 max-w-[560px] rounded-2xl border border-[rgba(207,181,124,0.32)] bg-[rgba(4,23,19,0.86)] p-3.5 sm:p-4 shadow-[0_18px_45px_rgba(0,0,0,0.42)] space-y-3.5"
                 >
                   {/* Quick Desk Mode Selector */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[rgba(207,181,124,0.18)] pb-2.5">
-                    <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label={bn ? "হিরো কুইক ডেস্ক" : "Hero quick desks"}>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[rgba(207,181,124,0.18)] pb-2.5">
+                    <div
+                      className="flex overflow-x-auto no-scrollbar sm:flex-wrap items-center gap-1 pb-1 sm:pb-0"
+                      role="tablist"
+                      aria-label={bn ? "হিরো কুইক ডেস্ক" : "Hero quick desks"}
+                    >
                       {HERO_QUICK_DESKS.map((desk) => {
                         const isCurrent = activeHeroDesk === desk.id;
                         return (
@@ -449,7 +466,7 @@ export function SiteExperience() {
                               setActiveHeroDesk(desk.id);
                               handleHeroRouteFocus(desk.targetCode);
                             }}
-                            className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-colors whitespace-nowrap shrink-0 ${
+                            className={`min-h-[36px] sm:min-h-0 rounded-lg px-2.5 py-1.5 sm:py-1 text-[11px] font-bold transition-colors whitespace-nowrap shrink-0 ${
                               isCurrent
                                 ? "bg-[#cfb57c] text-[#041713]"
                                 : "text-[#b1c3bc] hover:bg-[#092c27] hover:text-[#f3f0e7]"
@@ -463,7 +480,7 @@ export function SiteExperience() {
                     <button
                       type="button"
                       onClick={() => openOffer(currentDeskMeta.offerId)}
-                      className="inline-flex items-center gap-1 font-mono text-[10px] font-bold text-[#10b981] hover:underline whitespace-nowrap shrink-0"
+                      className="inline-flex min-h-[36px] sm:min-h-0 items-center self-start sm:self-auto gap-1 font-mono text-[11px] font-bold text-[#10b981] hover:underline whitespace-nowrap shrink-0"
                     >
                       <Sparkles className="h-3 w-3" />
                       <span>{bn ? "ডেস্ক কোটেশন ↗" : "Desk Quote ↗"}</span>
@@ -538,8 +555,8 @@ export function SiteExperience() {
                   </div>
 
                   {/* Interactive 8-Corridor 3D Globe Target Selector Bar */}
-                  <div className="flex items-center justify-between gap-2 pt-0.5">
-                    <div className="flex flex-wrap items-center gap-1">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-0.5">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <span className="inline-flex items-center gap-1 font-mono text-[10px] text-[#b1c3bc] mr-1">
                         <Navigation className="h-3 w-3 text-[#cfb57c]" />
                         <span>{bn ? "3D ফোকাস:" : "3D Focus:"}</span>
@@ -551,7 +568,7 @@ export function SiteExperience() {
                             key={r.code}
                             type="button"
                             onClick={() => handleHeroRouteFocus(r.code)}
-                            className={`rounded px-2 py-0.5 font-mono text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${
+                            className={`min-h-[32px] sm:min-h-0 rounded px-2 py-1 sm:py-0.5 font-mono text-[10px] font-bold transition-all whitespace-nowrap shrink-0 ${
                               isFocused
                                 ? "bg-[#10b981] text-[#041713] shadow-[0_0_10px_rgba(16,185,129,0.45)]"
                                 : "bg-[#092c27] text-[#cfb57c] hover:bg-[#12423a]"
@@ -566,7 +583,7 @@ export function SiteExperience() {
                     <button
                       type="button"
                       onClick={() => openRoute(activeRouteObj.code)}
-                      className="inline-flex items-center gap-1 rounded-lg bg-[#cfb57c]/15 border border-[#cfb57c]/40 px-2.5 py-1 text-[11px] font-bold text-[#cfb57c] hover:bg-[#cfb57c] hover:text-[#041713] transition-colors whitespace-nowrap shrink-0"
+                      className="inline-flex min-h-[40px] sm:min-h-0 w-full sm:w-auto items-center justify-center gap-1.5 rounded-lg bg-[#cfb57c]/15 border border-[#cfb57c]/40 px-3 py-1.5 sm:py-1 text-[11px] font-bold text-[#cfb57c] hover:bg-[#cfb57c] hover:text-[#041713] transition-colors whitespace-nowrap shrink-0"
                     >
                       <Plane className="h-3 w-3" />
                       <span>{bn ? `${activeRouteObj.code} কোটেশন` : `Quote ${activeRouteObj.code}`}</span>
@@ -676,19 +693,19 @@ export function SiteExperience() {
 
         <footer className="site-footer">
           <p>{t.footer}</p>
-          <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
-            <Link href="/b2b" style={{ color: "var(--sf-gold)", textDecoration: "underline" }}>
+          <div className="flex flex-wrap items-center gap-4">
+            <Link href="/b2b" className="text-safaria-gold underline underline-offset-2">
               {bn ? "বি২বি পার্টনারশিপ" : "B2B Agency Membership"}
             </Link>
             <a
               href={SAFARIA_CONFIG.whatsappChannelUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "#10b981", textDecoration: "underline", fontWeight: 600 }}
+              className="text-emerald-400 underline underline-offset-2 font-semibold"
             >
               {bn ? "অফিসিয়াল WhatsApp চ্যানেল ↗" : "Official WhatsApp Channel ↗"}
             </a>
-            <Link href="/login" style={{ color: "var(--sf-gold)", textDecoration: "underline" }}>
+            <Link href="/login" className="text-safaria-gold underline underline-offset-2">
               {bn ? "পার্টনার ও স্টাফ লগইন" : "Partner & Staff Portal"}
             </Link>
             <span>© 2026 SAFARIA Tours &amp; Travels</span>

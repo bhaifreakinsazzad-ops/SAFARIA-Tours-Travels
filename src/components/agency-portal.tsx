@@ -586,7 +586,7 @@ export function AgencyPortal({ language }: { language: Language }) {
                   set("volume", `${val} tickets/month`);
                 }
               }}
-              className="w-full accent-[#cfb57c] cursor-pointer"
+              className="w-full h-9 accent-[#cfb57c] cursor-pointer"
             />
             <div className="flex items-center justify-between pt-1 border-t border-[rgba(207,181,124,0.18)] text-xs">
               <span className="text-[#b1c3bc] flex items-center gap-1">
@@ -769,7 +769,7 @@ export function AgencyPortal({ language }: { language: Language }) {
                       role="tab"
                       aria-selected={isCurrent}
                       onClick={() => setActiveOnboardingStep(st.id)}
-                      className={`rounded-lg px-2.5 py-1.5 text-left text-xs font-bold transition-all ${
+                      className={`min-h-[44px] rounded-lg px-2 sm:px-2.5 py-2 text-left text-[11px] sm:text-xs font-bold transition-all ${
                         isCurrent
                           ? "bg-[#062b27] text-[#f3f0e7] shadow-sm"
                           : "bg-[#fffdf7]/80 text-[#386258] hover:bg-[#fffdf7]"
@@ -783,18 +783,18 @@ export function AgencyPortal({ language }: { language: Language }) {
 
               <div
                 ref={stepBannerRef}
-                className="flex items-center justify-between gap-2 text-xs text-[#062b27] px-1"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-[#062b27] px-1"
               >
                 <span className="flex items-center gap-1.5 font-medium">
                   <CheckCircle2 className="h-3.5 w-3.5 text-[#0f766e] shrink-0" />
                   <span>{bn ? currentStepMeta.bnDesc : currentStepMeta.enDesc}</span>
                 </span>
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 self-end sm:self-auto">
                   {activeOnboardingStep > 0 && (
                     <button
                       type="button"
                       onClick={() => setActiveOnboardingStep((prev) => Math.max(0, prev - 1))}
-                      className="rounded border border-[#386258]/30 bg-[#fffdf7] px-2 py-0.5 text-[11px] font-bold text-[#062b27] hover:bg-white"
+                      className="min-h-[38px] rounded border border-[#386258]/30 bg-[#fffdf7] px-3 py-1 text-[11px] font-bold text-[#062b27] hover:bg-white"
                     >
                       {bn ? "পূর্ববর্তী" : "Prev"}
                     </button>
@@ -803,7 +803,7 @@ export function AgencyPortal({ language }: { language: Language }) {
                     <button
                       type="button"
                       onClick={() => setActiveOnboardingStep((prev) => Math.min(2, prev + 1))}
-                      className="rounded bg-[#062b27] px-2 py-0.5 text-[11px] font-bold text-[#f3f0e7] hover:opacity-90"
+                      className="min-h-[38px] rounded bg-[#062b27] px-3 py-1 text-[11px] font-bold text-[#f3f0e7] hover:opacity-90"
                     >
                       {bn ? "পরবর্তী ধাপ →" : "Next Step →"}
                     </button>

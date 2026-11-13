@@ -81,10 +81,16 @@ export function DestinationExplorer({
     });
   }, [filter, reduceMotion]);
 
-  // Custom anime.js interactive cursor + trailing particle emitter for .explorer-card hover
+  // Custom anime.js interactive cursor + trailing particle emitter for desktop mouse hover only
+  const isMouseHoverCapable = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType !== "mouse" || reduceMotion) return false;
+    if (typeof window === "undefined") return false;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+    return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  };
+
   const handleCardPointerEnter = (code: string, event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (reduceMotion) return;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!isMouseHoverCapable(event)) return;
     setHoveredCode(code);
 
     const { clientX, clientY } = event;
@@ -111,8 +117,7 @@ export function DestinationExplorer({
   };
 
   const handleCardPointerMove = (code: string, event: ReactPointerEvent<HTMLButtonElement>) => {
-    if (reduceMotion) return;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!isMouseHoverCapable(event)) return;
     if (hoveredCode !== code) setHoveredCode(code);
 
     const { clientX, clientY } = event;

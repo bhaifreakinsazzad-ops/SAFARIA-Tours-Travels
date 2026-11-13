@@ -23,10 +23,6 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronUp,
-  Star,
-  Quote,
-  Award,
-  MapPin,
   Radio,
   ArrowUpRight,
 } from "lucide-react";
@@ -177,7 +173,7 @@ const FAQS: FAQItem[] = [
     questionEn: "How can I request the 72-hour pilot demo?",
     answerBn: "আগে এজেন্সির আগ্রহ নিবন্ধন করুন। টিম যাচাই করে উপযুক্ত হলে ৬টি অপারেশনাল ডেস্কের সীমিত পাইলট ডেমো অনুমোদন করতে পারে। এটি লাইভ এয়ারলাইন ইনভেন্টরি, বুকিং, টিকিট বা কমার্শিয়াল সাবস্ক্রিপশন সক্রিয় করে না।",
     answerEn: "Register interest first. Following manual review, an eligible agency may be invited to a limited demonstration of the six desks. A demo does not grant live airline inventory, booking, ticket issuance or an activated paid subscription.",
-  }
+  },
   {
     id: "how-desks-work",
     category: "desks",
@@ -185,7 +181,7 @@ const FAQS: FAQItem[] = [
     questionEn: "What can the six SAFARIA operational desks help organize?",
     answerBn: "FareDesk™ ফেয়ার অনুরোধ, BookingDesk™ বুকিং অনুরোধ ও অবস্থা, ClearMargin™ খরচ ও ফি রেকর্ড, AfterCare Desk™ সহায়তা কেস, Verified Workflow™ যাত্রীর নাম ও ডকুমেন্ট চেক এবং PartnerGrowth™ এজেন্সি কার্যক্রমের রেকর্ড সংগঠনে সহায়তা করে। বাস্তব বুকিং, রিফান্ড, কমিশন ও এয়ারলাইন কার্যক্রম অনুমোদন এবং সরবরাহকারী চুক্তিসাপেক্ষ।",
     answerEn: "FareDesk™ organizes quotation requests; BookingDesk™ records booking requests and status; ClearMargin™ structures fee records; AfterCare Desk™ tracks support cases; Verified Workflow™ assists name and document checks; and PartnerGrowth™ records agency activity. Airline bookings, refunds and commissions require authorized supplier arrangements.",
-  }
+  },
   {
     id: "iata-gds-requirement",
     category: "commercial",
@@ -193,7 +189,7 @@ const FAQS: FAQItem[] = [
     questionEn: "Do I need an IATA license or GDS terminal to enquire about the demo?",
     answerBn: "না, প্রাথমিক আগ্রহ নিবন্ধন বা ডেমোর জন্য নিজস্ব GDS টার্মিনাল প্রয়োজন নেই। বাস্তব টিকিটিং, এজেন্সির যোগ্যতা ও দায়িত্ব প্রযোজ্য আইন এবং ভবিষ্যৎ অনুমোদিত সরবরাহকারী চুক্তি অনুযায়ী নির্ধারিত হবে।",
     answerEn: "You do not need your own GDS terminal to register interest or discuss a workflow demo. Eligibility for actual ticketing and commercial services will depend on applicable law and finalized authorized supplier agreements.",
-  }
+  },
   {
     id: "whatsapp-handover",
     category: "desks",
@@ -201,7 +197,7 @@ const FAQS: FAQItem[] = [
     questionEn: "How does the WhatsApp-first partnership enquiry work?",
     answerBn: "আবেদন সাবমিট হলে সিস্টেম উপলব্ধ থাকলে একটি রেফারেন্স তৈরি হয় এবং WhatsApp-এ বার্তার ড্রাফট খোলে। আপনার পক্ষ থেকে Send করতে হবে। টিম পরবর্তী ধাপ জানাবে; ড্রাফট খোলা মানেই বার্তা পাঠানো বা অনুমোদন নয়।",
     answerEn: "When the intake service is available, submitting may create an enquiry reference and prepare a WhatsApp draft. You must press Send yourself. Opening a draft does not prove delivery, approval or a confirmed booking.",
-  }
+  },
   {
     id: "post-trial-transition",
     category: "pilot",
@@ -209,7 +205,7 @@ const FAQS: FAQItem[] = [
     questionEn: "What happens after a pilot demo?",
     answerBn: "ডেমোর পর চুক্তি, অনুমোদন, সেবার পরিধি এবং মূল্য লিখিতভাবে নিশ্চিত হলে সদস্যপদ বিষয়ে আলোচনা করা যাবে। বর্তমানে কোনো স্বয়ংক্রিয় পেইড অ্যাক্টিভেশন বা টিকিটিং অনুমোদন নেই।",
     answerEn: "After a demo, membership can be discussed once approvals, service scope, supplier agreements and prices are confirmed in writing. There is no automatic paid activation or ticket issuance at this stage.",
-  }
+  },
   {
     id: "zero-markup-guarantee",
     category: "commercial",
@@ -217,7 +213,7 @@ const FAQS: FAQItem[] = [
     questionEn: "How will fees, commissions and markups be determined?",
     answerBn: "বর্তমানে সরবরাহকারী ও কমার্শিয়াল চুক্তি আলোচনা পর্যায়ে। ভবিষ্যতে যোগ্য ফেয়ার, ট্যাক্স, সরবরাহকারী চার্জ, SAFARIA সার্ভিস ফি ও এজেন্সির কমিশন থাকলে সেগুলো লিখিত কোটেশন বা চুক্তিতে আলাদা করে জানানো হবে। এখন কোনো সর্বোচ্চ কমিশন বা ০% মার্কআপ গ্যারান্টি দেওয়া হচ্ছে না।",
     answerEn: "Supplier and commercial agreements are still under negotiation. Applicable fare, taxes, supplier charges, SAFARIA service fees and any agency commissions will be disclosed in written quotations or contracts. No highest-commission or zero-markup guarantee is offered at this stage.",
-  }
+  },
 ];
 
 export default function B2BLandingPage() {
@@ -346,38 +342,39 @@ export default function B2BLandingPage() {
   return (
     <div className="min-h-screen bg-[#031412] text-[#f7f2ea] selection:bg-[#c5a059] selection:text-[#031412]">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 border-b border-[#c5a059]/20 bg-[#031412]/95 backdrop-blur-md px-4 py-3 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="sticky top-0 z-30 border-b border-[#c5a059]/20 bg-[#031412]/95 backdrop-blur-md px-3 py-2.5 sm:px-8 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs text-[#a3b8b0] hover:text-[#c5a059] transition-colors"
+            aria-label={bn ? "পাবলিক সাইট" : "Public Site"}
+            className="inline-flex min-h-[44px] sm:min-h-0 items-center gap-1.5 text-xs text-[#a3b8b0] hover:text-[#c5a059] transition-colors shrink-0"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span>{bn ? "পাবলিক সাইট" : "Public Site"}</span>
+            <ArrowLeft className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
+            <span className="hidden sm:inline">{bn ? "পাবলিক সাইট" : "Public Site"}</span>
           </Link>
-          <div className="h-4 w-px bg-[#c5a059]/30" />
-          <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#c5a059]/20 border border-[#c5a059]/40 text-[#c5a059]">
+          <div className="h-4 w-px bg-[#c5a059]/30 shrink-0" />
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-[#c5a059]/20 border border-[#c5a059]/40 text-[#c5a059]">
               <Briefcase className="h-4 w-4" />
             </div>
-            <span className="font-display text-sm sm:text-base font-bold text-[#c5a059] tracking-wider">
+            <span className="font-display text-sm sm:text-base font-bold text-[#c5a059] tracking-wider truncate">
               SAFARIA B2B
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <PWAInstallButton variant="header" />
           <button
             type="button"
             onClick={() => setLang(bn ? "en" : "bn")}
-            className="rounded-full border border-[#c5a059]/40 bg-[#06201c] px-2.5 py-1 text-xs font-semibold text-[#c5a059] hover:border-[#c5a059]"
+            className="min-h-[38px] rounded-full border border-[#c5a059]/40 bg-[#06201c] px-2.5 py-1 text-xs font-semibold text-[#c5a059] hover:border-[#c5a059] whitespace-nowrap"
           >
-            {bn ? "English" : "বাংলা"}
+            {bn ? "EN" : "বাংলা"}
           </button>
           <Link
             href="/login"
-            className="rounded-lg bg-[#c5a059] px-3 py-1.5 text-xs font-bold text-[#031412] hover:bg-[#d6b26c] transition-colors"
+            className="inline-flex min-h-[38px] items-center rounded-lg bg-[#c5a059] px-3 py-1.5 text-xs font-bold text-[#031412] hover:bg-[#d6b26c] transition-colors whitespace-nowrap"
           >
             {bn ? "লগইন" : "Sign In"}
           </Link>
@@ -385,106 +382,67 @@ export default function B2BLandingPage() {
       </header>
 
       {/* Hero Section with W14 Dhaka B2B Agency Operations Desk Visual */}
-      <section className="relative overflow-hidden border-b border-[#c5a059]/20 px-4 py-14 sm:px-8 sm:py-20">
+      <section className="relative overflow-hidden border-b border-[#c5a059]/20 px-4 py-10 sm:px-8 sm:py-20">
         <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-12 items-center gap-8">
-          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+          <div className="lg:col-span-7 space-y-5 text-center lg:text-left">
             <div className="inline-flex items-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3.5 py-1 text-xs font-semibold tracking-wider text-[#c5a059] uppercase">
               <Sparkles className="h-3.5 w-3.5" />
               <span>{bn ? "বাংলাদেশের ট্রাভেল এজেন্সি অপারেটিং সিস্টেম" : "B2B Travel SaaS for Bangladesh"}</span>
             </div>
 
-          <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f7f2ea] leading-[1.15]">
-            {bn ? (
-              <>
-                হোলসেল ফেয়ার, ৬টি ডেডিকেটেড ডেস্ক ও <br />
-                <span className="text-[#c5a059]">হোয়াটসঅ্যাপ-ফার্স্ট পার্টনারশিপ</span>
-              </>
-            ) : (
-              <>
-                Wholesale Airfares, 6 Dedicated Desks &amp; <br />
-                <span className="text-[#c5a059]">WhatsApp-First Agency SaaS</span>
-              </>
-            )}
-          </h1>
-
-          <p className="mx-auto max-w-2xl text-sm sm:text-base text-[#a3b8b0] leading-relaxed">
-            {bn
-              ? "স্বাধীন ট্রাভেল এজেন্সির জন্য ৬টি অপারেশনাল ডেস্কের ওয়ার্কফ্লো, ২৪/৭ সাপোর্ট টিম ও আগাম পার্টনারশিপ নিবন্ধন। এয়ারলাইন/সাপ্লায়ার চুক্তি আলোচনা পর্যায়ে।"
-              : "Explore six agency desk workflows and staffed 24/7 support. Partner registrations are open while airline and supplier agreements are being negotiated."}
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs">
-            <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-medium">
-              ✦ {bn ? "যাচাইসাপেক্ষ পাইলট ডেমো" : "Pilot demo on approval"}
-            </span>
-            <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
-              ✦ {bn ? "পার্টনার প্রি-রেজিস্ট্রেশন" : "Partner pre-registration"}
-            </span>
-            <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
-              ✦ {bn ? "৬টি অপারেশনাল ডেস্ক" : "6 Operational Desks"}
-            </span>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
-            <a
-              href="#b2b-subscription-enquiry"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#c5a059] px-5 py-3 text-xs sm:text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-all shadow-lg"
-            >
-              <span>
-                {bn ? "B2B পার্টনার হতে আগ্রহ জানান" : "Register B2B partnership interest"}
-            <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-[#f7f2ea] leading-[1.15]">
+            <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f7f2ea] leading-[1.15]">
               {bn ? (
                 <>
-                  হোলসেল ফেয়ার, ৬টি ডেডিকেটেড ডেস্ক ও <br />
+                  হোলসেল ফেয়ার, ৬টি ডেডিকেটেড ডেস্ক ও <br className="hidden sm:inline" />
                   <span className="text-[#c5a059]">হোয়াটসঅ্যাপ-ফার্স্ট পার্টনারশিপ</span>
                 </>
               ) : (
                 <>
-                  Wholesale Airfares, 6 Dedicated Desks &amp; <br />
+                  Wholesale Airfares, 6 Dedicated Desks &amp; <br className="hidden sm:inline" />
                   <span className="text-[#c5a059]">WhatsApp-First Agency SaaS</span>
                 </>
               )}
             </h1>
 
-            <p className="max-w-2xl mx-auto lg:mx-0 text-sm sm:text-base text-[#a3b8b0] leading-relaxed">
+            <p className="mx-auto lg:mx-0 max-w-2xl text-sm sm:text-base text-[#a3b8b0] leading-relaxed">
               {bn
-                ? "জিডিএস টার্মিনাল ছাড়াই নন-আয়াটা ও স্বাধীন ট্রাভেল এজেন্সির জন্য দ্রুততম ফেয়ার কোটেশন, ০% নিজস্ব মার্কআপ এবং ২৪/৭ অপারেশন সাপোর্ট।"
-                : "Empowering non-IATA and independent travel agencies across Bangladesh with wholesale inventory, 0% SAFARIA markup, and transparent remittance."}
+                ? "স্বাধীন ট্রাভেল এজেন্সির জন্য ৬টি অপারেশনাল ডেস্কের ওয়ার্কফ্লো, ২৪/৭ সাপোর্ট টিম ও আগাম পার্টনারশিপ নিবন্ধন। এয়ারলাইন/সাপ্লায়ার চুক্তি আলোচনা পর্যায়ে।"
+                : "Explore six agency desk workflows and staffed 24/7 support. Partner registrations are open while airline and supplier agreements are being negotiated."}
             </p>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1 text-xs">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2.5 pt-1 text-xs">
               <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-medium">
-                ✦ {bn ? "৭২ ঘণ্টার পাইলট ট্রায়াল" : "72-Hour Pilot Trial Available"}
+                ✦ {bn ? "যাচাইসাপেক্ষ পাইলট ডেমো" : "Pilot demo on approval"}
               </span>
               <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
-                ✦ {bn ? "০% নিজস্ব মার্কআপ" : "0% SAFARIA Markup"}
+                ✦ {bn ? "পার্টনার প্রি-রেজিস্ট্রেশন" : "Partner pre-registration"}
               </span>
               <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
                 ✦ {bn ? "৬টি অপারেশনাল ডেস্ক" : "6 Operational Desks"}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center justify-center lg:justify-start gap-3 pt-2">
               <a
                 href="#b2b-subscription-enquiry"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#c5a059] px-5 py-3 text-xs sm:text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-all shadow-lg"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#c5a059] px-5 py-3 text-xs sm:text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-all shadow-lg"
               >
                 <span>
-                  {bn ? "B2B সাবস্ক্রিপশন ও ট্রায়াল আবেদন" : "Enquire B2B Subscription & 72h Pilot"}
+                  {bn ? "B2B পার্টনার হতে আগ্রহ জানান" : "Register B2B partnership interest"}
                 </span>
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-4 w-4 shrink-0" />
               </a>
               <a
                 href={SAFARIA_CONFIG.whatsappChannelUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border border-[#10b981]/60 bg-[#06201c] px-5 py-3 text-xs sm:text-sm font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#031412] transition-all"
+                className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-[#10b981]/60 bg-[#06201c] px-5 py-3 text-xs sm:text-sm font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#031412] transition-all"
               >
-                <Radio className="h-4 w-4" />
+                <Radio className="h-4 w-4 shrink-0" />
                 <span>
                   {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
                 </span>
-                <ArrowUpRight className="h-4 w-4" />
+                <ArrowUpRight className="h-4 w-4 shrink-0" />
               </a>
             </div>
           </div>
@@ -806,7 +764,7 @@ export default function B2BLandingPage() {
                   value={agencyName}
                   onChange={(e) => setAgencyName(e.target.value)}
                   placeholder={bn ? "উদা: মেঘনা ট্রাভেলস ইন্টারন্যাশনাল" : "e.g. Meghna Travels International"}
-                  className="w-full rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
+                  className="w-full min-h-[44px] rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-base sm:text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
                 />
               </div>
 
@@ -821,7 +779,7 @@ export default function B2BLandingPage() {
                     value={contactName}
                     onChange={(e) => setContactName(e.target.value)}
                     placeholder={bn ? "উদা: রফিকুল ইসলাম" : "e.g. Rafiqul Islam"}
-                    className="w-full rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
+                    className="w-full min-h-[44px] rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-base sm:text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
                   />
                 </div>
 
@@ -832,7 +790,7 @@ export default function B2BLandingPage() {
                   <select
                     value={district}
                     onChange={(e) => setDistrict(e.target.value)}
-                    className="w-full rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
+                    className="w-full min-h-[44px] rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-base sm:text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
                   >
                     {BD_DISTRICTS.map((d) => (
                       <option key={d} value={d}>
@@ -854,7 +812,7 @@ export default function B2BLandingPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     placeholder="+8801XXXXXXXXX"
-                    className="w-full rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none font-mono"
+                    className="w-full min-h-[44px] rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-base sm:text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none font-mono"
                   />
                 </div>
 
@@ -867,7 +825,7 @@ export default function B2BLandingPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="partner@agency.com"
-                    className="w-full rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
+                    className="w-full min-h-[44px] rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-base sm:text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
                   />
                 </div>
               </div>
@@ -879,7 +837,7 @@ export default function B2BLandingPage() {
                 <select
                   value={volume}
                   onChange={(e) => setVolume(e.target.value)}
-                  className="w-full rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
+                  className="w-full min-h-[44px] rounded-xl border border-[#c5a059]/30 bg-[#031412] px-3.5 py-2.5 text-base sm:text-sm text-[#f7f2ea] focus:border-[#c5a059] focus:outline-none"
                 >
                   <option value="UNDER_20">{bn ? "২০টির নিচে" : "Under 20 tickets / month"}</option>
                   <option value="20_TO_50">{bn ? "২০ থেকে ৫০টি" : "20 to 50 tickets / month"}</option>
@@ -895,7 +853,7 @@ export default function B2BLandingPage() {
                     type="checkbox"
                     checked={consentAgreed}
                     onChange={(e) => setConsentAgreed(e.target.checked)}
-                    className="mt-0.5 h-4 w-4 rounded border-[#c5a059] bg-[#031412] text-[#c5a059] focus:ring-0"
+                    className="mt-0.5 h-5 w-5 shrink-0 rounded border-[#c5a059] bg-[#031412] text-[#c5a059] focus:ring-0"
                   />
                   <span>
                     {bn
@@ -914,7 +872,7 @@ export default function B2BLandingPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-[#c5a059] px-6 py-3 text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-colors shadow-btn disabled:opacity-60"
+                className="w-full min-h-[48px] inline-flex items-center justify-center gap-2 rounded-xl bg-[#c5a059] px-6 py-3 text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-colors shadow-btn disabled:opacity-60"
               >
                 {submitting ? (
                   <span>{bn ? "সংরক্ষণ করা হচ্ছে…" : "Saving Lead…"}</span>

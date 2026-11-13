@@ -191,7 +191,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
                         setCopied(true);
                         setTimeout(() => setCopied(false), 2500);
                       }}
-                      className="rounded border border-[#386258]/40 bg-[#fffdf7] px-2.5 py-1 text-xs font-semibold text-[#062b27] hover:bg-white"
+                      className="min-h-[44px] rounded border border-[#386258]/40 bg-[#fffdf7] px-3 py-1.5 text-xs font-semibold text-[#062b27] hover:bg-white"
                     >
                       {copied ? (language === "bn" ? "কপি হয়েছে!" : "Copied!") : (language === "bn" ? "কপি" : "Copy")}
                     </button>
@@ -219,7 +219,7 @@ export function RouteEnquiryDialog({ open, selectedCode, selectedOfferId = "", l
                   <button
                     type="button"
                     onClick={onClose}
-                    className="w-full py-2 text-xs font-bold text-[#062b27] hover:underline"
+                    className="w-full min-h-[44px] py-2 text-xs font-bold text-[#062b27] hover:underline"
                   >
                     {language === "bn" ? "সম্পন্ন / বন্ধ করুন" : "Done / Close"}
                   </button>

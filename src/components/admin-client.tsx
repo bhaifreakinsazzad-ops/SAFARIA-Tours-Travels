@@ -23,6 +23,7 @@ import {
   Calendar,
   Activity,
   Award,
+  X,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -142,6 +143,14 @@ export default function AdminTriagePage() {
   // Outbox trigger state
   const [dispatchResult, setDispatchResult] = useState<string | null>(null);
   const [dispatching, setDispatching] = useState(false);
+
+  // In-app prompt replacement modal (never use native window.prompt/alert)
+  const [actionModal, setActionModal] = useState<{
+    type: "SUSPEND_AGENCY" | "RESOLVE_DESK";
+    id: string;
+    label: string;
+    value: string;
+  } | null>(null);
 
   const fetchRecords = async () => {
     setLoading(true);
@@ -314,40 +323,40 @@ export default function AdminTriagePage() {
   return (
     <div className="min-h-screen bg-surface-0 text-safaria-ink">
       {/* Admin Top Navigation */}
-      <header className="border-b border-safaria-line bg-surface-100 px-4 py-3 sm:px-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <header className="border-b border-safaria-line bg-surface-100 px-4 py-3 sm:px-8 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs text-safaria-inkMuted hover:text-safaria-gold transition-colors mr-4"
+            className="inline-flex min-h-[40px] items-center gap-1.5 text-xs text-safaria-inkMuted hover:text-safaria-gold transition-colors shrink-0 mr-1 sm:mr-3"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            <span>Public Site</span>
+            <span className="hidden sm:inline">Public Site</span>
           </Link>
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-0 border border-safaria-gold/40">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-0 border border-safaria-gold/40">
             <Lock className="h-4 w-4 text-safaria-gold" />
           </div>
-          <div>
-            <h1 className="font-display text-base sm:text-lg font-bold text-safaria-gold">
+          <div className="min-w-0">
+            <h1 className="font-display text-sm sm:text-lg font-bold text-safaria-gold truncate">
               SAFARIA Operations Triage Desk
             </h1>
-            <span className="text-[10px] text-safaria-inkMuted font-mono">
+            <span className="block text-[10px] text-safaria-inkMuted font-mono truncate">
               Role: SUPER_ADMIN • Commercial Launch Console
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <button
             onClick={fetchRecords}
             disabled={loading}
-            className="flex items-center gap-1.5 rounded-lg border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:text-safaria-gold transition-colors"
+            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:text-safaria-gold transition-colors"
           >
             <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
             <span>Refresh</span>
           </button>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-1.5 rounded-lg border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:text-red-400 transition-colors"
+            className="inline-flex min-h-[42px] items-center gap-1.5 rounded-lg border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:text-red-400 transition-colors"
           >
             <LogOut className="h-3.5 w-3.5" />
             <span>Sign Out</span>
@@ -727,14 +736,14 @@ export default function AdminTriagePage() {
         {/* Tab 1: Flight Enquiries */}
         {activeTab === "ENQUIRIES" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
                 <Filter className="h-3.5 w-3.5 text-safaria-inkMuted" />
                 <span className="text-safaria-inkMuted">Filter:</span>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="rounded border border-safaria-line bg-surface-100 px-2 py-1 text-xs text-safaria-ink"
+                  className="min-h-[40px] rounded border border-safaria-line bg-surface-100 px-2.5 py-1 text-xs text-safaria-ink"
                 >
                   <option value="ALL">All Enquiries</option>
                   <option value="NEW">NEW</option>
@@ -836,7 +845,7 @@ export default function AdminTriagePage() {
         {/* Tab 2: B2B Agencies & Subscriptions */}
         {activeTab === "AGENCIES" && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-safaria-inkMuted font-mono">
                 {agencies.length} registered agency partners &amp; leads
               </span>
@@ -969,20 +978,24 @@ export default function AdminTriagePage() {
                         <div className="flex items-center gap-2 self-end sm:self-auto w-full sm:w-auto justify-end">
                           {ag.status !== "SUSPENDED" ? (
                             <button
-                              onClick={() => {
-                                const reason = prompt("Enter suspension reason:");
-                                if (reason) {
-                                  handleAgencyAction({ id: ag.id, status: "SUSPENDED", notes: `Suspended by staff: ${reason}` });
-                                }
-                              }}
-                              className="w-full sm:w-auto rounded-lg border border-red-500/40 px-3 py-2 sm:py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 text-center"
+                              type="button"
+                              onClick={() =>
+                                setActionModal({
+                                  type: "SUSPEND_AGENCY",
+                                  id: ag.id,
+                                  label: ag.agencyName,
+                                  value: "",
+                                })
+                              }
+                              className="w-full sm:w-auto min-h-[42px] sm:min-h-0 rounded-lg border border-red-500/40 px-3 py-2 sm:py-1.5 text-xs font-semibold text-red-400 hover:bg-red-500/10 text-center"
                             >
                               Suspend
                             </button>
                           ) : (
                             <button
+                              type="button"
                               onClick={() => handleAgencyAction({ id: ag.id, status: "IN_REVIEW", notes: "Reinstated to review" })}
-                              className="w-full sm:w-auto rounded-lg border border-safaria-line px-3 py-2 sm:py-1.5 text-xs font-semibold text-safaria-ink hover:text-safaria-gold text-center"
+                              className="w-full sm:w-auto min-h-[42px] sm:min-h-0 rounded-lg border border-safaria-line px-3 py-2 sm:py-1.5 text-xs font-semibold text-safaria-ink hover:text-safaria-gold text-center"
                             >
                               Reinstate
                             </button>
@@ -1017,14 +1030,14 @@ export default function AdminTriagePage() {
         {/* Tab 3: Operational Desks Activity */}
         {activeTab === "DESKS" && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
               <div className="flex items-center gap-2">
                 <Filter className="h-3.5 w-3.5 text-safaria-inkMuted" />
                 <span className="text-safaria-inkMuted">Filter Desk:</span>
                 <select
                   value={deskFilter}
                   onChange={(e) => setDeskFilter(e.target.value)}
-                  className="rounded border border-safaria-line bg-surface-100 px-2 py-1 text-xs text-safaria-ink"
+                  className="min-h-[40px] rounded border border-safaria-line bg-surface-100 px-2.5 py-1 text-xs text-safaria-ink"
                 >
                   <option value="ALL">All 6 Desks</option>
                   <option value="FARE_DESK">FareDesk™</option>
@@ -1080,24 +1093,30 @@ export default function AdminTriagePage() {
                       )}
                     </div>
 
-                    <div className="flex items-center justify-between pt-1 text-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
                       <span className="text-[10px] text-safaria-inkMuted font-mono">ID: {rec.id}</span>
                       <div className="flex items-center gap-2">
                         {rec.status !== "RESOLVED" && (
                           <button
-                            onClick={() => {
-                              const note = prompt("Enter resolution notes:") || "Resolved by operations staff";
-                              handleUpdateDeskStatus(rec.id, "RESOLVED", note);
-                            }}
-                            className="rounded border border-emerald-500/60 bg-emerald-500/10 px-3 py-1 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20"
+                            type="button"
+                            onClick={() =>
+                              setActionModal({
+                                type: "RESOLVE_DESK",
+                                id: rec.id,
+                                label: rec.title,
+                                value: "Resolved by operations staff",
+                              })
+                            }
+                            className="min-h-[40px] rounded border border-emerald-500/60 bg-emerald-500/10 px-3 py-1.5 text-xs font-semibold text-emerald-400 hover:bg-emerald-500/20"
                           >
                             Mark Resolved
                           </button>
                         )}
                         {rec.status !== "CLOSED" && (
                           <button
+                            type="button"
                             onClick={() => handleUpdateDeskStatus(rec.id, "CLOSED", "Ticket closed")}
-                            className="rounded border border-safaria-line bg-surface-200 px-3 py-1 text-xs font-semibold text-safaria-ink hover:text-safaria-gold"
+                            className="min-h-[40px] rounded border border-safaria-line bg-surface-200 px-3 py-1.5 text-xs font-semibold text-safaria-ink hover:text-safaria-gold"
                           >
                             Close Ticket
                           </button>
@@ -1127,7 +1146,7 @@ export default function AdminTriagePage() {
               <button
                 onClick={handleTriggerOutbox}
                 disabled={dispatching}
-                className="inline-flex items-center gap-2 rounded-xl bg-safaria-gold px-4 py-2 text-xs font-bold text-safaria-onGold hover:opacity-90 transition-opacity disabled:opacity-60"
+                className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl bg-safaria-gold px-4 py-2 text-xs font-bold text-safaria-onGold hover:opacity-90 transition-opacity disabled:opacity-60"
               >
                 <Play className="h-3.5 w-3.5 fill-current" />
                 <span>{dispatching ? "Processing Queue…" : "Dispatch Outbox Now"}</span>
@@ -1153,6 +1172,99 @@ export default function AdminTriagePage() {
           </div>
         )}
       </main>
+
+      {/* Accessible In-App Action Modal (replaces browser prompt) */}
+      {actionModal && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="admin-action-modal-title"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setActionModal(null);
+          }}
+        >
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              const trimmed = actionModal.value.trim();
+              if (actionModal.type === "SUSPEND_AGENCY") {
+                if (!trimmed) return;
+                await handleAgencyAction({
+                  id: actionModal.id,
+                  status: "SUSPENDED",
+                  notes: `Suspended by staff: ${trimmed}`,
+                });
+              } else {
+                await handleUpdateDeskStatus(
+                  actionModal.id,
+                  "RESOLVED",
+                  trimmed || "Resolved by operations staff"
+                );
+              }
+              setActionModal(null);
+            }}
+            className="w-full max-w-md rounded-2xl border border-safaria-gold/45 bg-surface-100 p-6 text-safaria-ink shadow-2xl space-y-4"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 id="admin-action-modal-title" className="font-display text-lg font-bold text-safaria-gold">
+                  {actionModal.type === "SUSPEND_AGENCY" ? "Suspend Partner Agency" : "Mark Desk Request Resolved"}
+                </h3>
+                <p className="text-xs text-safaria-inkMuted truncate max-w-xs">{actionModal.label}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActionModal(null)}
+                aria-label="Close modal"
+                className="inline-flex min-h-[40px] min-w-[40px] items-center justify-center rounded-lg text-safaria-inkMuted hover:text-safaria-ink"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="admin-action-notes" className="text-xs font-semibold text-safaria-inkMuted block">
+                {actionModal.type === "SUSPEND_AGENCY" ? "Suspension reason *" : "Resolution notes"}
+              </label>
+              <textarea
+                id="admin-action-notes"
+                rows={3}
+                required={actionModal.type === "SUSPEND_AGENCY"}
+                autoFocus
+                value={actionModal.value}
+                onChange={(e) => setActionModal({ ...actionModal, value: e.target.value })}
+                placeholder={
+                  actionModal.type === "SUSPEND_AGENCY"
+                    ? "Enter reason for suspending this agency..."
+                    : "Enter resolution summary notes..."
+                }
+                className="w-full rounded-lg border border-safaria-line bg-surface-input px-3 py-2 text-base sm:text-sm text-safaria-ink focus:border-safaria-gold focus:outline-none"
+              />
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setActionModal(null)}
+                className="min-h-[44px] rounded-lg border border-safaria-line bg-surface-200 px-4 py-2 text-xs font-semibold text-safaria-ink hover:text-safaria-gold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className={`min-h-[44px] rounded-lg px-4 py-2 text-xs font-bold ${
+                  actionModal.type === "SUSPEND_AGENCY"
+                    ? "bg-red-500 text-white hover:bg-red-400"
+                    : "bg-safaria-gold text-safaria-onGold hover:opacity-90"
+                }`}
+              >
+                {actionModal.type === "SUSPEND_AGENCY" ? "Confirm Suspension" : "Save & Resolve"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </div>
   );
 }

@@ -404,7 +404,7 @@ export function FlightRouteCanvas({
 
       {/* Corridor Selector Tabs */}
       <div
-        className="relative z-10 mt-6 flex flex-wrap items-center gap-2"
+        className="relative z-10 mt-6 flex overflow-x-auto no-scrollbar sm:flex-wrap items-center gap-2 pb-1 sm:pb-0"
         role="tablist"
         aria-label="Flight corridor selector"
       >
@@ -417,9 +417,9 @@ export function FlightRouteCanvas({
               aria-selected={isSelected}
               type="button"
               onClick={() => setActiveCode(corridor.code)}
-              className={`group relative flex items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
+              className={`group relative flex min-h-[42px] items-center gap-2 rounded-xl px-3.5 py-2 text-xs font-medium transition-all whitespace-nowrap shrink-0 ${
                 isSelected
-                  ? "bg-[#cfb57c] text-[#041713] font-bold shadow-[0_4px_16px_rgba(207,181,124,0.35)] scale-[1.02]"
+                  ? "bg-[#cfb57c] text-[#041713] font-bold shadow-[0_4px_16px_rgba(207,181,124,0.35)] sm:scale-[1.02]"
                   : "bg-[rgba(9,44,39,0.6)] text-[#b1c3bc] hover:bg-[#0d3b34] hover:text-[#f3f0e7] border border-[rgba(207,181,124,0.2)]"
               }`}
             >
@@ -442,7 +442,7 @@ export function FlightRouteCanvas({
       {/* Main Radar Grid & Interactive Flight Corridor Display */}
       <div className="relative z-10 mt-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         {/* Radar SVG Viewport (7 cols on lg) */}
-        <div className="relative lg:col-span-7 rounded-2xl border border-[rgba(207,181,124,0.25)] bg-[rgba(3,19,16,0.95)] p-2 sm:p-4 overflow-hidden shadow-inner aspect-[800/460] flex flex-col justify-between">
+        <div className="relative lg:col-span-7 rounded-2xl border border-[rgba(207,181,124,0.25)] bg-[rgba(3,19,16,0.95)] p-2 sm:p-4 overflow-hidden shadow-inner aspect-[4/3] sm:aspect-[800/460] flex flex-col justify-between">
           {/* Subtle Radar Compass Rings */}
           <div className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-25" aria-hidden="true">
             <div className="h-[280px] w-[280px] rounded-full border border-dashed border-[#cfb57c]" />
@@ -665,7 +665,7 @@ export function FlightRouteCanvas({
                         key={mode}
                         type="button"
                         onClick={() => setCabinMode(mode)}
-                        className={`relative rounded-lg py-1.5 px-2 text-[11px] font-semibold transition-colors whitespace-nowrap truncate ${
+                        className={`relative min-h-[40px] rounded-lg py-1.5 px-1.5 sm:px-2 text-[10px] sm:text-[11px] font-semibold transition-colors truncate ${
                           active ? "text-[#041713] font-bold" : "text-[#b1c3bc] hover:text-[#f3f0e7]"
                         }`}
                       >
@@ -721,14 +721,14 @@ export function FlightRouteCanvas({
               <button
                 type="button"
                 onClick={() => onSelectRoute(activeCorridor.code)}
-                className="w-full group flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#cfb57c] via-[#dfca95] to-[#cfb57c] py-3.5 px-4 text-sm font-bold text-[#041713] shadow-[0_8px_24px_rgba(207,181,124,0.35)] hover:shadow-[0_12px_32px_rgba(207,181,124,0.5)] hover:scale-[1.01] transition-all whitespace-nowrap"
+                className="w-full min-h-[48px] group flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#cfb57c] via-[#dfca95] to-[#cfb57c] py-3.5 px-4 text-center text-xs sm:text-sm font-bold text-[#041713] shadow-[0_8px_24px_rgba(207,181,124,0.35)] hover:shadow-[0_12px_32px_rgba(207,181,124,0.5)] hover:scale-[1.01] transition-all whitespace-normal sm:whitespace-nowrap"
               >
                 <span>
                   {bn
                     ? `${activeCorridor.destinationBn} রুটের কোটেশন রিকোয়েস্ট করুন`
                     : `Request Route Quotation for ${activeCorridor.code}`}
                 </span>
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <ArrowRight className="h-4 w-4 shrink-0 transition-transform group-hover:translate-x-1" />
               </button>
             </motion.div>
           </AnimatePresence>

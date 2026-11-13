@@ -13,6 +13,7 @@ export const viewport: Viewport = {
   themeColor: "#031412",
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
 };
 
 export const metadata: Metadata = {
@@ -23,7 +24,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "SAFARIA B2B",
+    title: "SAFARIA",
   },
   icons: {
     apple: "/apple-touch-icon.png",
@@ -46,7 +47,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="bn" className={`${display.variable} ${ui.variable} ${bengali.variable}`}>
-      <body className="font-bn pb-14 sm:pb-0">
+      <body className="font-bn pb-[calc(4.5rem+env(safe-area-inset-bottom))] sm:pb-0">
         <PWARegistrar />
         {children}
         <PwaClientShell />
