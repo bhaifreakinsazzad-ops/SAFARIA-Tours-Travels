@@ -29,9 +29,11 @@ describe("universal handwritten-offers marketing mapping", () => {
     expect(UNIVERSAL_DISCLOSURE.en).toContain("confirmation");
   });
 
-  it("does not publish unverified highest-commission, 24/7 or remittance guarantees", () => {
+  it("allows staffed 24/7 contact but never promises airline resolutions, commissions or remittance benefits", () => {
     const messages = JSON.stringify({ UNIVERSAL_BENEFITS, SPECIALIST_CAMPAIGNS });
-    expect(messages).not.toMatch(/highest commission|24\s*\/\s*7|remittance offer/i);
-    expect(messages).not.toMatch(/সর্বোচ্চ কমিশন|২৪\s*\/\s*৭|রেমিট্যান্স অফার/);
+    expect(messages).toContain("24/7 support team");
+    expect(messages).toContain("depend on the relevant provider");
+    expect(messages).not.toMatch(/highest commission|24\/7 (guaranteed|airline|ticketing)|remittance offer/i);
+    expect(messages).not.toMatch(/সর্বোচ্চ কমিশন|রেমিট্যান্স অফার|২৪\/৭ (টিকিটিং|রিফান্ড নিশ্চয়তা)/);
   });
 });

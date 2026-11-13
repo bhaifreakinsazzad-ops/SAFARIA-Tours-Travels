@@ -37,10 +37,10 @@ const BANGLADESH_B2B_OFFER_HOOKS: OfferHookItem[] = [
     planRecommended: "ANNUAL",
     titleBn: "সৌদি ওমরাহ কাফেলা ও লেবার গ্রুপ ব্লক",
     titleEn: "Saudi Umrah Kafela & KSA Labor Group Blocks",
-    hookBn: "সৌদি এয়ারলাইন্স ও বিমানের গ্রুপ পিএনআর হোল্ড, ০% SAFARIA মার্কআপ এবং মক্কা-মদিনা ট্রান্সফার বান্ডেল।",
-    hookEn: "Lock Saudia & Biman group PNR allocations with 0% SAFARIA markup plus Makkah–Madinah land support.",
-    yieldBn: "গড় সাব-এজেন্ট মার্জিন: +৳৩,৫০০/যাত্রী",
-    yieldEn: "Avg Sub-Agent Yield: +৳3,500/pax",
+    hookBn: "সৌদি ও ওমরাহ গ্রুপ রিকোয়েস্ট এবং যাত্রীর তথ্য সংগঠিত করুন। লাইভ টিকিটিং চুক্তি ও অনুমোদনসাপেক্ষ।",
+    hookEn: "Organize Saudi and Umrah group requests. Live PNR holds and ticketing require authorized suppliers.",
+    yieldBn: "কমিশনের শর্ত আলোচনা পর্যায়ে",
+    yieldEn: "Commission terms pending",
     offersCount: "6 Saudi & Umrah Offers",
   },
   {
@@ -50,10 +50,10 @@ const BANGLADESH_B2B_OFFER_HOOKS: OfferHookItem[] = [
     planRecommended: "MONTHLY",
     titleBn: "দুবাই, কাতার ও মধ্যপ্রাচ্য এক্সপ্যাট নেট ফেয়ার",
     titleEn: "UAE, Qatar & Oman Expat Wholesale Net Fares",
-    hookBn: "জিডিএস টার্মিনাল ছাড়াই ১২ মিনিটে প্রবাসী ও ভিজিট ভিসার যাত্রীদের জন্য ভেরিফায়েড হোলসেল কোটেশন।",
-    hookEn: "12-minute verified wholesale net quotes for Gulf expat and visit-visa flyers without a GDS terminal.",
-    yieldBn: "গড় সাব-এজেন্ট মার্জিন: +৳২,৪০০/টিকেট",
-    yieldEn: "Avg Sub-Agent Yield: +৳2,400/ticket",
+    hookBn: "প্রবাসী ও ভিজিট ভিসা যাত্রীর ফেয়ার অনুরোধ ও ফলো-আপ এক জায়গায় সংগঠিত করুন।",
+    hookEn: "Organize Gulf expat fare enquiries and follow-up; supplier quotations are not yet guaranteed.",
+    yieldBn: "সাপ্লায়ার যাচাই চলমান",
+    yieldEn: "Supplier validation in progress",
     offersCount: "8 Flight & Care Offers",
   },
   {
@@ -63,10 +63,10 @@ const BANGLADESH_B2B_OFFER_HOOKS: OfferHookItem[] = [
     planRecommended: "ANNUAL",
     titleBn: "সিলেট-লন্ডন, কানাডা ও স্টুডেন্ট এক্সট্রা ব্যাগেজ",
     titleEn: "Sylhet–UK, Canada & Student Extra-Baggage Desk",
-    hookBn: "শিক্ষার্থীদের অতিরিক্ত ব্যাগেজ কোটা এবং পাসপোর্ট নাম অডিটের মাধ্যমে ৳১৫,০০০+ এয়ারলাইন জরিমানা প্রতিরোধ।",
-    hookEn: "Student extra-baggage allocations and pre-issuance passport name audits that eliminate ৳15,000+ fines.",
-    yieldBn: "গড় সাব-এজেন্ট মার্জিন: +৳৪,৮০০/টিকেট",
-    yieldEn: "Avg Sub-Agent Yield: +৳4,800/ticket",
+    hookBn: "শিক্ষার্থীদের ব্যাগেজ-যোগ্যতা যাচাই ও যাত্রীর নাম-ডকুমেন্ট চেকের জন্য অনুরোধ সংগঠিত করুন।",
+    hookEn: "Track student baggage eligibility requests and use pre-issuance name checks; benefits vary by carrier.",
+    yieldBn: "শর্ত যাচাইসাপেক্ষ",
+    yieldEn: "Benefits subject to verification",
     offersCount: "5 Student & Premium Offers",
   },
   {
@@ -76,10 +76,10 @@ const BANGLADESH_B2B_OFFER_HOOKS: OfferHookItem[] = [
     planRecommended: "MONTHLY",
     titleBn: "মালয়েশিয়া, সিঙ্গাপুর ও থাইল্যান্ড ভিসা + ট্যুর প্যাক",
     titleEn: "Malaysia, Singapore & Bangkok Visa + Holiday Packs",
-    hookBn: "হোলসেল এয়ার টিকিটের সাথে ভিসা চেকলিস্ট, হোটেল ও এয়ারপোর্ট ট্রান্সফার যুক্ত করে দ্বিগুণ এজেন্সি প্রফিট।",
-    hookEn: "Combine wholesale air tickets with visa processing, hotel stays, and airport transfers for double margin.",
-    yieldBn: "কম্বো মার্জিন: +৳৫,২০০/প্যাকেজ",
-    yieldEn: "Combo Agency Yield: +৳5,200/pack",
+    hookBn: "ভিসা সহায়তা, হোটেল ও ট্রান্সফারের সম্ভাব্য যৌথ অনুরোধ সংগঠিত করুন; মূল্য ও কমিশন আলোচনাধীন।",
+    hookEn: "Explore combined visa, hotel and transfer enquiry workflows; prices and margins remain subject to agreement.",
+    yieldBn: "কম্বো শর্ত আলোচনাধীন",
+    yieldEn: "Combo terms under negotiation",
     offersCount: "7 Visa, Hotel & Tour Offers",
   },
 ];
@@ -378,7 +378,7 @@ export function B2BThreeCommandHub({ bn, selectedPain, onSelectHook }: Props) {
             {!webglReady && (
               <div className="text-center space-y-1 text-xs text-[#a3b8b0] font-mono">
                 <span className="block text-[#c5a059] font-bold">DAC ➔ 33 GLOBAL CORRIDORS</span>
-                <span>6 Operational Desks • 0% SAFARIA Markup</span>
+                <span>6 Operational Desks • Partnership Enquiries</span>
               </div>
             )}
           </div>

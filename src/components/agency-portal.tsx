@@ -75,10 +75,10 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
     badgeEn: "Saudi & Umrah Blocks",
     titleBn: "ওমরাহ কাফেলা ও সৌদি লেবার ফেয়ার",
     titleEn: "Umrah Group PNR & Saudi Worker Net Fares",
-    hookBn: "০% SAFARIA মার্কআপে জেদ্দা ও রিয়াদ রুটে গ্রুপ সিট হোল্ড এবং পাসপোর্ট নাম অডিট।",
-    hookEn: "Lock group seat blocks on DAC–JED/RUH with 0% SAFARIA markup and pre-issuance name audit.",
-    marginTagBn: "গড় মার্জিন +৳৩,২০০/টিকেট",
-    marginTagEn: "Avg Margin +৳3,200/pax",
+    hookBn: "জেদ্দা ও রিয়াদ গ্রুপ ট্রাভেল অনুরোধ এবং যাত্রীর তথ্য যাচাইয়ের প্রস্তাবিত ওয়ার্কফ্লো।",
+    hookEn: "Explore group-travel request intake and passenger-name checks for DAC–JED/RUH.",
+    marginTagBn: "কমার্শিয়াল শর্ত আলোচনায়",
+    marginTagEn: "Commercial terms pending",
     requirement: "air",
     prefillNoteBn: "সৌদি ওমরাহ ও জেদ্দা/রিয়াদ গ্রুপ ব্লক হোলসেল ফেয়ারে আগ্রহী।",
     prefillNoteEn: "Interested in Saudi Umrah & DAC-JED/RUH wholesale group blocks.",
@@ -93,10 +93,10 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
     badgeEn: "Gulf Expat Corridors",
     titleBn: "দুবাই, শারজাহ ও কাতার ইনস্ট্যান্ট নেট কোট",
     titleEn: "Dubai, Doha & Gulf Expat Wholesale Desk",
-    hookBn: "জিডিএস ছাড়াই ১২ মিনিটে এমিরেটস, কাতার ও বিমানের নেট ফেয়ার কোটেশন এবং ২৪/৭ রি-ইস্যু।",
-    hookEn: "12-minute FareDesk™ net quotes on Emirates, Qatar & Biman without GDS terminal overhead.",
-    marginTagBn: "১২ মি. ফাস্ট কোট SLA",
-    marginTagEn: "12-Min Net Quote SLA",
+    hookBn: "মধ্যপ্রাচ্যের ফেয়ার অনুরোধ সংগঠিত করুন; SAFARIA টিম ২৪/৭ ফলো-আপে উপলব্ধ। এয়ারলাইন কার্যক্রম নিশ্চিত নয়।",
+    hookEn: "Organize Gulf fare requests with staffed 24/7 follow-up; airline quotes require supplier confirmation.",
+    marginTagBn: "২৪/৭ সাপোর্ট যোগাযোগ",
+    marginTagEn: "24/7 staffed contact",
     requirement: "air",
     prefillNoteBn: "দুবাই ও মধ্যপ্রাচ্য রুটে দ্রুত হোলসেল এয়ার টিকিট কোটেশনে আগ্রহী।",
     prefillNoteEn: "Interested in rapid wholesale net fares for UAE & Gulf corridors.",
@@ -111,10 +111,10 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
     badgeEn: "Student & UK/Canada",
     titleBn: "সিলেট-লন্ডন, টরন্টো ও স্টুডেন্ট ব্যাগেজ ফেয়ার",
     titleEn: "UK, Canada & Student Extra-Baggage Fares",
-    hookBn: "শিক্ষার্থী ও প্রবাসী যাত্রীদের জন্য অতিরিক্ত ব্যাগেজ এবং জটিল মাল্টি-সিটি স্প্লিট পিএনআর সাপোর্ট।",
-    hookEn: "Student extra-baggage allocations and error-free multi-city split ticketing for UK & Canada.",
-    marginTagBn: "৳০ নাম-পেনাল্টি গ্যারান্টি",
-    marginTagEn: "Zero Naming Fine Gate",
+    hookBn: "স্টুডেন্ট ব্যাগেজের যোগ্যতা যাচাই ও মাল্টি-সিটি রিকোয়েস্ট সংগঠিত করুন।",
+    hookEn: "Explore eligible student baggage conditions and multi-city request tracking.",
+    marginTagBn: "ডকুমেন্ট চেক ওয়ার্কফ্লো",
+    marginTagEn: "Passenger data checks",
     requirement: "air",
     prefillNoteBn: "ইউকে, কানাডা ও স্টুডেন্ট রুটের স্পেশাল ফেয়ার এবং ভিসা সাপোর্টে আগ্রহী।",
     prefillNoteEn: "Interested in UK/Canada student airfares and split-ticket PNR support.",
@@ -129,10 +129,10 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
     badgeEn: "ASEAN Visa & Holidays",
     titleBn: "মালয়েশিয়া, সিঙ্গাপুর ও থাইল্যান্ড B2B প্যাক",
     titleEn: "Malaysia, Singapore & Bangkok B2B Combos",
-    hookBn: "এয়ার টিকিটের পাশাপাশি ভিসা প্রসেসিং, হোটেল ও ট্রান্সফার কম্বোতে এজেন্সির জন্য বাড়তি কমিশন।",
-    hookEn: "Bundle wholesale airfares with visa assistance, hotels, and airport transfers for higher agency yield.",
-    marginTagBn: "কম্বো মার্জিন বুস্টার",
-    marginTagEn: "High-Yield Land + Air",
+    hookBn: "ভিসা, হোটেল ও ট্রান্সফার অনুরোধের সমন্বিত ওয়ার্কফ্লো দেখুন; কমিশন পরে লিখিতভাবে জানানো হবে।",
+    hookEn: "Explore visa, hotel and transfer requests as a combined workflow; commission terms are not finalized.",
+    marginTagBn: "কম্বো আলোচনা চলমান",
+    marginTagEn: "Potential combined enquiries",
     requirement: "visa",
     prefillNoteBn: "মালয়েশিয়া, সিঙ্গাপুর ও থাইল্যান্ডের ভিসা, ট্যুর ও এয়ার টিকিট B2B প্যাকেজে আগ্রহী।",
     prefillNoteEn: "Interested in ASEAN visa, holiday packages, and wholesale air ticketing.",
@@ -412,8 +412,8 @@ export function AgencyPortal({ language }: { language: Language }) {
         </h2>
         <p>
           {bn
-            ? "নন-আয়াটা ও স্বাধীন ট্রাভেল এজেন্সির জন্য ০% SAFARIA মার্কআপে হোলসেল ফেয়ার, ৬টি অপারেশনাল ডেস্ক এবং ৭২ ঘণ্টার পাইলট সুবিধা।"
-            : "Empowering Bangladeshi travel agencies with 0% SAFARIA markup, 6 dedicated operational desks, and a 72-hour verified pilot."}
+            ? "স্বাধীন ট্রাভেল এজেন্সির জন্য ৬টি অপারেশনাল ডেস্ক, ২৪/৭ সাপোর্ট টিম এবং যাচাইসাপেক্ষ ডেমোর আগাম নিবন্ধন। সরবরাহকারীর চুক্তি আলোচনাধীন।"
+            : "Explore six agency desk workflows and 24/7 staffed support. Supplier contracts and live ticketing terms are under negotiation."}
         </p>
       </div>
 
@@ -548,7 +548,7 @@ export function AgencyPortal({ language }: { language: Language }) {
           </div>
 
           <div className="price-display">
-            <span>{bn ? "এজেন্সি সাবস্ক্রিপশন" : "Agency subscription"}</span>
+            <span>{bn ? "প্রস্তাবিত এজেন্সি প্ল্যান" : "Proposed agency plan"}</span>
             <strong ref={priceRef}>
               ৳{number(annual ? AGENCY_PRICING.annual : AGENCY_PRICING.monthly)}
             </strong>
@@ -566,7 +566,7 @@ export function AgencyPortal({ language }: { language: Language }) {
             <div className="flex items-center justify-between text-xs">
               <span className="flex items-center gap-1.5 font-bold text-[#cfb57c]">
                 <Calculator className="h-3.5 w-3.5 text-[#10b981]" />
-                <span>{bn ? "মাসিক মার্জিন সিমুলেটর" : "Monthly Margin Simulator"}</span>
+                <span>{bn ? "কাল্পনিক মার্জিন উদাহরণ" : "Illustrative Margin Model"}</span>
               </span>
               <span className="font-mono font-bold text-[#f3f0e7] tabular-nums">
                 {number(simTickets)} {bn ? "টিকেট/মাস" : "Tickets/mo"}
@@ -591,7 +591,7 @@ export function AgencyPortal({ language }: { language: Language }) {
             <div className="flex items-center justify-between pt-1 border-t border-[rgba(207,181,124,0.18)] text-xs">
               <span className="text-[#b1c3bc] flex items-center gap-1">
                 <TrendingUp className="h-3.5 w-3.5 text-[#10b981]" />
-                <span>{bn ? "সম্ভাব্য সাশ্রয় ও মার্জিন:" : "Est. Protected Margin:"}</span>
+                <span>{bn ? "হিসাবের উদাহরণ (নিশ্চিত নয়):" : "Illustrative arithmetic only:"}</span>
               </span>
               <strong className="font-mono text-sm text-[#10b981] tabular-nums">
                 +৳{number(animatedSavings)} / {bn ? "মাস" : "mo"}
@@ -621,7 +621,7 @@ export function AgencyPortal({ language }: { language: Language }) {
                 </svg>
                 <div>
                   <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
-                    {bn ? "লাইভ ট্রেড কমিউনিটি" : "LIVE B2B TRADE CHANNEL"}
+                    {bn ? "SAFARIA আপডেট চ্যানেল" : "SAFARIA UPDATE CHANNEL"}
                   </span>
                   <strong className="text-xs font-bold text-[#f3f0e7]">
                     {bn ? "SAFARIA এজেন্সি নেটওয়ার্ক হাব" : "SAFARIA Bangladesh Agency Hub"}
@@ -633,8 +633,8 @@ export function AgencyPortal({ language }: { language: Language }) {
 
             <p className="text-xs text-[#b1c3bc] leading-relaxed">
               {bn
-                ? "প্রতিদিনের ঢাকা-জেদ্দা/দুবাই হোলসেল ফেয়ার ড্রপ, গ্রুপ ব্লক সিট অ্যালার্ট এবং এয়ারলাইন সার্কুলার সবার আগে পেতে আমাদের অফিসিয়াল হোয়াটসঅ্যাপ চ্যানেলে ফলো করুন।"
-                : "Get daily Dhaka wholesale fare drops, Umrah seat block alerts, and instant airline waiver circulars in our official Bangladesh B2B WhatsApp channel."}
+                ? "SAFARIA-এর সেবা, পার্টনারশিপ অগ্রগতি ও নতুন আপডেট জানতে অফিসিয়াল WhatsApp চ্যানেল ফলো করুন। সরবরাহকারী চুক্তি চলমান।"
+                : "Follow SAFARIA's official WhatsApp channel for service, partnership and launch updates. Supplier agreements are currently under negotiation."}
             </p>
 
             <a
@@ -658,7 +658,7 @@ export function AgencyPortal({ language }: { language: Language }) {
           </div>
 
           <div className="agency-benefit">
-            <strong>0% SAFARIA Markup</strong>
+            <strong>Proposed B2B Partnership</strong>
             <button
               type="button"
               onClick={() => setShowMarkup((current) => !current)}
@@ -669,15 +669,15 @@ export function AgencyPortal({ language }: { language: Language }) {
             </button>
             <p id="markup-rule" hidden={!showMarkup}>
               {bn
-                ? "শুধু যোগ্য এয়ার টিকিটে SAFARIA-এর নিজস্ব মার্কআপ ০%; এয়ারলাইন কর ও সরবরাহকারীর ফি এর বাইরে। যোগ্যতা ও শর্ত যাচাই সাপেক্ষে।"
-                : "0% SAFARIA markup applies only to eligible air tickets. Airline taxes and supplier fees are excluded. Eligibility and terms require verification."}
+                ? "টিকিটিং, মার্কআপ ও কমিশনের চূড়ান্ত শর্ত সরবরাহকারী চুক্তি এবং অনুমোদনের পর লিখিতভাবে জানানো হবে।"
+                : "Final ticketing, markup and commission terms will be disclosed in writing only after supplier agreements and applicable approvals."}
             </p>
           </div>
 
           <p className="agency-fineprint">
             {bn
-              ? "দাম প্রদর্শন আবেদন বা ট্রায়াল সক্রিয় করে না। বুকিং, ক্রেডিট ও সাবস্ক্রিপশন আলাদা লিখিত শর্ত সাপেক্ষে।"
-              : "Displayed prices do not activate a subscription or trial. Booking, credits and subscription terms require written confirmation."}
+              ? "প্রদর্শিত মূল্য এবং সিমুলেটরের আয় সম্পূর্ণ প্রস্তাবিত/কাল্পনিক; বাস্তব কমিশন, বুকিং বা সাবস্ক্রিপশন চুক্তি ও অনুমোদন ছাড়া নিশ্চিত নয়।"
+              : "Plan prices are proposed and simulator values are hypothetical, not actual or guaranteed earnings. Bookings, credits and subscriptions require written agreements and authorization."}
           </p>
         </div>
 
