@@ -26,7 +26,6 @@ import {
   Quote,
   Award,
   MapPin,
-  Users,
   Radio,
   ArrowUpRight,
 } from "lucide-react";
