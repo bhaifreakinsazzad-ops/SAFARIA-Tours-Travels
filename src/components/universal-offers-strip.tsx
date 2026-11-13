@@ -114,13 +114,23 @@ export function UniversalOffersStrip({
             {bn ? "স্টুডেন্ট থেকে Business Class" : "From student travel to Business Class"}
           </h3>
         </div>
-        <a
-          href="#sf26-offers"
-          className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#cfb57c] hover:underline"
-        >
-          {bn ? "সব সেবা দেখুন" : "View all services"}
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </a>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="/seasonal"
+            data-campaign-id="universal-to-seasonal"
+            className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#cfb57c] px-4 text-xs font-bold text-[#041713] hover:bg-[#f0d6a1]"
+          >
+            {bn ? "সিজনাল ট্রাভেল প্ল্যানিং" : "Seasonal travel planning"}
+            <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+          <a
+            href="#sf26-offers"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#cfb57c] hover:underline"
+          >
+            {bn ? "সব সেবা দেখুন" : "View all services"}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
+        </div>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
