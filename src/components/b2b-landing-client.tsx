@@ -556,10 +556,10 @@ export default function B2BLandingPage() {
         <div className="space-y-6">
           <div className="text-center space-y-2">
             <h3 className="font-display text-xl sm:text-2xl font-bold text-[#f7f2ea]">
-              {bn ? "আপনার পছন্দের মেম্বারশিপ প্ল্যান নির্বাচন করুন" : "Select Your Preferred Partnership Plan"}
+              {bn ? "আপনার আগ্রহের প্রস্তাবিত প্ল্যান নির্বাচন করুন" : "Select a Proposed Partnership Plan"}
             </h3>
             <p className="text-xs text-[#a3b8b0]">
-              {bn ? "সকল প্ল্যানে ৭২ ঘণ্টার প্রাথমিক ভেরিফায়েড ট্রায়াল অন্তর্ভুক্ত।" : "Both plans include a 72-hour verified pilot trial to experience all 6 desks."}
+              {bn ? "৭২ ঘণ্টার ওয়ার্কফ্লো ডেমো যাচাইসাপেক্ষ; এখানে কোনো পেইড প্ল্যান সক্রিয় হচ্ছে না।" : "A 72-hour workflow demo is subject to approval; selecting a plan does not activate billing."}
             </p>
           </div>
 
@@ -576,7 +576,7 @@ export default function B2BLandingPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#a3b8b0]">
-                  {bn ? "মাসিক প্ল্যান" : "Monthly Plan"}
+                  {bn ? "প্রস্তাবিত মাসিক" : "Proposed Monthly"}
                 </span>
                 <span className="rounded-full bg-[#c5a059]/20 px-2 py-0.5 text-[10px] font-bold text-[#c5a059]">
                   {bn ? "ফ্লেক্সিবল" : "Flexible"}
@@ -587,7 +587,7 @@ export default function B2BLandingPage() {
                 <span className="text-xs text-[#a3b8b0]">/ {bn ? "মাস" : "month"}</span>
               </div>
               <p className="text-xs text-[#a3b8b0] mt-3">
-                {bn ? "মাসিক ভিত্তিতে রিনিউয়াল; কোনো দীর্ঘমেয়াদী লক-ইন নেই।" : "Monthly billing boundary. Cancel or pause anytime."}
+                {bn ? "এটি প্রস্তাবিত মূল্য; লিখিত চুক্তি ও অনুমোদন না হওয়া পর্যন্ত সদস্যপদ সক্রিয় নয়।" : "Illustrative proposed price only; membership remains inactive until written terms and approval."}
               </p>
             </button>
 
@@ -603,7 +603,7 @@ export default function B2BLandingPage() {
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#c5a059]">
-                  {bn ? "বার্ষিক প্ল্যান" : "Annual Plan"}
+                  {bn ? "প্রস্তাবিত বার্ষিক" : "Proposed Annual"}
                 </span>
                 <span className="rounded-full bg-emerald-500/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
                   ✦ {bn ? `সাশ্রয় ৳${AGENCY_PRICING.annualSavings.toLocaleString()}` : `Save ৳${AGENCY_PRICING.annualSavings.toLocaleString()}`}
@@ -614,7 +614,7 @@ export default function B2BLandingPage() {
                 <span className="text-xs text-[#a3b8b0]">/ {bn ? "বছর" : "year"}</span>
               </div>
               <p className="text-xs text-[#a3b8b0] mt-3">
-                {bn ? "অগ্রাধিকারভিত্তিক FareDesk রাউটিং এবং পুরো বছরের নিরবচ্ছিন্ন সার্ভিস।" : "Includes priority FareDesk quote routing and dedicated account manager."}
+                {bn ? "প্রস্তাবিত বার্ষিক মূল্য; সেবা ও সুবিধা চূড়ান্ত লিখিত চুক্তিসাপেক্ষ।" : "Proposed annual price; features and service commitments await written agreement."}
               </p>
             </button>
           </div>
@@ -632,7 +632,7 @@ export default function B2BLandingPage() {
               <span className="text-[#c5a059]">{selectedCorridorHook}</span>
             </span>
             <h3 className="font-display text-xl sm:text-2xl font-bold text-[#f7f2ea]">
-              {bn ? "এজেন্সি পার্টনারশিপ ও ট্রায়াল আবেদন" : "Register Agency & Connect WhatsApp"}
+              {bn ? "এজেন্সি আগ্রহ নিবন্ধন ও WhatsApp" : "Register Agency Interest & Connect WhatsApp"}
             </h3>
             <p className="text-xs text-[#a3b8b0]">
               {bn
