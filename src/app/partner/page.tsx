@@ -16,17 +16,49 @@ import {
   AlertTriangle,
   RefreshCw,
   LogOut,
+  CreditCard,
+  History,
+  ShieldAlert,
+  MessageCircle,
 } from "lucide-react";
 import { SITE_CONFIG } from "@server/config/siteConfig";
-import type { StoredB2BDeskRecord } from "@server/db/enquiriesRepository";
+import { whatsappHrefFor } from "@/config/constants";
+import type { StoredB2BDeskRecord, AgencyInvoice } from "@server/db/enquiriesRepository";
 import type { PassengerAuditResult } from "@/app/api/partner/verify-passenger/route";
+import { PWAInstallButton } from "@/components/pwa-install-button";
 
 type AuditResultState = (PassengerAuditResult & { penaltyRiskLevel: string }) | null;
+
+interface MembershipInfo {
+  status: string;
+  plan: string;
+  isTrial: boolean;
+  isActive: boolean;
+  trialActivatedAt: string | null;
+  trialExpiresAt: string | null;
+  subscriptionStartedAt: string | null;
+  subscriptionExpiresAt: string | null;
+  isRenewalDue: boolean;
+  usage: {
+    fareUsed: number;
+    fareLimit: number;
+    fareRemaining: number;
+    bookingUsed: number;
+    bookingLimit: number;
+    bookingRemaining: number;
+    afterCareUsed: number;
+    afterCareLimit: number;
+    afterCareRemaining: number;
+    verifiedUsed: number;
+    seatsUsed: number;
+    seatsLimit: number;
+  };
+}
 
 export default function PartnerWorkspacePage() {
   const router = useRouter();
   const [activeDesk, setActiveDesk] = useState<
-    "FARE_DESK" | "BOOKING_DESK" | "CLEAR_MARGIN" | "AFTER_CARE" | "VERIFIED_WORKFLOW" | "PARTNER_GROWTH"
+    "FARE_DESK" | "BOOKING_DESK" | "CLEAR_MARGIN" | "AFTER_CARE" | "VERIFIED_WORKFLOW" | "PARTNER_GROWTH" | "MEMBERSHIP" | "AUDIT"
   >("FARE_DESK");
 
   // Authentication session state — populated from the real /api/auth/me
@@ -41,6 +73,24 @@ export default function PartnerWorkspacePage() {
   // the ClearMargin ledger and PartnerGrowth volume tier from real data.
   const [allDeskRecords, setAllDeskRecords] = useState<StoredB2BDeskRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [membership, setMembership] = useState<MembershipInfo | null>(null);
+  const [invoices, setInvoices] = useState<AgencyInvoice[]>([]);
+  const [quotaError, setQuotaError] = useState<string | null>(null);
+
+  // Fetch real membership and quota usage
+  const fetchMembershipData = async () => {
+    try {
+      const res = await fetch("/api/partner/membership", { credentials: "include" });
+      if (res.status === 401 || res.status === 403) return;
+      const data = await res.json();
+      if (data.success && data.membership) {
+        setMembership(data.membership);
+        if (data.invoices) setInvoices(data.invoices);
+      }
+    } catch (e) {
+      console.warn("Failed to load membership data:", e);
+    }
+  };
 
   // FareDesk form state
   const [fareOrigin, setFareOrigin] = useState("DAC");
@@ -106,10 +156,6 @@ export default function PartnerWorkspacePage() {
   };
 
   useEffect(() => {
-    // One-time auth check on mount: redirects to /login if the session is
-    // missing or not a B2B_PARTNER, otherwise records the real agency identity
-    // the server reports (never client-chosen). router/fetchAllDeskData are
-    // stable here and intentionally excluded to avoid re-running this check.
     (async () => {
       const meRes = await fetch("/api/auth/me", { credentials: "include" });
       const meData = await meRes.json();
@@ -121,6 +167,7 @@ export default function PartnerWorkspacePage() {
       setAgencyName(meData.user.agencyName || "Partner Agency");
       setCheckingAuth(false);
       fetchAllDeskData();
+      fetchMembershipData();
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -341,9 +388,14 @@ export default function PartnerWorkspacePage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs font-mono">
+        <div className="flex items-center gap-3 text-xs font-mono">
+          <PWAInstallButton variant="header" />
           <button
-            onClick={fetchDeskData}
+            onClick={() => {
+              fetchDeskData();
+              fetchMembershipData();
+              fetchAllDeskData();
+            }}
             className="flex items-center gap-1 rounded bg-surface-200 border border-safaria-line px-2.5 py-1 text-safaria-ink hover:text-safaria-gold"
           >
             <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
@@ -364,50 +416,167 @@ export default function PartnerWorkspacePage() {
       </header>
 
       {/* Main Workspace Layout */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Left Sidebar: 6 Desks */}
-        <aside className="lg:col-span-3 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-safaria-gold block px-2 mb-2">
-            The 6 Operational Desks
-          </span>
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+        {/* Real Membership & Entitlement Status Banner (Track C) */}
+        {membership && (
+          <div className="rounded-2xl border border-safaria-gold/40 bg-surface-100 p-5 space-y-4 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-safaria-line/40 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className={`rounded-full px-3 py-0.5 text-xs font-bold ${
+                  membership.isTrial
+                    ? "bg-amber-500/20 text-amber-300 border border-amber-500/40"
+                    : "bg-emerald-500/20 text-emerald-300 border border-emerald-500/40"
+                }`}>
+                  {membership.isTrial ? "72-Hour Pilot Trial" : `Active Partner (${membership.plan})`}
+                </span>
+                <span className="text-xs text-safaria-inkMuted">
+                  {membership.isTrial && membership.trialExpiresAt
+                    ? `Trial valid until ${new Date(membership.trialExpiresAt).toLocaleDateString()}`
+                    : (membership.subscriptionExpiresAt
+                        ? `Valid until ${new Date(membership.subscriptionExpiresAt).toLocaleDateString()}`
+                        : "Active Partner Status")}
+                </span>
+              </div>
 
-          {([
-            { id: "FARE_DESK", label: "FareDesk™", desc: "Wholesale fare search", icon: <DollarSign className="h-4 w-4" /> },
-            { id: "BOOKING_DESK", label: "BookingDesk™", desc: "PNR & split tickets", icon: <Ticket className="h-4 w-4" /> },
-            { id: "CLEAR_MARGIN", label: "ClearMargin™", desc: "Zero hidden fee ledger", icon: <TrendingUp className="h-4 w-4" /> },
-            { id: "AFTER_CARE", label: "AfterCare Desk™", desc: "Re-issue & emergency", icon: <Headphones className="h-4 w-4" /> },
-            { id: "VERIFIED_WORKFLOW", label: "Verified Workflow™", desc: "Passenger audit gate", icon: <FileCheck className="h-4 w-4" /> },
-            { id: "PARTNER_GROWTH", label: "PartnerGrowth™", desc: "Volume tiers & incentives", icon: <Sparkles className="h-4 w-4" /> },
-          ] as const).map((desk) => {
-            const isActive = activeDesk === desk.id;
-            return (
-              <button
-                key={desk.id}
-                onClick={() => setActiveDesk(desk.id)}
-                className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition-all border ${
-                  isActive
-                    ? "border-safaria-gold bg-safaria-gold/15 text-safaria-gold shadow-sm"
-                    : "border-safaria-line/50 bg-surface-100 text-safaria-inkMuted hover:border-safaria-gold/40 hover:text-safaria-ink"
-                }`}
-              >
-                <div
-                  className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                    isActive ? "bg-safaria-gold text-safaria-onGold" : "bg-surface-0 text-safaria-gold"
+              {membership.isRenewalDue && (
+                <a
+                  href={whatsappHrefFor(`SAFARIA B2B RENEWAL\nAgency: ${agencyName}\nAgencyId: ${agencyId}\nRequest: Please assist with membership subscription renewal.`)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1 text-xs font-bold text-white hover:bg-emerald-500 transition-colors"
+                >
+                  <MessageCircle className="h-3.5 w-3.5" />
+                  <span>Renew on WhatsApp</span>
+                </a>
+              )}
+            </div>
+
+            {/* Quota Usage Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-xs font-mono">
+              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+                <span className="text-safaria-inkMuted block text-[10px] uppercase">FareDesk™ Quota</span>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-bold text-safaria-gold text-sm">{membership.usage.fareRemaining}</span>
+                  <span className="text-safaria-inkMuted text-[10px]">/ {membership.usage.fareLimit} left</span>
+                </div>
+                <div className="w-full bg-surface-200 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-safaria-gold h-full rounded-full transition-all"
+                    style={{ width: `${membership.usage.fareLimit > 0 ? (membership.usage.fareRemaining / membership.usage.fareLimit) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+                <span className="text-safaria-inkMuted block text-[10px] uppercase">BookingDesk™ Quota</span>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-bold text-safaria-gold text-sm">{membership.usage.bookingRemaining}</span>
+                  <span className="text-safaria-inkMuted text-[10px]">/ {membership.usage.bookingLimit} left</span>
+                </div>
+                <div className="w-full bg-surface-200 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-safaria-gold h-full rounded-full transition-all"
+                    style={{ width: `${membership.usage.bookingLimit > 0 ? (membership.usage.bookingRemaining / membership.usage.bookingLimit) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+                <span className="text-safaria-inkMuted block text-[10px] uppercase">AfterCare™ Quota</span>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-bold text-safaria-gold text-sm">{membership.usage.afterCareRemaining}</span>
+                  <span className="text-safaria-inkMuted text-[10px]">/ {membership.usage.afterCareLimit} left</span>
+                </div>
+                <div className="w-full bg-surface-200 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-safaria-gold h-full rounded-full transition-all"
+                    style={{ width: `${membership.usage.afterCareLimit > 0 ? (membership.usage.afterCareRemaining / membership.usage.afterCareLimit) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-safaria-line/60 bg-surface-0 p-3 space-y-1">
+                <span className="text-safaria-inkMuted block text-[10px] uppercase">Team Seats</span>
+                <div className="flex items-baseline justify-between">
+                  <span className="font-bold text-safaria-gold text-sm">{membership.usage.seatsUsed}</span>
+                  <span className="text-safaria-inkMuted text-[10px]">/ {membership.usage.seatsLimit} active</span>
+                </div>
+                <div className="w-full bg-surface-200 h-1.5 rounded-full overflow-hidden">
+                  <div
+                    className="bg-emerald-400 h-full rounded-full"
+                    style={{ width: "50%" }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {quotaError && (
+              <div className="rounded-xl border border-red-500/50 bg-red-500/10 p-3.5 text-xs text-red-200 flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2">
+                  <ShieldAlert className="h-5 w-5 text-red-400 shrink-0 mt-0.5" />
+                  <div>
+                    <strong className="block font-bold text-red-300">Quota Limit Notice</strong>
+                    <span>{quotaError}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setQuotaError(null)}
+                  className="text-red-400 hover:text-white font-bold"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Sidebar: 6 Desks + Membership & Audit */}
+          <aside className="lg:col-span-3 space-y-2">
+            <span className="text-xs font-bold uppercase tracking-wider text-safaria-gold block px-2 mb-2">
+              The 6 Operational Desks
+            </span>
+
+            {([
+              { id: "FARE_DESK", label: "FareDesk™", desc: "Wholesale fare search", icon: <DollarSign className="h-4 w-4" /> },
+              { id: "BOOKING_DESK", label: "BookingDesk™", desc: "PNR & split tickets", icon: <Ticket className="h-4 w-4" /> },
+              { id: "CLEAR_MARGIN", label: "ClearMargin™", desc: "Zero hidden fee ledger", icon: <TrendingUp className="h-4 w-4" /> },
+              { id: "AFTER_CARE", label: "AfterCare Desk™", desc: "Re-issue & emergency", icon: <Headphones className="h-4 w-4" /> },
+              { id: "VERIFIED_WORKFLOW", label: "Verified Workflow™", desc: "Passenger audit gate", icon: <FileCheck className="h-4 w-4" /> },
+              { id: "PARTNER_GROWTH", label: "PartnerGrowth™", desc: "Volume tiers & incentives", icon: <Sparkles className="h-4 w-4" /> },
+              { id: "MEMBERSHIP", label: "Membership & Invoices", desc: "Entitlements & billing", icon: <CreditCard className="h-4 w-4" /> },
+              { id: "AUDIT", label: "Activity History", desc: "Cross-desk audit trail", icon: <History className="h-4 w-4" /> },
+            ] as const).map((desk) => {
+              const isActive = activeDesk === desk.id;
+              return (
+                <button
+                  key={desk.id}
+                  onClick={() => setActiveDesk(desk.id)}
+                  className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition-all border ${
+                    isActive
+                      ? "border-safaria-gold bg-safaria-gold/15 text-safaria-gold shadow-sm"
+                      : "border-safaria-line/50 bg-surface-100 text-safaria-inkMuted hover:border-safaria-gold/40 hover:text-safaria-ink"
                   }`}
                 >
-                  {desk.icon}
-                </div>
-                <div>
-                  <strong className="block text-xs font-bold text-safaria-ink">{desk.label}</strong>
-                  <span className="text-[10px] text-safaria-inkMuted">{desk.desc}</span>
-                </div>
-              </button>
-            );
-          })}
-        </aside>
+                  <div
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                      isActive ? "bg-safaria-gold text-safaria-onGold" : "bg-surface-0 text-safaria-gold"
+                    }`}
+                  >
+                    {desk.icon}
+                  </div>
+                  <div>
+                    <strong className="block text-xs font-bold text-safaria-ink">{desk.label}</strong>
+                    <span className="text-[10px] text-safaria-inkMuted">{desk.desc}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </aside>
 
-        {/* Right Active Desk Workspace */}
-        <main className="lg:col-span-9 rounded-2xl border border-safaria-line bg-surface-100 p-6 sm:p-8 shadow-panel min-h-[500px]">
+          {/* Right Active Desk Workspace */}
+          <main className="lg:col-span-9 rounded-2xl border border-safaria-line bg-surface-100 p-6 sm:p-8 shadow-panel min-h-[500px]">
           {/* Desk 1: FareDesk */}
           {activeDesk === "FARE_DESK" && (
             <div className="space-y-6">
@@ -917,8 +1086,186 @@ export default function PartnerWorkspacePage() {
               })()}
             </div>
           )}
+
+          {/* Desk 7: Membership & Invoices (Track B & Track C) */}
+          {activeDesk === "MEMBERSHIP" && (
+            <div className="space-y-6">
+              <div className="border-b border-safaria-line/60 pb-4">
+                <h2 className="font-display text-2xl font-bold text-safaria-gold">
+                  Membership, Entitlements &amp; Billing Invoices
+                </h2>
+                <p className="text-xs text-safaria-inkMuted">
+                  View your current partnership tier, verified billing records, and entitlement quotas.
+                </p>
+              </div>
+
+              {/* Plan Details Card */}
+              <div className="rounded-xl border border-safaria-line bg-surface-200 p-5 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] text-safaria-inkMuted uppercase tracking-wider block">
+                      Active Plan Tier
+                    </span>
+                    <h3 className="font-display text-xl font-bold text-safaria-gold">
+                      {membership?.isTrial ? "72-Hour Pilot Trial" : `Active Partner (${membership?.plan || "Monthly"})`}
+                    </h3>
+                  </div>
+
+                  <a
+                    href={whatsappHrefFor(`SAFARIA B2B MEMBERSHIP INQUIRY\nAgency: ${agencyName}\nAgencyId: ${agencyId}\nRequest: Please share upgrade or renewal options for our agency.`)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white hover:bg-emerald-500 transition-colors"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span>WhatsApp Concierge Renewal</span>
+                  </a>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-safaria-line/40 text-xs font-mono">
+                  <div>
+                    <span className="text-safaria-inkMuted block text-[10px]">Start Date</span>
+                    <span className="font-semibold text-safaria-ink">
+                      {membership?.subscriptionStartedAt
+                        ? new Date(membership.subscriptionStartedAt).toLocaleDateString()
+                        : (membership?.trialActivatedAt ? new Date(membership.trialActivatedAt).toLocaleDateString() : "Active")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-safaria-inkMuted block text-[10px]">Expiration</span>
+                    <span className="font-semibold text-safaria-ink">
+                      {membership?.subscriptionExpiresAt
+                        ? new Date(membership.subscriptionExpiresAt).toLocaleDateString()
+                        : (membership?.trialExpiresAt ? new Date(membership.trialExpiresAt).toLocaleDateString() : "Pending")}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-safaria-inkMuted block text-[10px]">FareDesk Limit</span>
+                    <span className="font-semibold text-safaria-gold">
+                      {membership?.usage.fareLimit} requests
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-safaria-inkMuted block text-[10px]">Booking Limit</span>
+                    <span className="font-semibold text-safaria-gold">
+                      {membership?.usage.bookingLimit} PNRs
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Invoices List */}
+              <div className="space-y-3">
+                <h4 className="font-display text-base font-bold text-safaria-gold">
+                  Billing &amp; Payment Receipts
+                </h4>
+                {invoices.length === 0 ? (
+                  <div className="rounded-xl border border-safaria-line bg-surface-0 p-6 text-center text-xs text-safaria-inkMuted">
+                    No billing invoices recorded yet. Invoices are issued upon subscription activation.
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto rounded-xl border border-safaria-line">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead className="bg-surface-200 text-safaria-inkMuted uppercase text-[10px]">
+                        <tr>
+                          <th className="p-3">Invoice No</th>
+                          <th className="p-3">Plan</th>
+                          <th className="p-3">Amount BDT</th>
+                          <th className="p-3">Method</th>
+                          <th className="p-3">Status</th>
+                          <th className="p-3">Issued Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-safaria-line bg-surface-0">
+                        {invoices.map((inv) => (
+                          <tr key={inv.id}>
+                            <td className="p-3 font-bold text-safaria-gold">{inv.invoiceNo}</td>
+                            <td className="p-3">{inv.plan}</td>
+                            <td className="p-3 font-semibold">৳{inv.amountBdt.toLocaleString()}</td>
+                            <td className="p-3">{inv.paymentMethod}</td>
+                            <td className="p-3">
+                              <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                                inv.status === "VERIFIED_PAID"
+                                  ? "bg-emerald-500/20 text-emerald-400"
+                                  : "bg-amber-500/20 text-amber-300"
+                              }`}>
+                                {inv.status}
+                              </span>
+                            </td>
+                            <td className="p-3 text-safaria-inkMuted">
+                              {new Date(inv.issuedAt).toLocaleDateString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Desk 8: Business Activity History (Track C) */}
+          {activeDesk === "AUDIT" && (
+            <div className="space-y-6">
+              <div className="border-b border-safaria-line/60 pb-4">
+                <h2 className="font-display text-2xl font-bold text-safaria-gold">
+                  Business Activity History &amp; Operational Ledger
+                </h2>
+                <p className="text-xs text-safaria-inkMuted">
+                  Real-time chronological audit trail of all desk requests, status transitions, and notes for your agency.
+                </p>
+              </div>
+
+              {allDeskRecords.length === 0 ? (
+                <div className="rounded-xl border border-safaria-line bg-surface-0 p-8 text-center text-xs text-safaria-inkMuted">
+                  No operational desk activity recorded yet. Start by submitting a FareDesk quote or BookingDesk PNR hold.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-safaria-line">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead className="bg-surface-200 text-safaria-inkMuted uppercase text-[10px]">
+                      <tr>
+                        <th className="p-3">Date &amp; Time</th>
+                        <th className="p-3">Desk</th>
+                        <th className="p-3">Title / Route</th>
+                        <th className="p-3">Priority</th>
+                        <th className="p-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-safaria-line bg-surface-0">
+                      {allDeskRecords.map((rec) => (
+                        <tr key={rec.id}>
+                          <td className="p-3 text-safaria-inkMuted whitespace-nowrap">
+                            {new Date(rec.createdAt).toLocaleString()}
+                          </td>
+                          <td className="p-3 font-semibold text-safaria-gold">{rec.deskType}</td>
+                          <td className="p-3 max-w-xs truncate">{rec.title}</td>
+                          <td className="p-3">
+                            <span className="text-[10px] uppercase font-bold text-safaria-inkMuted">
+                              {rec.priority}
+                            </span>
+                          </td>
+                          <td className="p-3">
+                            <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                              rec.status === "RESOLVED"
+                                ? "bg-emerald-500/20 text-emerald-400"
+                                : "bg-amber-500/20 text-amber-300"
+                            }`}>
+                              {rec.status}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </main>
       </div>
     </div>
-  );
+  </div>
+);
 }

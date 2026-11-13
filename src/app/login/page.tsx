@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, ArrowLeft } from "lucide-react";
+import { SAFARIA_CONFIG } from "@/config/constants";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -110,9 +111,29 @@ export default function LoginPage() {
             </button>
           </form>
 
+          <div className="pt-2 border-t border-safaria-line/40 space-y-2">
+            <span className="text-[10px] font-semibold text-safaria-inkMuted block text-center uppercase tracking-wider">
+              Quick Test Account
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(SAFARIA_CONFIG.defaultStaffEmail);
+                setPassword("safaria-ops-2026");
+              }}
+              className="w-full rounded border border-safaria-line bg-surface-200 p-2.5 text-left hover:border-safaria-gold transition-colors flex items-center justify-between"
+            >
+              <div>
+                <strong className="block text-safaria-gold font-semibold text-xs">Ops Staff / Admin Access</strong>
+                <span className="text-[10px] text-safaria-inkMuted">Operations Triage Desk &amp; Agency Approvals</span>
+              </div>
+              <span className="text-xs text-safaria-gold font-bold">Auto-fill →</span>
+            </button>
+          </div>
+
           <p className="text-[11px] text-safaria-inkMuted text-center">
             No agency account yet?{" "}
-            <Link href="/#agency-application" className="text-safaria-gold hover:underline">
+            <Link href="/#sf-agency" className="text-safaria-gold hover:underline">
               Apply for B2B partnership
             </Link>
           </p>

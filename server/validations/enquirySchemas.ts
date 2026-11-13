@@ -57,7 +57,7 @@ export const FlightEnquiryInputSchema = z
       .trim()
       .min(3, "Lead passenger full name must be at least 3 characters")
       .max(80, "Name cannot exceed 80 characters")
-      .regex(/^[A-Za-z\s.\-']+$/, "Name contains invalid characters (letters only)"),
+      .regex(/^[\p{L}\p{M}\s.'-]+$/u, "Name contains invalid characters"),
     phoneCountryCode: z
       .string()
       .trim()

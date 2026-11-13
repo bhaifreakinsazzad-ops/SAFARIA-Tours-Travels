@@ -52,13 +52,15 @@ async function main() {
       const context = await browser.newContext({ ...devices[deviceName] });
       const devicePage = await context.newPage();
       await devicePage.goto(origin, { waitUntil: "networkidle" });
-      await devicePage.evaluate(() => { window.open = (href) => { window.__draftHref = href; return null; }; });
       await devicePage.locator(".destination-button").first().click();
       await devicePage.getByRole("dialog").locator('input[type="date"]').first().fill(date);
       await devicePage.getByRole("dialog").locator('input[autocomplete="name"]').fill("Device Test");
       await devicePage.getByRole("dialog").locator('input[type="tel"]').fill("+8801700000000");
+      await devicePage.getByRole("dialog").getByRole("checkbox").check();
       await devicePage.getByRole("dialog").locator('button[type="submit"]').click();
-      const href = await devicePage.evaluate(() => window.__draftHref);
+      const handoff = devicePage.getByRole("dialog").getByRole("link", { name: /WhatsApp/ });
+      await handoff.waitFor({ state: "visible" });
+      const href = (await handoff.getAttribute("href")) || "";
       assert.match(href, /^https:\/\/wa\.me\/8801674178437\?text=/, deviceName);
       assert.match(decodeURIComponent(href.split("?text=")[1]), /Device Test/);
       assert.match(decodeURIComponent(href.split("?text=")[1]), /supplier confirmation/);

@@ -347,9 +347,9 @@ export function JourneyAtlas({ language, onSelect }: Props) {
   }, [language]);
 
   return (
-    <section className="bg-sf-000 p-space-5 rounded-radius-md shadow-header" aria-label="Interactive globe of enquiry destinations from Dhaka">
-      <div className="atlas-stage w-full h-full" ref={hostRef} aria-hidden="true" />
-      <div className={`atlas-static ${ready ? "atlas-static-hidden" : ""} bg-sf-100 p-space-4 rounded-radius-sm`}><AtlasFallback /></div>
-    </section>
+    <div className="atlas-visual" aria-label="Interactive globe of enquiry destinations from Dhaka">
+      <div className="atlas-stage" ref={hostRef} aria-hidden="true" />
+      <div className={`atlas-static ${ready ? "atlas-static-hidden" : ""}`}><AtlasFallback /></div>
+    </div>
   );
 }
