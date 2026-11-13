@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Plane, Calendar, Users, Sparkles, CheckCircle2 } from "lucide-react";
 import { animate, stagger } from "animejs";
 import { cityName, destinations } from "@/data/catalog";
+import { STUDIO_AND_B2B_MEDIA } from "@/data/marketing-assets";
 import type { Language } from "@/lib/atlas-data";
 import {
   localToday,
@@ -416,23 +418,40 @@ export function TravelStudio({ language }: { language: Language }) {
           </div>
         )}
 
-        {/* Live Dynamic Boarding Pass / Telemetry Preview Strip */}
+        {/* Live Dynamic Boarding Pass / Telemetry Preview Strip + W13 Travel Studio Editorial Visual */}
         <div
           ref={boardingStripRef}
-          className="mx-4 sm:mx-8 mt-5 rounded-xl border border-[rgba(207,181,124,0.28)] bg-[#06241e] px-4 py-3 flex flex-wrap items-center justify-between gap-3 text-xs"
+          className="mx-4 sm:mx-8 mt-5 rounded-xl border border-[rgba(207,181,124,0.28)] bg-[#06241e] p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3.5 text-xs"
         >
-          <div className="flex items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 font-mono font-bold text-[#cfb57c]">
-              <Plane className="h-3.5 w-3.5 text-[#10b981]" />
-              <span>{fields.origin || "DAC"}</span>
-              <span className="text-[#10b981]">➔</span>
-              <span>{fields.destination || (bn ? "গন্তব্য" : "DEST")}</span>
-            </span>
-            <span className="text-[#b1c3bc]" aria-hidden="true">·</span>
-            <span className="text-[#f3f0e7] font-medium">{activeServiceLabel}</span>
+          <div className="flex items-center gap-3.5">
+            <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-[rgba(207,181,124,0.35)] bg-[#041713]">
+              <Image
+                src={STUDIO_AND_B2B_MEDIA.travelStudio.src}
+                alt={bn ? STUDIO_AND_B2B_MEDIA.travelStudio.altBn : STUDIO_AND_B2B_MEDIA.travelStudio.altEn}
+                fill
+                sizes="120px"
+                referrerPolicy="no-referrer"
+                className="object-cover"
+              />
+            </div>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 font-mono font-bold text-[#cfb57c]">
+                  <Plane className="h-3.5 w-3.5 text-[#10b981]" />
+                  <span>{fields.origin || "DAC"}</span>
+                  <span className="text-[#10b981]">➔</span>
+                  <span>{fields.destination || (bn ? "গন্তব্য" : "DEST")}</span>
+                </span>
+                <span className="text-[#b1c3bc]" aria-hidden="true">·</span>
+                <span className="text-[#f3f0e7] font-semibold">{activeServiceLabel}</span>
+              </div>
+              <p className="text-[11px] text-[#b1c3bc]">
+                {bn ? STUDIO_AND_B2B_MEDIA.travelStudio.captionBn : STUDIO_AND_B2B_MEDIA.travelStudio.captionEn}
+              </p>
+            </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#b1c3bc] font-mono">
+          <div className="flex flex-wrap items-center gap-3 text-[11px] text-[#b1c3bc] font-mono border-t md:border-t-0 border-[rgba(207,181,124,0.18)] pt-2 md:pt-0">
             <span className="inline-flex items-center gap-1">
               <Calendar className="h-3 w-3 text-[#cfb57c]" />
               <span>{fields.departure || (bn ? "তারিখ অনির্ধারিত" : "Date TBD")}</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   Briefcase,
@@ -30,6 +31,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 import { SAFARIA_CONFIG, AGENCY_PRICING, PILOT_ENTITLEMENTS, whatsappHrefFor } from "@/config/constants";
+import { STUDIO_AND_B2B_MEDIA } from "@/data/marketing-assets";
 import { PWAInstallButton } from "@/components/pwa-install-button";
 import { motion, AnimatePresence } from "motion/react";
 import { animate } from "animejs";
@@ -382,13 +384,14 @@ export default function B2BLandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden border-b border-[#c5a059]/20 px-4 py-16 sm:px-8 sm:py-24 text-center">
-        <div className="mx-auto max-w-4xl space-y-6">
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3.5 py-1 text-xs font-semibold tracking-wider text-[#c5a059] uppercase">
-            <Sparkles className="h-3.5 w-3.5" />
-            <span>{bn ? "বাংলাদেশের ট্রাভেল এজেন্সি অপারেটিং সিস্টেম" : "B2B Travel SaaS for Bangladesh"}</span>
-          </div>
+      {/* Hero Section with W14 Dhaka B2B Agency Operations Desk Visual */}
+      <section className="relative overflow-hidden border-b border-[#c5a059]/20 px-4 py-14 sm:px-8 sm:py-20">
+        <div className="mx-auto max-w-6xl grid grid-cols-1 lg:grid-cols-12 items-center gap-8">
+          <div className="lg:col-span-7 space-y-6 text-center lg:text-left">
+            <div className="inline-flex items-center gap-2 rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3.5 py-1 text-xs font-semibold tracking-wider text-[#c5a059] uppercase">
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>{bn ? "বাংলাদেশের ট্রাভেল এজেন্সি অপারেটিং সিস্টেম" : "B2B Travel SaaS for Bangladesh"}</span>
+            </div>
 
           <h1 className="font-display text-3xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-[#f7f2ea] leading-[1.15]">
             {bn ? (
@@ -429,21 +432,91 @@ export default function B2BLandingPage() {
             >
               <span>
                 {bn ? "B2B পার্টনার হতে আগ্রহ জানান" : "Register B2B partnership interest"}
+            <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-[#f7f2ea] leading-[1.15]">
+              {bn ? (
+                <>
+                  হোলসেল ফেয়ার, ৬টি ডেডিকেটেড ডেস্ক ও <br />
+                  <span className="text-[#c5a059]">হোয়াটসঅ্যাপ-ফার্স্ট পার্টনারশিপ</span>
+                </>
+              ) : (
+                <>
+                  Wholesale Airfares, 6 Dedicated Desks &amp; <br />
+                  <span className="text-[#c5a059]">WhatsApp-First Agency SaaS</span>
+                </>
+              )}
+            </h1>
+
+            <p className="max-w-2xl mx-auto lg:mx-0 text-sm sm:text-base text-[#a3b8b0] leading-relaxed">
+              {bn
+                ? "জিডিএস টার্মিনাল ছাড়াই নন-আয়াটা ও স্বাধীন ট্রাভেল এজেন্সির জন্য দ্রুততম ফেয়ার কোটেশন, ০% নিজস্ব মার্কআপ এবং ২৪/৭ অপারেশন সাপোর্ট।"
+                : "Empowering non-IATA and independent travel agencies across Bangladesh with wholesale inventory, 0% SAFARIA markup, and transparent remittance."}
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-1 text-xs">
+              <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-medium">
+                ✦ {bn ? "৭২ ঘণ্টার পাইলট ট্রায়াল" : "72-Hour Pilot Trial Available"}
               </span>
-              <ArrowRight className="h-4 w-4" />
-            </a>
-            <a
-              href={SAFARIA_CONFIG.whatsappChannelUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-xl border border-[#10b981]/60 bg-[#06201c] px-5 py-3 text-xs sm:text-sm font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#031412] transition-all"
-            >
-              <Radio className="h-4 w-4" />
-              <span>
-                {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
+              <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
+                ✦ {bn ? "০% নিজস্ব মার্কআপ" : "0% SAFARIA Markup"}
               </span>
-              <ArrowUpRight className="h-4 w-4" />
-            </a>
+              <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
+                ✦ {bn ? "৬টি অপারেশনাল ডেস্ক" : "6 Operational Desks"}
+              </span>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 pt-2">
+              <a
+                href="#b2b-subscription-enquiry"
+                className="inline-flex items-center gap-2 rounded-xl bg-[#c5a059] px-5 py-3 text-xs sm:text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-all shadow-lg"
+              >
+                <span>
+                  {bn ? "B2B সাবস্ক্রিপশন ও ট্রায়াল আবেদন" : "Enquire B2B Subscription & 72h Pilot"}
+                </span>
+                <ArrowRight className="h-4 w-4" />
+              </a>
+              <a
+                href={SAFARIA_CONFIG.whatsappChannelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl border border-[#10b981]/60 bg-[#06201c] px-5 py-3 text-xs sm:text-sm font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#031412] transition-all"
+              >
+                <Radio className="h-4 w-4" />
+                <span>
+                  {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
+                </span>
+                <ArrowUpRight className="h-4 w-4" />
+              </a>
+            </div>
+          </div>
+
+          <div className="lg:col-span-5">
+            <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-[#c5a059]/40 bg-[#041713] shadow-2xl">
+              <Image
+                src={STUDIO_AND_B2B_MEDIA.b2bHero.src}
+                alt={bn ? STUDIO_AND_B2B_MEDIA.b2bHero.altBn : STUDIO_AND_B2B_MEDIA.b2bHero.altEn}
+                fill
+                priority
+                sizes="(max-width: 1024px) 100vw, 520px"
+                referrerPolicy="no-referrer"
+                className="object-cover"
+                style={{ objectPosition: STUDIO_AND_B2B_MEDIA.b2bHero.objectPosition }}
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(4, 23, 19, 0.14) 0%, rgba(4, 23, 19, 0.50) 58%, rgba(4, 23, 19, 0.90) 100%)",
+                }}
+              />
+              <div className="absolute inset-x-4 bottom-3 flex items-center justify-between gap-2 text-left">
+                <span className="rounded-md border border-[#c5a059]/40 bg-[#031412]/90 px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider text-[#c5a059]">
+                  {bn ? STUDIO_AND_B2B_MEDIA.b2bHero.badgeBn : STUDIO_AND_B2B_MEDIA.b2bHero.badgeEn}
+                </span>
+                <span className="font-mono text-[10px] font-bold text-[#10b981] bg-[#031412]/90 px-2 py-1 rounded border border-[#10b981]/35">
+                  DHAKA OPERATIONS HUB
+                </span>
+              </div>
+            </div>
           </div>
         </div>
       </section>

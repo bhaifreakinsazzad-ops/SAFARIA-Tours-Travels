@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
+import Image from "next/image";
 import { TrendingUp, Calculator, CheckCircle2, Users, Sparkles, ArrowUpRight, Radio } from "lucide-react";
 import { animate, stagger } from "animejs";
 import {
@@ -10,6 +11,7 @@ import {
   type AgencyFields,
 } from "@/lib/agency";
 import { AGENCY_PRICING, SAFARIA_CONFIG } from "@/config/constants";
+import { OFFER_CATEGORY_MEDIA, STUDIO_AND_B2B_MEDIA } from "@/data/marketing-assets";
 import { focusInvalidField } from "@/lib/validation-motion";
 import type { Language } from "@/lib/atlas-data";
 
@@ -46,6 +48,9 @@ const ONBOARDING_STEPS = [
 interface B2BMarketingHook {
   id: string;
   corridor: string;
+  imageSrc: string;
+  imageAltBn: string;
+  imageAltEn: string;
   badgeBn: string;
   badgeEn: string;
   titleBn: string;
@@ -63,6 +68,9 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
   {
     id: "umrah-ksa",
     corridor: "DAC ➔ JED / RUH",
+    imageSrc: OFFER_CATEGORY_MEDIA.saudi.src,
+    imageAltBn: OFFER_CATEGORY_MEDIA.saudi.altBn,
+    imageAltEn: OFFER_CATEGORY_MEDIA.saudi.altEn,
     badgeBn: "সৌদি ও ওমরাহ ব্লক",
     badgeEn: "Saudi & Umrah Blocks",
     titleBn: "ওমরাহ কাফেলা ও সৌদি লেবার ফেয়ার",
@@ -78,6 +86,9 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
   {
     id: "gulf-expat",
     corridor: "DAC ➔ DXB / DOH",
+    imageSrc: OFFER_CATEGORY_MEDIA.flights.src,
+    imageAltBn: OFFER_CATEGORY_MEDIA.flights.altBn,
+    imageAltEn: OFFER_CATEGORY_MEDIA.flights.altEn,
     badgeBn: "মধ্যপ্রাচ্য এক্সপ্যাট হাব",
     badgeEn: "Gulf Expat Corridors",
     titleBn: "দুবাই, শারজাহ ও কাতার ইনস্ট্যান্ট নেট কোট",
@@ -93,6 +104,9 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
   {
     id: "student-longhaul",
     corridor: "DAC ➔ LON / YTO",
+    imageSrc: OFFER_CATEGORY_MEDIA.student.src,
+    imageAltBn: OFFER_CATEGORY_MEDIA.student.altBn,
+    imageAltEn: OFFER_CATEGORY_MEDIA.student.altEn,
     badgeBn: "স্টুডেন্ট ও লং-হল",
     badgeEn: "Student & UK/Canada",
     titleBn: "সিলেট-লন্ডন, টরন্টো ও স্টুডেন্ট ব্যাগেজ ফেয়ার",
@@ -108,6 +122,9 @@ const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
   {
     id: "asean-visa-pack",
     corridor: "DAC ➔ KUL / SIN / BKK",
+    imageSrc: OFFER_CATEGORY_MEDIA.services.src,
+    imageAltBn: OFFER_CATEGORY_MEDIA.services.altBn,
+    imageAltEn: OFFER_CATEGORY_MEDIA.services.altEn,
     badgeBn: "আসিয়ান ভিসা ও ট্যুর",
     badgeEn: "ASEAN Visa & Holidays",
     titleBn: "মালয়েশিয়া, সিঙ্গাপুর ও থাইল্যান্ড B2B প্যাক",
@@ -400,29 +417,57 @@ export function AgencyPortal({ language }: { language: Language }) {
         </p>
       </div>
 
-      {/* High-Converting B2B Corridor & Offer Hooks Bar (Tailored for Bangladeshi Sub-Agents) */}
+      {/* High-Converting B2B Corridor & Offer Hooks Bar + W14 B2B Operations Desk Visual */}
       <div className="mb-8 space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#cfb57c] uppercase tracking-wider">
-            <Sparkles className="h-3.5 w-3.5 text-[#10b981]" />
-            <span>
-              {bn
-                ? "বাংলাদেশি এজেন্সির জন্য হাই-মার্জিন রুট ও অফার হুক (ক্লিক করে আবেদন প্রি-ফিল করুন)"
-                : "High-Margin Bangladeshi B2B Corridor Hooks (Click to pre-fill subscription enquiry)"}
-            </span>
+        <div className="relative overflow-hidden rounded-2xl border border-[rgba(207,181,124,0.34)] bg-[#041713]">
+          <div className="grid grid-cols-1 lg:grid-cols-12 items-center">
+            <div className="p-5 sm:p-6 lg:col-span-7 space-y-3">
+              <span className="inline-flex items-center gap-1.5 rounded-md border border-[#10b981]/40 bg-[#06241e] px-2.5 py-1 font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
+                <Sparkles className="h-3.5 w-3.5 text-[#cfb57c]" />
+                <span>{bn ? STUDIO_AND_B2B_MEDIA.b2bHero.badgeBn : STUDIO_AND_B2B_MEDIA.b2bHero.badgeEn}</span>
+              </span>
+              <h3 className="font-display text-lg sm:text-xl font-bold text-[#f3f0e7]">
+                {bn
+                  ? "ঢাকা অপারেশনস ডেস্ক থেকে সরাসরি হোলসেল ফেয়ার, গ্রুপ পিএনআর ও স্টুডেন্ট কোটেশন"
+                  : "Direct Wholesale Fares, Group PNR Holds & Student Ticketing from Our Dhaka Desk"}
+              </h3>
+              <p className="text-xs text-[#b1c3bc] leading-relaxed">
+                {bn ? STUDIO_AND_B2B_MEDIA.b2bHero.captionBn : STUDIO_AND_B2B_MEDIA.b2bHero.captionEn}
+              </p>
+              <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                <a
+                  href={SAFARIA_CONFIG.whatsappChannelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-[#10b981]/50 bg-[#06241e] px-3 py-1.5 text-xs font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#041713] transition-colors"
+                >
+                  <Radio className="h-3.5 w-3.5" />
+                  <span>
+                    {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
+                  </span>
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </a>
+              </div>
+            </div>
+            <div className="relative h-48 sm:h-56 lg:h-full min-h-[190px] lg:col-span-5 overflow-hidden border-t lg:border-t-0 lg:border-l border-[rgba(207,181,124,0.22)] bg-[#041713]">
+              <Image
+                src={STUDIO_AND_B2B_MEDIA.b2bHero.src}
+                alt={bn ? STUDIO_AND_B2B_MEDIA.b2bHero.altBn : STUDIO_AND_B2B_MEDIA.b2bHero.altEn}
+                fill
+                sizes="(max-width: 1024px) 100vw, 480px"
+                referrerPolicy="no-referrer"
+                className="object-cover"
+                style={{ objectPosition: STUDIO_AND_B2B_MEDIA.b2bHero.objectPosition }}
+              />
+              <div
+                className="pointer-events-none absolute inset-0"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(4, 23, 19, 0.72) 0%, rgba(4, 23, 19, 0.22) 45%, rgba(4, 23, 19, 0.45) 100%)",
+                }}
+              />
+            </div>
           </div>
-          <a
-            href={SAFARIA_CONFIG.whatsappChannelUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-[#10b981]/50 bg-[#06241e] px-3 py-1.5 text-xs font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#041713] transition-colors self-start sm:self-auto"
-          >
-            <Radio className="h-3.5 w-3.5" />
-            <span>
-              {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
-            </span>
-            <ArrowUpRight className="h-3.5 w-3.5" />
-          </a>
         </div>
 
         <div ref={hooksGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -433,20 +478,37 @@ export function AgencyPortal({ language }: { language: Language }) {
                 key={hook.id}
                 type="button"
                 onClick={() => handleSelectMarketingHook(hook)}
-                className={`b2b-hook-card rounded-2xl border p-4 text-left transition-all flex flex-col justify-between gap-3 ${
+                className={`b2b-hook-card rounded-2xl border p-3.5 text-left transition-all flex flex-col justify-between gap-3 ${
                   isSelected
                     ? "border-[#cfb57c] bg-[#092c27] shadow-[0_14px_34px_rgba(0,0,0,0.35)] ring-1 ring-[#cfb57c]/60"
                     : "border-[rgba(207,181,124,0.22)] bg-[rgba(6,36,30,0.75)] hover:border-[rgba(207,181,124,0.55)]"
                 }`}
               >
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[10px] font-bold text-[#cfb57c] bg-[#041713] px-2 py-0.5 rounded border border-[rgba(207,181,124,0.3)]">
-                      {hook.corridor}
-                    </span>
-                    <span className="font-mono text-[10px] font-bold text-[#10b981]">
-                      {bn ? hook.marginTagBn : hook.marginTagEn}
-                    </span>
+                <div className="space-y-2.5">
+                  <div className="relative h-28 w-full overflow-hidden rounded-xl border border-[rgba(207,181,124,0.25)] bg-[#041713]">
+                    <Image
+                      src={hook.imageSrc}
+                      alt={bn ? hook.imageAltBn : hook.imageAltEn}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 280px"
+                      referrerPolicy="no-referrer"
+                      className="object-cover"
+                    />
+                    <div
+                      className="pointer-events-none absolute inset-0"
+                      style={{
+                        background:
+                          "linear-gradient(180deg, rgba(4, 23, 19, 0.15) 0%, rgba(4, 23, 19, 0.78) 100%)",
+                      }}
+                    />
+                    <div className="absolute inset-x-2.5 bottom-2 flex items-center justify-between gap-1.5">
+                      <span className="font-mono text-[10px] font-bold text-[#cfb57c] bg-[#041713]/90 px-2 py-0.5 rounded border border-[rgba(207,181,124,0.35)]">
+                        {hook.corridor}
+                      </span>
+                      <span className="font-mono text-[10px] font-bold text-[#10b981] bg-[#041713]/85 px-1.5 py-0.5 rounded">
+                        {bn ? hook.marginTagBn : hook.marginTagEn}
+                      </span>
+                    </div>
                   </div>
                   <strong className="block text-sm font-bold text-[#f3f0e7]">
                     {bn ? hook.titleBn : hook.titleEn}
