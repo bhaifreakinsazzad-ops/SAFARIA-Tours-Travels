@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { Plane, Calendar, Users, Sparkles } from "lucide-react";
+import { Plane, Calendar, Users, Sparkles, CheckCircle2 } from "lucide-react";
+import { animate, stagger } from "animejs";
 import { cityName, destinations } from "@/data/catalog";
 import type { Language } from "@/lib/atlas-data";
 import {
@@ -17,6 +18,22 @@ import { focusInvalidField } from "@/lib/validation-motion";
 const labels = {
   bn: ["সেবা", "রুট ও তারিখ", "যাত্রী", "পছন্দ", "পর্যালোচনা"],
   en: ["Service", "Route & dates", "Passengers", "Preferences", "Review"],
+};
+const stepDescriptions = {
+  bn: [
+    "ধাপ ১: ফ্লাইট, ভিসা বা ওমরাহ ক্যাটাগরি এবং যাত্রার ধরন নির্বাচন করুন",
+    "ধাপ ২: যাত্রা শুরুর শহর, গন্তব্য এবং যাত্রার তারিখ নির্ধারণ করুন",
+    "ধাপ ৩: প্রাপ্তবয়স্ক, শিশু এবং কোলের শিশুর সংখ্যা নিশ্চিত করুন",
+    "ধাপ ৪: কেবিন ক্লাস, পছন্দের এয়ারলাইন এবং ব্যাগেজের চাহিদা যোগ করুন",
+    "ধাপ ৫: আপনার পরিকল্পনা যাচাই করে সরাসরি কোটেশন অনুরোধ নিশ্চিত করুন",
+  ],
+  en: [
+    "Step 1: Select service category and itinerary trip structure",
+    "Step 2: Configure origin airport, target destination, and travel dates",
+    "Step 3: Specify adult, child, and infant passenger counts",
+    "Step 4: Customize cabin class, preferred carrier, and baggage notes",
+    "Step 5: Review itinerary summary and confirm your quotation request",
+  ],
 };
 const serviceOptions = [
   ["air", "ফ্লাইট", "Flights"],
@@ -38,6 +55,9 @@ export function TravelStudio({ language }: { language: Language }) {
   const [drafting, setDrafting] = useState(false);
   const timerRef = useRef<number | null>(null);
   const boardingStripRef = useRef<HTMLDivElement>(null);
+  const stepPanelRef = useRef<HTMLDivElement>(null);
+  const progressRef = useRef<HTMLDivElement>(null);
+  const progressBarFillRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
@@ -47,19 +67,62 @@ export function TravelStudio({ language }: { language: Language }) {
     };
   }, []);
 
-  // Subtle anime.js pulse on the live boarding pass strip when route/step updates
+  // anime.js sequential reveal animation for each step of the Studio wizard + visual progress feedback
   useEffect(() => {
-    if (!boardingStripRef.current || reduceMotion) return;
-    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    void import("animejs").then(({ animate }) => {
-      if (boardingStripRef.current) {
-        animate(boardingStripRef.current, {
-          scale: [0.992, 1],
-          duration: 320,
-          ease: "outQuad",
+    const isReduced =
+      reduceMotion ||
+      (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    if (isReduced) return;
+
+    // 1. Pulse the live boarding pass telemetry strip
+    if (boardingStripRef.current) {
+      animate(boardingStripRef.current, {
+        scale: [0.99, 1],
+        duration: 320,
+        ease: "outQuad",
+      });
+    }
+
+    // 2. Animate progress bar fill width and active step pill pop
+    if (progressBarFillRef.current) {
+      const targetPct = ((step + 1) / 5) * 100;
+      animate(progressBarFillRef.current, {
+        width: `${targetPct}%`,
+        duration: 460,
+        ease: "outExpo",
+      });
+    }
+
+    if (progressRef.current) {
+      const currentBadge = progressRef.current.querySelector(".current");
+      if (currentBadge) {
+        animate(currentBadge, {
+          scale: [0.94, 1.03, 1],
+          duration: 380,
+          ease: "outBack",
+        });
+      }
+    }
+
+    // 3. Sequential staggered reveal of all interactive controls inside the active wizard step
+    const rafId = window.requestAnimationFrame(() => {
+      if (!stepPanelRef.current) return;
+      const targets = stepPanelRef.current.querySelectorAll(
+        ".step-count, .display-heading, .studio-step-feedback, fieldset, .field, .studio-review, .consent-field, .magic-draft, .studio-note",
+      );
+      if (targets.length > 0) {
+        animate(targets, {
+          opacity: [0, 1],
+          translateY: [14, 0],
+          scale: [0.985, 1],
+          delay: stagger(55, { start: 30 }),
+          duration: 420,
+          ease: "outExpo",
         });
       }
     });
+
+    return () => window.cancelAnimationFrame(rafId);
   }, [step, fields.origin, fields.destination, fields.cabin, fields.category, reduceMotion]);
 
   const bn = language === "bn";
@@ -306,7 +369,11 @@ export function TravelStudio({ language }: { language: Language }) {
       </div>
 
       <div className="studio-shell">
-        <div className="studio-progress" aria-label={bn ? "ফর্মের অগ্রগতি" : "Form progress"}>
+        <div
+          ref={progressRef}
+          className="studio-progress"
+          aria-label={bn ? "ফর্মের অগ্রগতি" : "Form progress"}
+        >
           {labels[language].map((label, index) => (
             <div
               key={label}
@@ -323,6 +390,15 @@ export function TravelStudio({ language }: { language: Language }) {
               <small>{label}</small>
             </div>
           ))}
+        </div>
+
+        {/* Animated Sequential Step Progress Bar */}
+        <div className="mx-4 sm:mx-8 mt-2 h-1 rounded-full bg-[rgba(207,181,124,0.14)] overflow-hidden">
+          <div
+            ref={progressBarFillRef}
+            className="h-full rounded-full bg-gradient-to-r from-[#cfb57c] to-[#10b981]"
+            style={{ width: `${((step + 1) / 5) * 100}%` }}
+          />
         </div>
 
         {hydrated && (
@@ -441,6 +517,7 @@ export function TravelStudio({ language }: { language: Language }) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={step}
+                ref={stepPanelRef}
                 layoutId={reduceMotion ? undefined : "travel-step-panel"}
                 className="studio-panel"
                 initial={reduceMotion ? false : { opacity: 0, x: 18 }}
@@ -452,6 +529,10 @@ export function TravelStudio({ language }: { language: Language }) {
                   {bn ? "ধাপ" : "STEP"} {step + 1} / 5
                 </p>
                 <h3 className="display-heading">{labels[language][step]}</h3>
+                <p className="studio-step-feedback mb-4 flex items-center gap-2 text-xs text-[#b1c3bc]">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#10b981] shrink-0" />
+                  <span>{stepDescriptions[language][step]}</span>
+                </p>
 
                 {step === 0 && (
                   <div className="studio-fields">

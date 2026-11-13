@@ -7,7 +7,14 @@ import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { ShaderPass } from "three/addons/postprocessing/ShaderPass.js";
-import { motion, AnimatePresence } from "motion/react";
+import {
+  motion,
+  AnimatePresence,
+  useScroll,
+  useSpring,
+  useTransform,
+  useMotionValueEvent,
+} from "motion/react";
 import { origin, routes, type Language } from "@/lib/atlas-data";
 import {
   applyStudioEnvironment,
@@ -25,6 +32,11 @@ type NodeEntry = { mesh: THREE.Mesh; label: HTMLElement; code: string; pos: THRE
 
 const DEFAULT_ROT_X = THREE.MathUtils.degToRad(17);
 const DEFAULT_ROT_Y = THREE.MathUtils.degToRad(-55);
+const DEFAULT_CAM_Z = 3.25;
+const ZOOMED_CAM_Z = 2.18;
+
+// Scroll-orbit destination sequence as the user scrolls past the hero section
+const SCROLL_WAYPOINT_CODES = ["DAC", "DXB", "RUH", "KUL", "LON"] as const;
 
 // Reusable module-scope math vectors to prevent GC in the animation loop
 const _worldPos = new THREE.Vector3();
@@ -40,6 +52,13 @@ function position(lat: number, lon: number, radius = 1.03) {
     radius * Math.sin(phi),
     radius * Math.cos(phi) * Math.cos(lambda),
   );
+}
+
+function getTargetRotationForCoord(lat: number, lon: number): { x: number; y: number } {
+  return {
+    x: THREE.MathUtils.clamp(THREE.MathUtils.degToRad(lat * 0.55), -0.45, 0.45),
+    y: THREE.MathUtils.degToRad(-lon + 15),
+  };
 }
 
 function arc(from: THREE.Vector3, to: THREE.Vector3) {
@@ -69,10 +88,35 @@ export function JourneyAtlas({ language, onSelect }: Props) {
   const [hudCollapsed, setHudCollapsed] = useState(false);
   const [autoOrbit, setAutoOrbit] = useState(false);
   const [focusedCode, setFocusedCode] = useState<string>("DAC");
+  const [scrollZoomPct, setScrollZoomPct] = useState<number>(100);
+  const [pinnedTargetCode, setPinnedTargetCode] = useState<string | null>(null);
 
   const autoOrbitRef = useRef(false);
-  const targetRotRef = useRef<{ x: number; y: number } | null>(null);
-  const focusRouteControlRef = useRef<((code: string) => void) | null>(null);
+  const pinnedTargetRef = useRef<string | null>(null);
+  const targetRotRef = useRef<{ x: number; y: number; zCam?: number } | null>(null);
+  const scrollOrbitStateRef = useRef<{
+    progress: number;
+    rotX: number;
+    rotY: number;
+    camZ: number;
+    activeCode: string;
+  }>({
+    progress: 0,
+    rotX: DEFAULT_ROT_X,
+    rotY: DEFAULT_ROT_Y,
+    camZ: DEFAULT_CAM_Z,
+    activeCode: "DAC",
+  });
+  const focusRouteControlRef = useRef<((code: string, fromScroll?: boolean) => void) | null>(null);
+
+  // motion.dev scroll-linked camera orbit & node zoom pipeline
+  const { scrollY } = useScroll();
+  const rawHeroScrollProgress = useTransform(scrollY, [0, 680], [0, 1], { clamp: true });
+  const smoothScrollProgress = useSpring(rawHeroScrollProgress, {
+    stiffness: 90,
+    damping: 24,
+    restDelta: 0.0005,
+  });
 
   useEffect(() => {
     onSelectRef.current = onSelect;
@@ -81,6 +125,78 @@ export function JourneyAtlas({ language, onSelect }: Props) {
   useEffect(() => {
     autoOrbitRef.current = autoOrbit;
   }, [autoOrbit]);
+
+  useEffect(() => {
+    pinnedTargetRef.current = pinnedTargetCode;
+  }, [pinnedTargetCode]);
+
+  // Listen to motion.dev spring-smoothed scroll progress to drive 3D camera orbit & destination zoom
+  useMotionValueEvent(smoothScrollProgress, "change", (progress) => {
+    const clamped = THREE.MathUtils.clamp(progress, 0, 1);
+    const zoomMultiplier = Math.round(100 + clamped * 48);
+    setScrollZoomPct(zoomMultiplier);
+
+    if (clamped <= 0.02) {
+      scrollOrbitStateRef.current = {
+        progress: 0,
+        rotX: DEFAULT_ROT_X,
+        rotY: DEFAULT_ROT_Y,
+        camZ: DEFAULT_CAM_Z,
+        activeCode: pinnedTargetRef.current || "DAC",
+      };
+      return;
+    }
+
+    // If user pinned a specific destination node, orbit & zoom directly into that node on scroll
+    const pinnedCode = pinnedTargetRef.current;
+    if (pinnedCode && pinnedCode !== "DAC") {
+      const pinnedRoute = routes.find((r) => r.code === pinnedCode);
+      if (pinnedRoute) {
+        const target = getTargetRotationForCoord(pinnedRoute.lat, pinnedRoute.lon);
+        const t = THREE.MathUtils.smoothstep(clamped, 0.02, 0.85);
+        scrollOrbitStateRef.current = {
+          progress: clamped,
+          rotX: THREE.MathUtils.lerp(DEFAULT_ROT_X, target.x, t),
+          rotY: THREE.MathUtils.lerp(DEFAULT_ROT_Y, target.y, t),
+          camZ: THREE.MathUtils.lerp(DEFAULT_CAM_Z, ZOOMED_CAM_Z, t),
+          activeCode: pinnedCode,
+        };
+        focusRouteControlRef.current?.(pinnedCode, true);
+        return;
+      }
+    }
+
+    // Otherwise, interpolate smoothly across the hero destination waypoint sequence on scroll
+    const waypoints = SCROLL_WAYPOINT_CODES.map((code) => {
+      if (code === "DAC") return { code: "DAC", x: DEFAULT_ROT_X, y: DEFAULT_ROT_Y };
+      const r = routes.find((item) => item.code === code);
+      if (!r) return { code, x: DEFAULT_ROT_X, y: DEFAULT_ROT_Y };
+      const rot = getTargetRotationForCoord(r.lat, r.lon);
+      return { code, x: rot.x, y: rot.y };
+    });
+
+    const totalSegments = waypoints.length - 1;
+    const scaled = clamped * totalSegments;
+    const segIdx = Math.min(Math.floor(scaled), totalSegments - 1);
+    const localT = scaled - segIdx;
+    const smoothT = localT * localT * (3 - 2 * localT);
+
+    const fromWp = waypoints[segIdx];
+    const toWp = waypoints[segIdx + 1];
+    const activeWp = localT > 0.35 ? toWp : fromWp;
+
+    scrollOrbitStateRef.current = {
+      progress: clamped,
+      rotX: THREE.MathUtils.lerp(fromWp.x, toWp.x, smoothT),
+      rotY: THREE.MathUtils.lerp(fromWp.y, toWp.y, smoothT),
+      camZ: THREE.MathUtils.lerp(DEFAULT_CAM_Z, ZOOMED_CAM_Z, THREE.MathUtils.smoothstep(clamped, 0.02, 0.92)),
+      activeCode: activeWp.code,
+    };
+
+    if (activeWp.code !== focusedCode) {
+      focusRouteControlRef.current?.(activeWp.code, true);
+    }
+  });
 
   useEffect(() => {
     const host = hostRef.current;
@@ -102,7 +218,7 @@ export function JourneyAtlas({ language, onSelect }: Props) {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 20);
-    camera.position.set(0, 0, 3.25);
+    camera.position.set(0, 0, DEFAULT_CAM_Z);
 
     const envTexture = applyStudioEnvironment(renderer, scene);
 
@@ -307,11 +423,13 @@ export function JourneyAtlas({ language, onSelect }: Props) {
     let hovering: NodeEntry | undefined;
     let drag: { x: number; y: number; moved: boolean } | null = null;
     let contextLost = false;
+    let lastLockedCode = "";
 
-    function lockReticleOnNode(node: NodeEntry | undefined) {
+    function lockReticleOnNode(node: NodeEntry | undefined, pulse = true) {
       if (!node) {
         reticle.group.visible = false;
         spatialCallout.hide();
+        lastLockedCode = "";
         return;
       }
       reticle.group.position.copy(node.pos).multiplyScalar(1.015);
@@ -319,29 +437,33 @@ export function JourneyAtlas({ language, onSelect }: Props) {
       _lookTarget.copy(reticle.group.position).add(_normalVec);
       reticle.group.lookAt(_lookTarget);
       reticle.group.visible = true;
-      reticle.pulseWithAnime();
+      if (pulse && lastLockedCode !== node.code) {
+        reticle.pulseWithAnime();
+      }
+      lastLockedCode = node.code;
 
       const telemetry = getRouteTelemetry(node.code, node.city);
       spatialCallout.updateTelemetry(telemetry);
       spatialCallout.sprite.position.copy(node.pos).multiplyScalar(1.22);
     }
 
-    focusRouteControlRef.current = (code: string) => {
+    focusRouteControlRef.current = (code: string, fromScroll = false) => {
       setFocusedCode(code);
       if (code === "DAC") {
-        targetRotRef.current = { x: DEFAULT_ROT_X, y: DEFAULT_ROT_Y };
-        lockReticleOnNode(undefined);
+        if (!fromScroll) {
+          targetRotRef.current = { x: DEFAULT_ROT_X, y: DEFAULT_ROT_Y, zCam: DEFAULT_CAM_Z };
+        }
+        lockReticleOnNode(undefined, false);
         return;
       }
       const routeObj = routes.find((r) => r.code === code);
       const nodeObj = nodes.find((n) => n.code === code);
-      if (routeObj) {
-        const targetY = THREE.MathUtils.degToRad(-routeObj.lon + 15);
-        const targetX = THREE.MathUtils.clamp(THREE.MathUtils.degToRad(routeObj.lat * 0.55), -0.45, 0.45);
-        targetRotRef.current = { x: targetX, y: targetY };
+      if (routeObj && !fromScroll) {
+        const rot = getTargetRotationForCoord(routeObj.lat, routeObj.lon);
+        targetRotRef.current = { x: rot.x, y: rot.y, zCam: 2.48 };
       }
       if (nodeObj) {
-        lockReticleOnNode(nodeObj);
+        lockReticleOnNode(nodeObj, !fromScroll);
       }
     };
 
@@ -372,19 +494,31 @@ export function JourneyAtlas({ language, onSelect }: Props) {
         reticle.group.rotateZ(delta * 1.4);
       }
 
-      // Smooth exponential damping for camera/globe presets or auto-orbit
+      const scrollState = scrollOrbitStateRef.current;
+
+      // Smooth exponential damping for scroll-driven camera orbit/zoom, presets, or auto-orbit
       if (!drag && !hovering) {
-        if (targetRotRef.current) {
-          group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotRef.current.x, 5, delta);
-          group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotRef.current.y, 5, delta);
+        if (scrollState.progress > 0.02) {
+          group.rotation.x = THREE.MathUtils.damp(group.rotation.x, scrollState.rotX, 6.5, delta);
+          group.rotation.y = THREE.MathUtils.damp(group.rotation.y, scrollState.rotY, 6.5, delta);
+          camera.position.z = THREE.MathUtils.damp(camera.position.z, scrollState.camZ, 6.5, delta);
+        } else if (targetRotRef.current) {
+          group.rotation.x = THREE.MathUtils.damp(group.rotation.x, targetRotRef.current.x, 5.5, delta);
+          group.rotation.y = THREE.MathUtils.damp(group.rotation.y, targetRotRef.current.y, 5.5, delta);
+          const targetCamZ = targetRotRef.current.zCam ?? DEFAULT_CAM_Z;
+          camera.position.z = THREE.MathUtils.damp(camera.position.z, targetCamZ, 5.5, delta);
           if (
             Math.abs(group.rotation.x - targetRotRef.current.x) < 0.002 &&
-            Math.abs(group.rotation.y - targetRotRef.current.y) < 0.002
+            Math.abs(group.rotation.y - targetRotRef.current.y) < 0.002 &&
+            Math.abs(camera.position.z - targetCamZ) < 0.004
           ) {
             targetRotRef.current = null;
           }
-        } else if (autoOrbitRef.current) {
-          group.rotation.y += delta * 0.18;
+        } else {
+          camera.position.z = THREE.MathUtils.damp(camera.position.z, DEFAULT_CAM_Z, 5, delta);
+          if (autoOrbitRef.current) {
+            group.rotation.y += delta * 0.18;
+          }
         }
       }
 
@@ -452,7 +586,7 @@ export function JourneyAtlas({ language, onSelect }: Props) {
         hovering?.label.classList.remove("is-hovered");
         next?.label.classList.add("is-hovered");
         hovering = next;
-        lockReticleOnNode(next);
+        lockReticleOnNode(next, true);
         if (next) setFocusedCode(next.code);
         renderer.domElement.style.cursor = next ? "pointer" : "grab";
       }
@@ -587,7 +721,14 @@ export function JourneyAtlas({ language, onSelect }: Props) {
                   {autoOrbit ? (bn ? "অটো-অরবিট: চালু" : "Auto-Orbit: ON") : bn ? "অটো-অরবিট" : "Auto-Orbit"}
                 </button>
 
-                <span className="text-[rgba(207,181,124,0.3)] text-xs select-none">|</span>
+                <span
+                  className="rounded bg-[#092c27] border border-[rgba(16,185,129,0.35)] px-2 py-0.5 text-[9px] font-mono font-bold text-[#10b981] whitespace-nowrap shrink-0 tabular-nums"
+                  title={bn ? "স্ক্রল করলে গন্তব্য নোডে ক্যামেরা জুম হয়" : "Scroll-linked camera orbit & node zoom"}
+                >
+                  {bn ? `স্ক্রল জুম ${scrollZoomPct}%` : `SCROLL ZOOM ${scrollZoomPct}%`}
+                </span>
+
+                <span className="text-[rgba(207,181,129,0.3)] text-xs select-none">|</span>
 
                 {(["DAC", "RUH", "DXB", "KUL", "LON"] as const).map((code) => (
                   <button
@@ -595,7 +736,8 @@ export function JourneyAtlas({ language, onSelect }: Props) {
                     type="button"
                     onClick={() => {
                       setAutoOrbit(false);
-                      focusRouteControlRef.current?.(code);
+                      setPinnedTargetCode(code === "DAC" ? null : code);
+                      focusRouteControlRef.current?.(code, false);
                     }}
                     className={`px-2 py-1 rounded-md text-[10px] font-mono font-semibold transition-colors whitespace-nowrap shrink-0 ${
                       focusedCode === code
