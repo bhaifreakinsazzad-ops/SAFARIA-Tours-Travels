@@ -41,7 +41,7 @@ const BENEFITS = [
  * This is a marketing and enquiry surface, not a fare inventory or a
  * replacement for the existing Travel Studio, B2B desk or ticketing workflow.
  */
-export function SeasonalLandingClient() {
+export function SeasonalLandingClient({ initialAudience = "b2c" }: { initialAudience?: SeasonalAudience }) {
   const language = useSiteStore((state) => state.language);
   const setLanguage = useSiteStore((state) => state.setLanguage);
   const selectedOfferId = useSiteStore((state) => state.selectedOfferId);
@@ -51,17 +51,12 @@ export function SeasonalLandingClient() {
   const closeEnquiry = useSiteStore((state) => state.closeEnquiry);
 
   const bn = language === "bn";
-  const [audience, setAudience] = useState<SeasonalAudience>("b2c");
+  const [audience, setAudience] = useState<SeasonalAudience>(initialAudience);
   const [dialogVisited, setDialogVisited] = useState(false);
 
   useEffect(() => {
     document.documentElement.lang = language;
   }, [language]);
-
-  useEffect(() => {
-    const selected = new URLSearchParams(window.location.search).get("audience");
-    if (selected === "b2b") setAudience("b2b");
-  }, []);
 
   const launchQuote = (offerId: string) => {
     setDialogVisited(true);
