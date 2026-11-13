@@ -261,3 +261,19 @@ External airline documentation verifies that programs of this type exist, **not*
 - The handwritten Seasonal header has no visible offer details, so no seasonal promotion was invented.
 - The 50/50 test split applies to qualified-lead acquisition, not proof of equal unit economics.
 - Pre-register B2B interest and offer appropriate workflow demos. Never activate paid membership or booking until regulatory, supplier, payment and privacy gates pass.
+
+---
+
+## 11. Seasonal Landing Upgrade — Second Handwritten Photo (2026-11-14)
+
+**Read alongside:** [SEASONAL_LANDING_CONVERSION_MASTER.md](SEASONAL_LANDING_CONVERSION_MASTER.md).
+
+The second photo starts with **SEASONAL**, but appears to outline website presentation features, not a confirmed seasonal airfare sale. The discernible ideas are **Landing Page**, **Interactive & Responsive**, **Mobile Responsive**, **Free Customized Domain** (uncertain commercial claim), and **Hosting**; the lower phrase is unclear.
+
+**Implemented extension:** `/seasonal` with a bilingual responsive interactive visitor-versus-agency selector, four linked B2C enquiry themes and four B2B partnership interest themes. The page reuses existing images, real logo, existing enquiry dialog, B2B intake, SEO metadata and website hosting. It is discoverable through a homepage call-to-action and sitemap.
+
+**No duplicate offers:** Original 26-offer registry remains unchanged; seasonal ideas are reusable *campaign themes*, not new supplier inventory. **No free domain or free hosting is promised.** Supplier contracts remain under negotiation.
+
+**Creative production:** The linked Seasonal master has ten Nano Banana Pro scene briefs (two website heroes and eight social master creatives), explicit dimensions, HTML overlay guidance, quality review and safe advertising wording.
+
+**Operating decision carried forward:** 50% B2C and 50% B2B as initial *media testing allocation*, 24/7 staffed support *contact only*, not 24/7 airline action or guaranteed fare, booking, refund or commission. Review approval and test gates before release.

@@ -1,0 +1,40 @@
+name: SAFARIA Seasonal Upgrade Verification
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches:
+      - feature/seasonal-landing-unified-upgrade-20261114
+
+permissions:
+  contents: read
+
+concurrency:
+  group: seasonal-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Check TypeScript
+        run: npm run typecheck
+      - name: Check ESLint
+        run: npm run lint
+      - name: Run unit and integration tests
+        run: npm test
+      - name: Check production purge safety
+        run: npm run verify:purge
+      - name: Build production app
+        run: npm run build
