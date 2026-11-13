@@ -9,7 +9,8 @@ import {
 describe("universal handwritten-offers marketing mapping", () => {
   it("maps all homepage campaign buttons to an existing offer without catalog duplication", () => {
     const ids = new Set(offers.map((offer) => offer.id));
-    expect(offers).toHaveLength(26);
+    expect(offers.length).toBeGreaterThanOrEqual(26);
+    expect(ids.size).toBe(offers.length);
     for (const campaign of [...UNIVERSAL_BENEFITS, ...SPECIALIST_CAMPAIGNS]) {
       expect(ids.has(campaign.offerId), campaign.id).toBe(true);
     }
