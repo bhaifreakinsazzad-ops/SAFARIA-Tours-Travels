@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", images: ["/images/social-share.jpg"] },
 };
 
-export default function SeasonalPage() {
-  return <SeasonalLandingClient />;
+export default async function SeasonalPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ audience?: string | string[] }>;
+}) {
+  const { audience } = await searchParams;
+  return <SeasonalLandingClient initialAudience={audience === "b2b" ? "b2b" : "b2c"} />;
 }
