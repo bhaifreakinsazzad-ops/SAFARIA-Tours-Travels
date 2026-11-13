@@ -50,33 +50,6 @@ export function OffersBento({
   const parallaxEvenX = useTransform(smoothScrollProgress, [0, 0.5, 1], [-3, 0, 3]);
   const parallaxOddX = useTransform(smoothScrollProgress, [0, 0.5, 1], [3, 0, -3]);
 
-  // IntersectionObserver + anime.js staggered card reveal
-  useEffect(() => {
-    if (!root.current || reduceMotion) return;
-    const groups = Array.from(root.current.querySelectorAll<HTMLElement>(".offer-group"));
-    const observer = new IntersectionObserver(
-      async (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          observer.unobserve(entry.target);
-          const cards = Array.from(entry.target.querySelectorAll<HTMLElement>(".offer-card"));
-          const { animate, stagger } = await import("animejs");
-          animate(cards, {
-            opacity: [0, 1],
-            scale: [0.95, 1],
-            y: [20, 0],
-            delay: stagger(55),
-            duration: 540,
-            ease: "outQuad",
-          });
-        }
-      },
-      { threshold: 0.08 },
-    );
-    groups.forEach((group) => observer.observe(group));
-    return () => observer.disconnect();
-  }, [reduceMotion]);
-
   // Automatic Spotlight Cycler across featured offers
   useEffect(() => {
     if (!autoSpotlight || reduceMotion) return;
@@ -231,6 +204,14 @@ export function OffersBento({
                     className={`offer-card ${isFeatured ? "offer-card-featured" : ""} ${
                       isSpotlighted ? "ring-1 ring-[#cfb57c]/70" : ""
                     }`}
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.95 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, amount: 0.08 }}
+                    transition={{
+                      duration: reduceMotion ? 0 : 0.44,
+                      delay: reduceMotion ? 0 : Math.min((index % 4) * 0.055, 0.22),
+                      ease: [0.16, 1, 0.3, 1],
+                    }}
                     style={
                       reduceMotion
                         ? undefined

@@ -50,6 +50,13 @@ export default function manifest(): MetadataRoute.Manifest {
         icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
       },
       {
+        name: "Seasonal Travel Planning",
+        short_name: "Seasonal",
+        description: "Seasonal travel enquiries and agency workflow previews",
+        url: "/seasonal",
+        icons: [{ src: "/icon-192.png", sizes: "192x192", type: "image/png" }],
+      },
+      {
         name: "B2B Agency SaaS",
         short_name: "B2B SaaS",
         description: "Agency partner launch program and desks",

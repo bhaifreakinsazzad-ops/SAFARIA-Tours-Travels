@@ -2,7 +2,7 @@
 
 **Record date:** 2026-11-14  
 **Basis:** Owner-supplied handwritten Universal and Seasonal photos; current SAFARIA `main` branch; owner decisions (50/50 B2C/B2B, 24/7 staffed support, supplier contracts not finalized).  
-**Delivery status:** Implementation committed on a review branch; **not independently production-tested**.
+**Delivery status:** Unified implementation verified locally in AI Studio sandbox (`typecheck`, `lint`, `vitest`, production `next build`, and live Playwright verification); **Nano Banana Pro external asset generation, GitHub push, and Vercel production deployment remain external blockers in this sandbox**.
 
 ## 1. Faithful extraction: second handwritten note
 
@@ -11,8 +11,8 @@ The page is labeled `SEASONAL`. Under it, diagonally handwritten and partly cros
 | Written phrase (best reading) | Confidence | Implementation |
 |---|---|---|
 | Landing Page | high | Dedicated `/seasonal` route, reusable within existing Next.js application |
-| Interactive & Responsive | medium | Interactive B2C/B2B selection, clickable offer cards |
-| Mobile Responsive | high | Fluid Tailwind layout, responsive images, 44px+ controls |
+| Interactive & Responsive | medium | Interactive B2C/B2B selection synced with `?audience=b2b` URL state, clickable offer cards, Framer Motion scroll reveals |
+| Mobile Responsive | high | Fluid Tailwind layout, responsive images, 44px+ controls, mobile bottom PWA nav clearance |
 | Free Customized Domain | medium | **Unconfirmed commercial note**. No free domain claim, purchase or configuration implemented |
 | Hosting | high | Deploy under existing SAFARIA hosting; no new hosting promise |
 | Additional lower-right words | low | Unclear; not converted into features or claims |
@@ -23,16 +23,19 @@ The first handwritten Universal page remains authoritative for the trust and ser
 
 ## 2. What is new and how it merges with the previous revision
 
-The previous Universal-and-B2B work was already merged into `main` through PR #29 and PR #30. This extension is intentionally additive and based on the **actual latest `main`**. It preserves all existing creative assets, original 26-item catalog, 3D Atlas, PWA, bilingual UX, privacy boundaries, B2B desk infrastructure and WhatsApp enquiry integrations.
+The previous Universal-and-B2B work was already merged into `main` through PR #29 and PR #30. This extension is intentionally additive and preserves all existing creative assets, original 26-item catalog, 3D Atlas, PWA, bilingual UX, privacy boundaries, B2B desk infrastructure and WhatsApp enquiry integrations.
 
-| New asset/code | Purpose |
+| New / updated asset or module | Purpose |
 |---|---|
-| `src/app/seasonal/page.tsx` | Landing page, canonical SEO metadata and share preview |
-| `src/components/seasonal-landing-client.tsx` | Premium responsive seasonal landing page with audience selection and enquiry interactions |
-| `src/data/seasonal-campaigns.ts` | Central bilingual campaign registry, mapped to existing offers |
-| `src/components/universal-offers-strip.tsx` | Link added to the new page from homepage, without removing existing offers |
-| `src/app/sitemap.ts` | Adds seasonal landing page to sitemap |
-| `tests/unit/seasonalCampaigns.test.ts` | Regression protection for destination IDs, assets, audience pathways, and claims |
+| `src/app/seasonal/page.tsx` | Landing page, canonical SEO metadata, OpenGraph/Twitter tags, and Schema.org `WebPage` JSON-LD |
+| `src/components/seasonal-landing-client.tsx` | Responsive seasonal landing page with URL-synced audience selection, Motion reveals, and enquiry interactions |
+| `src/lib/attribution.ts` | Non-PII UTM (`utm_*`) and `campaign` propagation helper across `/seasonal` → `/b2b` |
+| `src/data/seasonal-campaigns.ts` | Central bilingual campaign registry, mapped strictly to existing offers |
+| `src/components/universal-offers-strip.tsx` & `src/components/site-experience.tsx` | Discovery links to `/seasonal` from homepage hero/offers without removing existing offers |
+| `src/components/offers-bento.tsx` & `src/components/destination-explorer.tsx` | Conflict-free Framer Motion scroll-triggered reveal animations on `.offer-card` and `.explorer-card` honoring `prefers-reduced-motion` |
+| `public/sw.js` & `src/app/manifest.ts` | Offline PWA shell (`safaria-public-v4`) and Web App Manifest shortcut for `/seasonal` |
+| `src/app/sitemap.ts` | Adds `/seasonal` to sitemap |
+| `tests/unit/seasonalCampaigns.test.ts` | Regression protection for destination IDs, assets, audience pathways, attribution, PWA SW caching, and claims |
 
 The new landing page is published on the existing canonical domain path:
 

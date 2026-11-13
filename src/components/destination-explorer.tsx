@@ -66,17 +66,20 @@ export function DestinationExplorer({
     Promise.resolve(useFavoriteStore.persist.rehydrate()).then(() => setHydrated(true));
   }, []);
 
-  // anime.js cascade animation when filter changes
+  const prevFilterRef = useRef<Filter>(filter);
+
+  // anime.js subtle pulse when user actively switches destination filter
   useEffect(() => {
+    if (prevFilterRef.current === filter) return;
+    prevFilterRef.current = filter;
     if (!gridRef.current || reduceMotion) return;
     if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const wraps = Array.from(gridRef.current.querySelectorAll<HTMLElement>(".destination-card-wrap"));
     if (!wraps.length) return;
     animate(wraps, {
-      opacity: [0.4, 1],
-      translateY: [10, 0],
-      delay: stagger(16),
-      duration: 320,
+      scale: [0.97, 1],
+      delay: stagger(14),
+      duration: 280,
       ease: "outQuad",
     });
   }, [filter, reduceMotion]);
@@ -370,7 +373,7 @@ export function DestinationExplorer({
         </p>
 
         <div className="explorer-grid" ref={gridRef}>
-          {matches.map((destination) => {
+          {matches.map((destination, index) => {
             const metrics = computeFlightMetrics(destination);
             return (
               <div className="destination-card-wrap" key={destination.code}>
@@ -378,8 +381,15 @@ export function DestinationExplorer({
                   type="button"
                   className="explorer-card"
                   layoutId={reduceMotion ? undefined : `destination-${destination.code}`}
+                  initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.97 }}
+                  whileInView={{ opacity: 1, y: 0, scale: 1 }}
+                  viewport={{ once: true, amount: 0.08 }}
                   whileHover={reduceMotion ? undefined : { y: -4 }}
-                  transition={{ duration: 0.18 }}
+                  transition={{
+                    duration: reduceMotion ? 0 : 0.36,
+                    delay: reduceMotion ? 0 : Math.min((index % 4) * 0.045, 0.16),
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   onPointerEnter={(event) => handleCardPointerEnter(destination.code, event)}
                   onPointerMove={(event) => handleCardPointerMove(destination.code, event)}
                   onPointerLeave={handleCardPointerLeave}
@@ -401,9 +411,17 @@ export function DestinationExplorer({
                   </span>
                   <span className="sr-only">{bn ? "বিস্তারিত দেখুন" : "View details"}</span>
                 </motion.button>
-                <button
+                <motion.button
                   type="button"
                   className="favorite-button"
+                  initial={reduceMotion ? false : { opacity: 0, scale: 0.85 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, amount: 0.08 }}
+                  transition={{
+                    duration: reduceMotion ? 0 : 0.3,
+                    delay: reduceMotion ? 0 : Math.min((index % 4) * 0.045 + 0.08, 0.24),
+                    ease: [0.16, 1, 0.3, 1],
+                  }}
                   aria-pressed={hydrated && favorites.includes(destination.code)}
                   aria-label={`${
                     hydrated && favorites.includes(destination.code)
@@ -417,7 +435,7 @@ export function DestinationExplorer({
                   onClick={() => toggleFavorite(destination.code)}
                 >
                   {hydrated && favorites.includes(destination.code) ? "♥" : "♡"}
-                </button>
+                </motion.button>
               </div>
             );
           })}

@@ -51,10 +51,30 @@ describe("seasonal campaign landing contract", () => {
     const seasonal = readFileSync(path.join(process.cwd(), "src/components/seasonal-landing-client.tsx"), "utf8");
     const universal = readFileSync(path.join(process.cwd(), "src/components/universal-offers-strip.tsx"), "utf8");
     const sitemap = readFileSync(path.join(process.cwd(), "src/app/sitemap.ts"), "utf8");
+    const sw = readFileSync(path.join(process.cwd(), "public/sw.js"), "utf8");
     expect(seasonal).toContain("<RouteEnquiryDialog");
     expect(seasonal).toContain('role="group"');
     expect(seasonal).toContain("data-campaign-id");
+    expect(seasonal).toContain("window.history.replaceState");
     expect(universal).toContain('href="/seasonal"');
     expect(sitemap).toContain("/seasonal");
+    expect(sw).toContain('"/seasonal"');
+  });
+
+  it("preserves non-PII UTM and campaign attribution cleanly across /seasonal -> /b2b", async () => {
+    const { extractAttributionParams, buildB2BAttributionHref } = await import("../../src/lib/attribution");
+    const attr = extractAttributionParams(
+      "?audience=b2b&utm_source=facebook&utm_medium=paid_social&utm_campaign=safaria_seasonal_b2b&utm_content=ss05&email=ignored@example.com"
+    );
+    expect(attr).toEqual({
+      utm_source: "facebook",
+      utm_medium: "paid_social",
+      utm_campaign: "safaria_seasonal_b2b",
+      utm_content: "ss05",
+    });
+    const href = buildB2BAttributionHref(attr, "seasonal-agency-requests");
+    expect(href).toBe(
+      "/b2b?utm_source=facebook&utm_medium=paid_social&utm_campaign=safaria_seasonal_b2b&utm_content=ss05&campaign=seasonal-agency-requests#b2b-subscription-enquiry"
+    );
   });
 });

@@ -1,8 +1,9 @@
 // SAFARIA public PWA shell. Never persist enquiries, sessions, or private API responses.
-const CACHE_NAME = "safaria-public-v3";
+const CACHE_NAME = "safaria-public-v4";
 
 const PUBLIC_SHELL = [
   "/",
+  "/seasonal",
   "/b2b",
   "/offline",
   "/manifest.webmanifest",
@@ -18,7 +19,7 @@ const PUBLIC_SHELL = [
   "/images/logo-inverted.webp",
 ];
 
-const CACHEABLE_PUBLIC_ROUTES = new Set(["/", "/b2b", "/offline"]);
+const CACHEABLE_PUBLIC_ROUTES = new Set(["/", "/seasonal", "/b2b", "/offline"]);
 
 self.addEventListener("install", (event) => {
   // A single missing asset must not invalidate all offline resources.

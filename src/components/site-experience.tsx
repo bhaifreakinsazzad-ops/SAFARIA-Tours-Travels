@@ -309,6 +309,13 @@ export function SiteExperience() {
               {bn ? "এজেন্সি" : "Agency"}
             </a>
             <Link
+              href="/seasonal"
+              onClick={() => setMenuOpen(false)}
+              className="text-safaria-gold font-medium"
+            >
+              {bn ? "সিজনাল" : "Seasonal"}
+            </Link>
+            <Link
               href="/b2b"
               onClick={() => setMenuOpen(false)}
               className="text-safaria-gold font-medium"

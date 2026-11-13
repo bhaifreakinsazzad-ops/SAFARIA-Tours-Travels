@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { extractAttributionParams } from "@/lib/attribution";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -247,6 +248,28 @@ export default function B2BLandingPage() {
   const [copied, setCopied] = useState(false);
   const [selectedCorridorHook, setSelectedCorridorHook] = useState<string>("DAC ➔ JED / RUH / MED");
   const leadFormCardRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const attr = extractAttributionParams(window.location.search);
+    if (!attr.campaign) return;
+    const campaignToPain: Record<string, { pain: PainCategory; label: string }> = {
+      "seasonal-agency-requests": { pain: "PAIN_FARE", label: "FareDesk™ (Seasonal Workflow)" },
+      "seasonal-agency-aftercare": { pain: "PAIN_AFTERCARE", label: "AfterCare Desk™ (24/7 Support)" },
+      "seasonal-agency-verify": { pain: "PAIN_TRUST", label: "Verified Workflow™ (Pre-Flight Checks)" },
+      "seasonal-agency-partner": { pain: "PAIN_GROWTH", label: "PartnerGrowth™ (Pre-Registration)" },
+      "seasonal-agency-hero": { pain: "PAIN_FARE", label: "Seasonal B2B Enquiry" },
+      "seasonal-agency-bottom": { pain: "PAIN_GROWTH", label: "Seasonal Team Follow-Up" },
+    };
+    const match = campaignToPain[attr.campaign];
+    if (match) {
+      const timer = window.setTimeout(() => {
+        setSelectedPain(match.pain);
+        setSelectedCorridorHook(match.label);
+      }, 0);
+      return () => window.clearTimeout(timer);
+    }
+  }, []);
 
   const activePain = PAIN_DETAILS.find((p) => p.id === selectedPain) || PAIN_DETAILS[0];
 

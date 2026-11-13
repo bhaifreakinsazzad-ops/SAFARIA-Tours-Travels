@@ -1,0 +1,1186 @@
+# SAFARIA TOURS & TRAVELS
+## MASTER EXECUTION DIRECTIVE 4.0
+### Complete Platform Upgrade, Seasonal Campaign Engine, Conversion Optimization & Production Deployment
+
+**Repository:** https://github.com/bhaifreakinsazzad-ops/SAFARIA-Tours-Travels
+
+**Production Website:** https://safaria.vibing.world
+
+**Primary Branch:** `main`
+
+**Latest Verified Baseline:** `8e4586807d2b9b8ffafee3420ab106799f521d00`
+
+**Execution Mode:** Autonomous development, continuous verification, minimal disruption, production-focused delivery.
+
+---
+
+# 1. YOUR ASSIGNED ROLE
+
+Act simultaneously as SAFARIA's:
+
+- Principal Full-Stack Software Architect
+- Senior Next.js and React Engineer
+- Creative Engineering Director
+- Senior UI/UX and Conversion Rate Optimization Specialist
+- Digital Marketing and Campaign Systems Architect
+- AI Media Integration Engineer
+- SEO and Web Performance Specialist
+- Quality Assurance and Deployment Engineer
+
+Your responsibility is to take ownership of the existing SAFARIA application and finish the Universal + Seasonal marketing implementation to a professional, production-ready standard.
+
+You are not starting a new project.
+
+You are continuing an existing, extensively developed travel technology platform.
+
+**Your objective is to deliver working software, not merely recommendations, implementation plans, or visual mockups.**
+
+Inspect, implement, test, repair, document, commit, and prepare the completed upgrade for deployment.
+
+Do not claim completion until independently verifiable evidence supports it.
+
+---
+
+# 2. MISSION AND SUCCESS CRITERIA
+
+Transform SAFARIA into a cohesive, premium travel marketing and lead-generation platform serving two equally important audiences.
+
+**Audience A — B2C Travellers (50%)**
+
+Travellers looking for flight quotations, domestic travel, Saudi routes, student travel, premium cabins, and post-booking support.
+
+**Audience B — B2B Travel Agencies (50%)**
+
+Independent travel agencies seeking organized quotation workflows, support coordination, partner registration, operational efficiency, and eventual supplier-enabled commercial services.
+
+The 50/50 ratio is the initial marketing and testing allocation, not a requirement to force equal website traffic.
+
+Your final implementation must:
+
+1. Integrate the existing Universal Offers and Seasonal Campaign systems into one consistent customer experience.
+2. Preserve all existing working features and data.
+3. Improve the homepage-to-enquiry conversion journey.
+4. Complete and optimize the dedicated Seasonal landing page.
+5. Integrate professionally branded promotional media.
+6. Ensure separate, relevant B2C and B2B conversion pathways.
+7. Improve the mobile experience.
+8. Maintain accurate Bengali and English content.
+9. Prepare SEO and campaign attribution.
+10. Pass technical, visual, security, and functional quality checks.
+11. Produce an auditable GitHub implementation and deployment handover.
+
+**Non-negotiable:** The result must work correctly, remain maintainable, and avoid unsupported commercial claims.
+
+---
+
+# 3. FIRST ACTION — AUDIT THE EXISTING REPOSITORY
+
+Before changing any code, inspect the actual latest version of the repository.
+
+Run:
+
+```bash
+git fetch origin
+git status
+git checkout main
+git pull --ff-only origin main
+git log -8 --oneline
+```
+
+If the local checkout contains uncommitted work, preserve it safely before switching branches. Never overwrite another developer's changes.
+
+Create a dedicated implementation branch from the latest verified `main`.
+
+Suggested branch:
+
+`feature/safaria-conversion-production-upgrade`
+
+### Important history
+
+The following changes were previously merged:
+
+- PR #29 — Universal Offers implementation.
+- PR #30 — Updated B2B and commercial-claim safeguards.
+- PR #35 — Seasonal landing page and integrated campaign architecture.
+
+**Do not rebuild or duplicate these implementations.**
+
+Instead, inspect the existing code, identify incomplete areas, and improve the current functionality.
+
+### Mandatory files to inspect
+
+**Campaign architecture**
+
+```text
+src/data/universal-marketing.ts
+src/data/seasonal-campaigns.ts
+src/data/marketing-assets.ts
+src/data/offers.json
+src/data/catalog.ts
+```
+
+**Frontend components**
+
+```text
+src/components/site-experience.tsx
+src/components/universal-offers-strip.tsx
+src/components/seasonal-landing-client.tsx
+src/components/offers-bento.tsx
+src/components/destination-explorer.tsx
+src/components/travel-studio.tsx
+src/components/route-enquiry-dialog.tsx
+src/components/agency-portal.tsx
+src/components/b2b-landing-client.tsx
+src/components/b2b-three-hub.tsx
+```
+
+**Application and infrastructure**
+
+```text
+src/app/page.tsx
+src/app/seasonal/page.tsx
+src/app/b2b/page.tsx
+src/app/layout.tsx
+src/app/sitemap.ts
+src/app/robots.ts
+src/app/globals.css
+src/config/constants.ts
+src/lib/site-store.ts
+```
+
+**Authoritative planning documents**
+
+```text
+docs/HANDWRITTEN_OFFERS_CONVERSION_PLAN.md
+docs/SEASONAL_LANDING_CONVERSION_MASTER.md
+public/assets/aistudio/SAFARIA_Nano_Banana_Pro_Creative_Master_Pack_f51ccca2.md
+```
+
+**Existing media**
+
+```text
+public/marketing/
+public/marketing/web/
+public/marketing/offers/
+public/marketing/destinations/
+```
+
+**Testing and verification**
+
+```text
+tests/unit/universalMarketing.test.ts
+tests/unit/seasonalCampaigns.test.ts
+tests/unit/gtmLaunchCopy.test.ts
+.github/workflows/seasonal-validation.yml
+package.json
+```
+
+Also discover and inspect related files not explicitly listed here.
+
+### Audit requirements
+
+Identify:
+
+- Features already completed.
+- Features partially implemented.
+- Broken links, buttons, or redirects.
+- Duplicated content.
+- Placeholder data.
+- Missing or unsuitable visuals.
+- Inconsistent branding.
+- Unverified commercial claims.
+- Performance problems.
+- Mobile layout problems.
+- Accessibility problems.
+- SEO inconsistencies.
+- Conversion tracking gaps.
+- Production deployment blockers.
+
+Create a concise baseline audit recording the current state before modifying anything.
+
+Do not overwrite correct existing implementations.
+
+---
+
+# 4. PRESERVE THE EXISTING PLATFORM
+
+Maintain all operational functionality, including:
+
+- Interactive 3D Journey Atlas.
+- Three.js globe rendering.
+- Flight route selection.
+- Destination Explorer.
+- Existing 26-offer catalog.
+- Travel Studio.
+- Universal Offers.
+- Agency Portal.
+- B2B landing page.
+- Six operational desk concepts.
+- Existing enquiry dialogs.
+- WhatsApp handoff.
+- Bengali/English language functionality.
+- PWA functionality.
+- Existing backend APIs and authentication.
+- Current validation and security controls.
+
+Retain existing data structures and database compatibility.
+
+Do not remove or restructure unrelated features unless a verified defect requires a narrowly scoped repair.
+
+Do not duplicate existing routes, offers, buttons, data records, or campaign components.
+
+Avoid introducing unnecessary libraries.
+
+Use the existing technologies where appropriate:
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS
+- Three.js
+- Anime.js
+- Motion
+- Zustand
+- Sharp
+- Existing backend and API infrastructure
+
+Prioritize native browser capabilities and lightweight implementations.
+
+---
+
+# 5. OFFICIAL BRAND DESIGN SYSTEM
+
+The updated experience must feel like one cohesive international travel brand.
+
+### Color system
+
+| Purpose | Color |
+|---|---|
+| Primary background | `#041713` |
+| Secondary background | `#062B27` |
+| Premium accent | `#CFB57C` |
+| Main typography | `#F3F0E7` |
+| Corporate contrast | `#10243A` |
+
+### Typography
+
+- Cormorant Garamond — editorial display headings.
+- Inter — English UI and body typography.
+- Noto Sans Bengali — Bengali interfaces and content.
+
+### Visual principles
+
+Use premium editorial design with:
+
+- Strong typography hierarchy.
+- Meaningful whitespace.
+- Authentic travel photography.
+- Restrained animation.
+- Consistent borders and corner radii.
+- Accessible contrast.
+- Clear conversion buttons.
+- Realistic human representation.
+- Minimal visual clutter.
+
+Avoid generic AI-generated aesthetics, excessive gradients, animated decoration without purpose, repetitive cards, oversized effects, and overcrowded promotional sections.
+
+### Critical design principle
+
+**The website should feel like a premium travel product, not a collection of unrelated advertising posters.**
+
+Images should support the content.
+
+Content and CTA buttons must remain native, accessible HTML elements.
+
+---
+
+# 6. UNIFY THE UNIVERSAL OFFERS SYSTEM
+
+The original handwritten Universal offer notes include:
+
+1. Best Fare — Best Deal.
+2. No Hidden Charge.
+3. Refund / Re-Issue / Void.
+4. After Sales Support (24/7).
+5. SalamAir — Remittance Offer.
+6. China Southern — Extra Baggage.
+7. Malaysian Student Fare.
+8. Turkish / Singapore / Qatar / Emirates.
+9. Business Class.
+10. Highest Commission.
+
+These are original marketing concepts.
+
+Their appearance in handwritten notes is not proof of active supplier authorization.
+
+### Implementation
+
+Retain and optimize the existing Universal Offers section.
+
+Its main customer-facing benefits should emphasize:
+
+**Fare Options**
+
+Compare route, transit, baggage, and applicable fare conditions.
+
+**Clear Charges**
+
+Understand applicable taxes, fares, and service charges before confirming an arrangement.
+
+**Refund / Re-Issue / Void**
+
+Receive guidance about fare rules, eligibility, and available post-booking actions.
+
+**24/7 Staffed Support**
+
+Contact SAFARIA's support team for enquiries and follow-up.
+
+Do not imply that an airline's ticketing, waiver, or refund department is continuously available.
+
+### Specialized campaign categories
+
+Preserve the existing enquiry pathways for:
+
+- China Southern student travel.
+- Malaysia student travel.
+- SalamAir route enquiries.
+- Business Class enquiries.
+- Premium airline preferences.
+
+Use existing offer IDs and the established enquiry process.
+
+### Commercial restrictions
+
+Supplier agreements remain under negotiation.
+
+Therefore:
+
+- Do not guarantee the lowest fare.
+- Do not advertise guaranteed extra baggage.
+- Do not publish a SalamAir remittance benefit as confirmed.
+- Do not imply official airline partnerships without authorization.
+- Do not guarantee refund approval.
+- Do not promise zero airline penalties.
+- Do not advertise the highest commission.
+- Do not claim confirmed airline inventory or live ticket issuance.
+
+Replace unsupported statements with precise, enquiry-focused messaging.
+
+Keep the presentation persuasive without inventing operational capabilities.
+
+---
+
+# 7. COMPLETE THE SEASONAL CAMPAIGN SYSTEM
+
+The second handwritten note contains references to:
+
+- Landing Page.
+- Interactive & Responsive.
+- Mobile Responsive.
+- Free Customized Domain.
+- Hosting.
+
+Some handwritten words are unclear.
+
+There are no confirmed seasonal airfare discounts, prices, campaign dates, or airline allocations in that source.
+
+### Required implementation
+
+Complete and improve the existing route:
+
+`/seasonal`
+
+Do not create a second competing seasonal page.
+
+Build around the existing `SeasonalLandingClient` and `seasonal-campaigns.ts` registry.
+
+### Required page architecture
+
+**Section 1 — Premium Hero**
+
+Provide a powerful, clear value proposition with:
+
+- SAFARIA branding.
+- Authentic hero photography.
+- One primary conversion CTA.
+- One secondary CTA.
+- Clear audience context.
+- Excellent mobile responsiveness.
+
+The hero must change appropriately between B2C and B2B audiences.
+
+**Section 2 — Trust and Service Principles**
+
+Present:
+
+- Route-focused enquiries.
+- Clear charges and conditions.
+- 24/7 staffed support.
+- Verification-first service delivery.
+
+Do not use invented statistics.
+
+**Section 3 — Audience Selector**
+
+Provide two options:
+
+- Travellers.
+- Travel Agencies.
+
+Switch the visible campaign cards, hero messaging, and CTAs appropriately.
+
+Preserve keyboard usability and accessibility.
+
+Support:
+
+`/seasonal?audience=b2b`
+
+Synchronize audience selection with URL state where appropriate.
+
+Ensure navigation, browser history, direct links, and refresh behavior remain coherent without creating hydration errors.
+
+**Section 4 — Campaign Collection**
+
+Render the relevant campaign cards from the central campaign registry.
+
+**Section 5 — Conversion CTA**
+
+Provide a clear final action appropriate to the selected customer segment.
+
+**Section 6 — Disclosures**
+
+Show concise conditions describing the enquiry-only nature of the platform.
+
+Keep these readable and accessible without overwhelming the page.
+
+---
+
+# 8. B2C CAMPAIGN IMPLEMENTATION
+
+Preserve four core seasonal categories.
+
+| Campaign | Existing offer ID | Action |
+|---|---|---|
+| Domestic Travel | `domestic` | Open quotation enquiry |
+| Saudi Travel | `saudi-cities` | Open quotation enquiry |
+| Student Travel | `student` | Open quotation enquiry |
+| Premium Travel | `business-class` | Open quotation enquiry |
+
+### Conversion requirements
+
+Every card must:
+
+1. Present one relevant customer problem or aspiration.
+2. Explain the practical benefit.
+3. Use a relevant photograph.
+4. Have a clearly visible CTA.
+5. Open the existing quotation process.
+6. Preserve the selected offer context.
+7. Work correctly on mobile and desktop.
+
+The hero quotation CTA should reuse `fare-options`.
+
+Do not invent new catalog products or supplier inventory.
+
+Use the existing `RouteEnquiryDialog` rather than developing another quotation form.
+
+Verify dialog focus management, keyboard access, scroll locking, successful submission handling, error states, and WhatsApp handoff specifically on the `/seasonal` page.
+
+---
+
+# 9. B2B CAMPAIGN IMPLEMENTATION
+
+Retain four primary B2B themes:
+
+**1. Fare Request Management**
+
+Problem: Agencies managing scattered quotation requests.
+
+Solution positioning: Organized FareDesk™ request and follow-up workflows.
+
+**2. AfterCare Support**
+
+Problem: Difficulty obtaining assistance outside regular operating hours.
+
+Solution positioning: SAFARIA's staffed 24/7 communication and support process.
+
+**3. Passenger Data Checks**
+
+Problem: Manual passenger data handling and preventable documentation mistakes.
+
+Solution positioning: Verified Workflow™ passenger-detail checks.
+
+**4. Partner Network**
+
+Problem: Independent agencies looking for operational partners and structured systems.
+
+Solution positioning: SAFARIA partnership pre-registration and workflow demonstrations.
+
+### B2B CTA destination
+
+Use the existing partner enquiry route:
+
+`/b2b#b2b-subscription-enquiry`
+
+Do not create duplicate lead forms.
+
+### Commercial positioning
+
+Until supplier contracts and other required approvals are completed:
+
+- Promote agency interest registration.
+- Promote demonstrations of available workflows.
+- Explain the six operational desks accurately.
+- Show proposed plans only as proposed.
+- Do not promise live wholesale fares.
+- Do not guarantee commission rates.
+- Do not activate paid subscriptions automatically.
+- Do not imply operational ticketing rights not yet secured.
+
+Preserve the existing agency verification and authorization requirements.
+
+---
+
+# 10. NANO BANANA PRO — MEDIA PRODUCTION & WEBSITE INTEGRATION
+
+Create a coordinated SAFARIA visual campaign system.
+
+The existing master documentation includes detailed production prompts and specifications.
+
+Use them as the creative foundation.
+
+### Production priority
+
+**Priority A — Website hero assets**
+
+Generate or finalize:
+
+- SW01 — B2C Seasonal Hero.
+- SW02 — B2B Seasonal Hero.
+
+Target desktop canvas: 1600×900.
+
+Produce independently composed mobile crops.
+
+**Priority B — B2C category visuals**
+
+- SS01 — Domestic Travel.
+- SS02 — Saudi Travel.
+- SS03 — Student Travel.
+- SS04 — Premium Travel.
+
+**Priority C — B2B category visuals**
+
+- SS05 — Agency Workload.
+- SS06 — Staffed Support.
+- SS07 — Verified Workflow.
+- SS08 — Partnership Pre-Registration.
+
+**Priority D — Supporting promotional assets**
+
+Where justified by actual page placement, create:
+
+- Universal Offers support banner.
+- B2C lead-generation banner.
+- B2B partnership banner.
+- Seasonal campaign social-sharing preview.
+
+Avoid adding decorative banners that displace high-value content or cause repetitive messaging.
+
+### Visual generation instructions
+
+Use Nano Banana Pro where an authorized integration is available.
+
+Supply:
+
+- Original SAFARIA logo.
+- Existing website screenshots.
+- Official color palette.
+- Relevant destination references.
+- Exact campaign brief.
+- Target dimensions.
+- Intended website placement.
+
+Generate photo-realistic visual backgrounds.
+
+For website images, do not burn CTA buttons, pricing, disclaimers, or large promotional headlines into the image.
+
+Those must be rendered as editable HTML.
+
+If Nano Banana Pro is unavailable, preserve existing approved assets, prepare the specific missing production files and prompts, and identify the blocker honestly.
+
+Do not substitute unrelated or fabricated images.
+
+### File organization
+
+Use:
+
+```text
+public/marketing/seasonal/
+  sw01-b2c-hero.webp
+  sw02-b2b-hero.webp
+  ss01-domestic.webp
+  ss02-saudi.webp
+  ss03-student.webp
+  ss04-premium.webp
+  ss05-agency-workload.webp
+  ss06-staffed-support.webp
+  ss07-verified-workflow.webp
+  ss08-partnership.webp
+```
+
+Only reference new paths once the actual files exist.
+
+Preserve existing assets as fallbacks until replacements pass review.
+
+### Image optimization
+
+Use Sharp or the existing image-processing pipeline.
+
+Implement:
+
+- WebP or AVIF where suitable.
+- Responsive dimensions.
+- Correct aspect ratios.
+- Appropriate image compression.
+- Explicit image sizing.
+- Native lazy loading below the fold.
+- Correct image priority for above-the-fold content.
+- Object positioning for mobile crops.
+- Descriptive image alt text.
+
+Do not use giant uncompressed images.
+
+Do not degrade the site's mobile performance to achieve decorative effects.
+
+### Social media derivatives
+
+For approved campaign imagery, prepare:
+
+- 1080×1350 feed.
+- 1080×1080 square.
+- 1080×1920 story/reel cover.
+- 1200×630 link preview where relevant.
+
+Keep master artwork and copy independently editable when possible.
+
+Use exact approved Bengali or English copy.
+
+Proofread all generated typography before publishing.
+
+---
+
+# 11. HOMEPAGE INTEGRATION
+
+The new Seasonal system should be discoverable without interrupting the existing homepage experience.
+
+Inspect the current information hierarchy.
+
+Maintain:
+
+- The main hero.
+- Interactive Journey Atlas.
+- Route selector.
+- Universal Offers.
+- Existing offer collections.
+- Destination Explorer.
+- Travel Studio.
+- Agency sections.
+
+Do not cover or replace functional Three.js content with static imagery.
+
+### Required improvements
+
+Ensure there is a clear, natural path from the homepage to:
+
+`/seasonal`
+
+Maintain the existing link in `UniversalOffersStrip`.
+
+Evaluate one additional contextually appropriate navigation entry or campaign CTA if it improves discovery.
+
+Avoid several redundant Seasonal CTAs competing in the same viewport.
+
+Preserve mobile menu usability.
+
+Keep the homepage visually restrained.
+
+---
+
+# 12. CONVERSION TRACKING AND LEAD ATTRIBUTION
+
+Create a practical, privacy-conscious measurement system without fabricating results.
+
+### Campaign attribution
+
+Preserve campaign identifiers such as:
+
+`seasonal-domestic`
+
+`seasonal-student`
+
+`seasonal-agency-requests`
+
+`seasonal-agency-partner`
+
+Support source parameters such as:
+
+```text
+utm_source
+utm_medium
+utm_campaign
+utm_content
+```
+
+Ensure campaign attribution survives navigation from the landing page to the relevant enquiry flow where technically appropriate.
+
+Do not place personal information in URLs.
+
+### Meaningful funnel events
+
+Track these as distinct events only when actually observable:
+
+- Landing page viewed.
+- Audience selected.
+- Campaign CTA clicked.
+- Enquiry form started.
+- Enquiry submitted successfully.
+- WhatsApp draft opened.
+- Agency registration saved.
+- Verified lead qualified.
+
+A WhatsApp draft being opened does not prove that the user sent the message.
+
+Do not count a quotation request as a confirmed booking.
+
+Use existing analytics or CRM integrations where available and authorized.
+
+If analytics is not configured, implement a clean, consent-aware integration boundary rather than inventing a functioning dashboard.
+
+### Funnel reporting
+
+Separate B2C and B2B metrics.
+
+**B2C**
+
+- Qualified enquiries.
+- Route and date completeness.
+- Actual follow-up status.
+- Quotation conversion where fulfillment is authorized.
+
+**B2B**
+
+- Qualified agency registrations.
+- Verification progress.
+- Demo requests.
+- Completed demos.
+- Commercial follow-up readiness.
+
+Prepare the data model and event names for future reporting without creating unnecessary services.
+
+---
+
+# 13. RESPONSIVE DESIGN & ACCESSIBILITY
+
+Treat mobile as the primary experience.
+
+Test at:
+
+- 320px.
+- 360px.
+- 390px.
+- 428px.
+- 768px.
+- 1024px.
+- 1280px.
+- 1440px and above.
+
+Verify:
+
+- No horizontal overflow.
+- Readable Bengali typography.
+- Proper headline wrapping.
+- Appropriate image crops.
+- Consistent button sizing.
+- Keyboard focus visibility.
+- Correct form labels.
+- Accessible dialogue behavior.
+- Tap targets approximately 44px or larger.
+- Reduced-motion preferences.
+- Sufficient color contrast.
+- No obstructive sticky elements.
+- Correct PWA navigation behavior.
+
+Use motion for purposeful feedback and transitions.
+
+Avoid animation loops that interfere with reading, scrolling, or interaction.
+
+Do not make mobile devices render expensive visual effects unnecessarily.
+
+---
+
+# 14. WEBSITE PERFORMANCE
+
+Protect the performance of the existing application.
+
+Pay particular attention to:
+
+- Three.js loading.
+- Hero image delivery.
+- Cumulative layout shift.
+- Third-party scripts.
+- JavaScript bundle size.
+- Hydration stability.
+- Font loading.
+- Below-the-fold content loading.
+
+Use dynamic imports or deferred loading where appropriate.
+
+Avoid loading unnecessary 3D effects on low-powered devices.
+
+Target strong Core Web Vitals under realistic mobile conditions:
+
+- LCP: 2.5 seconds or less at the 75th percentile.
+- CLS: 0.1 or less.
+- INP: 200 milliseconds or less.
+
+These are optimization targets, not measurements that may be claimed without testing.
+
+Do not trade away functional reliability for visual effects.
+
+---
+
+# 15. SEO AND SOCIAL SHARING
+
+Verify:
+
+```text
+src/app/seasonal/page.tsx
+src/app/layout.tsx
+src/app/sitemap.ts
+src/app/robots.ts
+```
+
+### Requirements
+
+Implement or verify:
+
+- Unique metadata title.
+- Descriptive page summary.
+- Correct canonical URL.
+- Open Graph metadata.
+- Twitter/X card metadata.
+- Appropriate social preview image.
+- Logical heading structure.
+- Accessible image descriptions.
+- Relevant internal links.
+- Sitemap inclusion.
+- Appropriate indexing directives.
+
+Canonical landing URL:
+
+`https://safaria.vibing.world/seasonal`
+
+Ensure the B2B audience parameter does not create unnecessary duplicate indexed pages.
+
+Do not create fake structured review data, ratings, or unsupported offers.
+
+---
+
+# 16. DOMAIN & HOSTING REQUIREMENTS
+
+The handwritten source mentions:
+
+- Free Customized Domain.
+- Hosting.
+
+These are planning notes, not confirmed commercial entitlements.
+
+### Implement now
+
+Use the current verified SAFARIA domain and hosting arrangement.
+
+Do not buy or register additional domains.
+
+Do not advertise free domains.
+
+Do not create an agency domain-reselling product without written commercial specifications.
+
+### Future readiness
+
+Keep the landing page architecture reusable enough to support:
+
+- Multiple approved seasonal campaigns.
+- Campaign-specific content.
+- Future custom subdomains.
+- Optional white-label agency landing pages.
+
+However, do not build a large multi-tenant website builder in this upgrade.
+
+That would be a separate project requiring business rules, tenant isolation, permissions, pricing and deployment design.
+
+---
+
+# 17. QA AND REGRESSION TESTING
+
+Run the repository's established quality gates.
+
+```bash
+npm ci
+
+npm run typecheck
+
+npm run lint
+
+npm test
+
+npm run verify:purge
+
+npm run verify:atlas
+
+npm run verify:phase23
+
+npm run verify:phase45
+
+npm run verify:b2b
+
+npm run build
+```
+
+Execute relevant browser tests:
+
+```bash
+npm run test:e2e
+```
+
+Where the environment supports them, configure and execute the actual browser suite rather than treating a missing browser installation as a test pass.
+
+### Required functional tests
+
+Verify:
+
+1. Homepage loads correctly.
+2. Journey Atlas remains interactive.
+3. Universal Offers cards open the correct enquiries.
+4. Seasonal page loads successfully.
+5. B2C/B2B selector works.
+6. Direct links with `?audience=b2b` work.
+7. Bengali and English switching works.
+8. All four B2C offers pass their correct IDs.
+9. All four B2B campaigns lead to the agency registration flow.
+10. Enquiry dialog opens, closes and validates correctly.
+11. WhatsApp handoff preserves the intended enquiry.
+12. Images load without broken paths.
+13. Keyboard navigation works.
+14. Responsive layouts remain usable.
+15. SEO metadata and sitemap are valid.
+16. Existing PWA features remain functional.
+17. No new commercial claims violate launch restrictions.
+
+### Required visual verification
+
+Use browser screenshots on mobile, tablet and desktop.
+
+Inspect:
+
+- Hero.
+- Audience selector.
+- Campaign cards.
+- CTAs.
+- Forms.
+- Footer.
+- Empty states.
+- Validation errors.
+- Image crops.
+- Bengali typography.
+
+Do not mark visual QA complete based only on a successful TypeScript build.
+
+### Security checks
+
+Verify that the upgrade does not introduce:
+
+- Exposed credentials.
+- Unapproved third-party scripts.
+- Personal data in analytics events.
+- Insecure file upload endpoints.
+- Unverified payment actions.
+- Unauthorized partner access.
+- Cross-tenant data exposure.
+- Missing consent controls.
+
+Preserve existing authentication and data isolation.
+
+---
+
+# 18. PRODUCTION DEPLOYMENT
+
+Inspect the existing deployment configuration before making changes.
+
+A previous Vercel deployment check reported a build-rate limitation.
+
+Do not interpret that as a successful live deployment.
+
+### Required deployment workflow
+
+1. Confirm the branch is based on the latest `main`.
+2. Confirm all modified files are reviewed.
+3. Run the complete CI pipeline.
+4. Resolve failures.
+5. Verify no merge conflicts.
+6. Open or update a detailed GitHub pull request.
+7. Merge once project review and required checks are satisfied.
+8. Confirm the hosting provider actually deploys the merge.
+9. Verify the live production website.
+10. Record the deployed commit and production URL.
+
+If hosting limits prevent deployment, document the exact blocker and retain the tested repository changes.
+
+Do not claim the public website has been updated until the deployed version is independently verified.
+
+---
+
+# 19. DOCUMENTATION & HANDOVER
+
+Update the existing project documentation to match the final implementation.
+
+Required deliverables:
+
+**A. Architecture Summary**
+
+Explain where the Universal and Seasonal campaign systems live and how they connect to the existing platform.
+
+**B. Files Changed**
+
+Provide an accurate list of new and modified files.
+
+**C. Campaign Media Register**
+
+Record image filenames, campaign IDs, sizes, placement, and approval status.
+
+**D. Conversion Flow Map**
+
+Document B2C and B2B CTA destinations, lead handling and attribution.
+
+**E. Testing Results**
+
+Provide actual test outputs, failures encountered and repairs completed.
+
+**F. Deployment Verification**
+
+Provide the exact deployed Git commit and verified production URL.
+
+**G. Remaining Commercial Dependencies**
+
+Clearly record supplier agreements, ticketing permissions, unapproved promotional claims and any outstanding operator decisions.
+
+Ensure existing implementation documentation is updated instead of generating contradictory duplicate specifications.
+
+---
+
+# 20. ACCEPTANCE CRITERIA
+
+The assignment is complete only when:
+
+- The existing SAFARIA application remains functional.
+- Universal and Seasonal systems are integrated without duplication.
+- `/seasonal` offers a polished bilingual experience.
+- B2C and B2B campaign paths work correctly.
+- All campaign references resolve to existing, valid workflows.
+- The media system is implemented with approved assets and no broken paths.
+- The website works properly on mobile, tablet and desktop.
+- Conversion tracking is accurately scoped and tested where configured.
+- SEO and social metadata are correct.
+- The original 26-offer catalog remains intact.
+- Commercial claims are properly qualified.
+- The full automated quality suite passes.
+- Browser QA is completed with evidence.
+- Documentation is updated.
+- Changes are committed to GitHub.
+- Deployment state is verified or any external blocker is explicitly documented.
+
+**Never label incomplete features as complete.**
+
+Do not fake test results, campaign performance, ticket inventory, client testimonials, or deployment status.
+
+---
+
+# 21. FINAL EXECUTION DIRECTIVE
+
+Begin implementation immediately.
+
+Follow this order:
+
+**PHASE 1 — Repository Audit**
+
+Inspect and validate the current main branch, previous revisions, assets, source data and architecture.
+
+**PHASE 2 — Conversion Integration**
+
+Improve the existing Universal and Seasonal experiences without rebuilding completed features.
+
+**PHASE 3 — Premium Media Production**
+
+Generate or integrate approved Nano Banana Pro imagery and optimize all responsive media.
+
+**PHASE 4 — Functional Completion**
+
+Finish audience navigation, enquiry handling, attribution and any verified outstanding UI requirements.
+
+**PHASE 5 — Quality Optimization**
+
+Improve performance, accessibility, SEO and mobile responsiveness.
+
+**PHASE 6 — Complete Verification**
+
+Run automated tests, production build, browser QA and regression checks.
+
+**PHASE 7 — GitHub Delivery**
+
+Commit changes, prepare a clear PR, complete review requirements and merge safely.
+
+**PHASE 8 — Deployment Verification**
+
+Confirm production deployment and hand over the exact resulting build.
+
+### Operational rules
+
+- Execute work rather than repeatedly generating plans.
+- Preserve existing working functionality.
+- Avoid unrelated code changes.
+- Prefer simple, robust architecture.
+- Reuse existing components and services.
+- Use real source evidence for every commercial claim.
+- Keep all marketing data centrally maintainable.
+- Maintain visual consistency across the platform.
+- Do not request information already provided.
+- Record unresolved dependencies without inventing answers.
+- Do not bypass failing tests or misrepresent their results.
+- Continue through the full implementation workflow within the capabilities of the connected environment.
+
+### Final report format
+
+Return:
+
+1. **Completed Implementations**
+2. **Features Preserved**
+3. **Files Created / Modified**
+4. **Media Assets Integrated**
+5. **B2C / B2B Conversion Paths**
+6. **Verification Results**
+7. **SEO / Accessibility / Performance Results**
+8. **GitHub Commit and PR**
+9. **Production Deployment Status**
+10. **Remaining Blockers, if any**
+
+---
+
+## FINAL GOAL
+
+Deliver SAFARIA Tours & Travels as a cohesive, premium, bilingual travel marketing and agency lead-generation platform.
+
+Unify the existing Universal Offers, Seasonal Campaigns, interactive travel experience, B2C customer journey, B2B partner acquisition, and high-quality promotional media into one commercially credible digital experience.
+
+**The deliverable is a verified, maintainable repository upgrade—not a prototype, mockup, or implementation proposal.**
+
+**BEGIN EXECUTION.**
