@@ -2,8 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform } from "motion/react";
-import { Compass } from "lucide-react";
+import { Compass, Radio, ArrowUpRight } from "lucide-react";
 import { offers, offerCategories, type OfferCategory } from "@/data/catalog";
+import { SAFARIA_CONFIG } from "@/config/constants";
 import type { Language } from "@/lib/atlas-data";
 
 const labels: Record<string, [string, string]> = {
@@ -268,6 +269,48 @@ export function OffersBento({
           </div>
         );
       })}
+
+      {/* B2B Sub-Agent Wholesale Hook & Official WhatsApp Community Channel Callout */}
+      <div className="mt-10 rounded-2xl border border-[rgba(207,181,124,0.34)] bg-gradient-to-r from-[#06241e] via-[#041713] to-[#06241e] p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <span className="inline-flex items-center gap-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
+            <Radio className="h-3.5 w-3.5" />
+            <span>
+              {bn
+                ? "ট্রাভেল এজেন্সি ও বি২বি পার্টনার স্পেশাল"
+                : "FOR BANGLADESHI TRAVEL AGENCIES & SUB-AGENTS"}
+            </span>
+          </span>
+          <h4 className="font-display text-base sm:text-lg font-bold text-[#f3f0e7]">
+            {bn
+              ? "এই ২৬টি সেবায় ০% SAFARIA মার্কআপে বি২বি হোলসেল রেট ও ডেইলি ফেয়ার আপডেট চান?"
+              : "Want 0% SAFARIA Markup on All 26 Services + Daily Dhaka Net Fare Drops?"}
+          </h4>
+          <p className="text-xs text-[#b1c3bc]">
+            {bn
+              ? "৭২ ঘণ্টার পাইলট ট্রায়ালের জন্য আবেদন করুন অথবা আমাদের অফিসিয়াল WhatsApp চ্যানেলে যুক্ত থাকুন।"
+              : "Enquire for a 72-hour B2B subscription pilot or follow our official WhatsApp community broadcast channel."}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <a
+            href="#sf-agency"
+            className="rounded-xl bg-[#cfb57c] px-4 py-2 text-xs font-bold text-[#041713] hover:opacity-90 transition-opacity"
+          >
+            {bn ? "B2B সাবস্ক্রিপশন এনকোয়ারি →" : "Enquire B2B Subscription →"}
+          </a>
+          <a
+            href={SAFARIA_CONFIG.whatsappChannelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-xl border border-[#10b981]/55 bg-[#092c27] px-4 py-2 text-xs font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#041713] transition-colors"
+          >
+            <span>{bn ? "WhatsApp চ্যানেলে যুক্ত হোন" : "Join WhatsApp Channel"}</span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+      </div>
     </section>
   );
 }

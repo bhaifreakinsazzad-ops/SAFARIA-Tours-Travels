@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { TrendingUp, Calculator, CheckCircle2 } from "lucide-react";
+import { TrendingUp, Calculator, CheckCircle2, Users, Sparkles, ArrowUpRight, Radio } from "lucide-react";
 import { animate, stagger } from "animejs";
 import {
   agencyErrors,
@@ -9,7 +9,7 @@ import {
   initialAgencyFields,
   type AgencyFields,
 } from "@/lib/agency";
-import { AGENCY_PRICING } from "@/config/constants";
+import { AGENCY_PRICING, SAFARIA_CONFIG } from "@/config/constants";
 import { focusInvalidField } from "@/lib/validation-motion";
 import type { Language } from "@/lib/atlas-data";
 
@@ -43,6 +43,85 @@ const ONBOARDING_STEPS = [
   },
 ] as const;
 
+interface B2BMarketingHook {
+  id: string;
+  corridor: string;
+  badgeBn: string;
+  badgeEn: string;
+  titleBn: string;
+  titleEn: string;
+  hookBn: string;
+  hookEn: string;
+  marginTagBn: string;
+  marginTagEn: string;
+  requirement: "air" | "tour" | "hotel" | "visa" | "other";
+  prefillNoteBn: string;
+  prefillNoteEn: string;
+}
+
+const B2B_OFFER_HOOKS: B2BMarketingHook[] = [
+  {
+    id: "umrah-ksa",
+    corridor: "DAC ➔ JED / RUH",
+    badgeBn: "সৌদি ও ওমরাহ ব্লক",
+    badgeEn: "Saudi & Umrah Blocks",
+    titleBn: "ওমরাহ কাফেলা ও সৌদি লেবার ফেয়ার",
+    titleEn: "Umrah Group PNR & Saudi Worker Net Fares",
+    hookBn: "০% SAFARIA মার্কআপে জেদ্দা ও রিয়াদ রুটে গ্রুপ সিট হোল্ড এবং পাসপোর্ট নাম অডিট।",
+    hookEn: "Lock group seat blocks on DAC–JED/RUH with 0% SAFARIA markup and pre-issuance name audit.",
+    marginTagBn: "গড় মার্জিন +৳৩,২০০/টিকেট",
+    marginTagEn: "Avg Margin +৳3,200/pax",
+    requirement: "air",
+    prefillNoteBn: "সৌদি ওমরাহ ও জেদ্দা/রিয়াদ গ্রুপ ব্লক হোলসেল ফেয়ারে আগ্রহী।",
+    prefillNoteEn: "Interested in Saudi Umrah & DAC-JED/RUH wholesale group blocks.",
+  },
+  {
+    id: "gulf-expat",
+    corridor: "DAC ➔ DXB / DOH",
+    badgeBn: "মধ্যপ্রাচ্য এক্সপ্যাট হাব",
+    badgeEn: "Gulf Expat Corridors",
+    titleBn: "দুবাই, শারজাহ ও কাতার ইনস্ট্যান্ট নেট কোট",
+    titleEn: "Dubai, Doha & Gulf Expat Wholesale Desk",
+    hookBn: "জিডিএস ছাড়াই ১২ মিনিটে এমিরেটস, কাতার ও বিমানের নেট ফেয়ার কোটেশন এবং ২৪/৭ রি-ইস্যু।",
+    hookEn: "12-minute FareDesk™ net quotes on Emirates, Qatar & Biman without GDS terminal overhead.",
+    marginTagBn: "১২ মি. ফাস্ট কোট SLA",
+    marginTagEn: "12-Min Net Quote SLA",
+    requirement: "air",
+    prefillNoteBn: "দুবাই ও মধ্যপ্রাচ্য রুটে দ্রুত হোলসেল এয়ার টিকিট কোটেশনে আগ্রহী।",
+    prefillNoteEn: "Interested in rapid wholesale net fares for UAE & Gulf corridors.",
+  },
+  {
+    id: "student-longhaul",
+    corridor: "DAC ➔ LON / YTO",
+    badgeBn: "স্টুডেন্ট ও লং-হল",
+    badgeEn: "Student & UK/Canada",
+    titleBn: "সিলেট-লন্ডন, টরন্টো ও স্টুডেন্ট ব্যাগেজ ফেয়ার",
+    titleEn: "UK, Canada & Student Extra-Baggage Fares",
+    hookBn: "শিক্ষার্থী ও প্রবাসী যাত্রীদের জন্য অতিরিক্ত ব্যাগেজ এবং জটিল মাল্টি-সিটি স্প্লিট পিএনআর সাপোর্ট।",
+    hookEn: "Student extra-baggage allocations and error-free multi-city split ticketing for UK & Canada.",
+    marginTagBn: "৳০ নাম-পেনাল্টি গ্যারান্টি",
+    marginTagEn: "Zero Naming Fine Gate",
+    requirement: "air",
+    prefillNoteBn: "ইউকে, কানাডা ও স্টুডেন্ট রুটের স্পেশাল ফেয়ার এবং ভিসা সাপোর্টে আগ্রহী।",
+    prefillNoteEn: "Interested in UK/Canada student airfares and split-ticket PNR support.",
+  },
+  {
+    id: "asean-visa-pack",
+    corridor: "DAC ➔ KUL / SIN / BKK",
+    badgeBn: "আসিয়ান ভিসা ও ট্যুর",
+    badgeEn: "ASEAN Visa & Holidays",
+    titleBn: "মালয়েশিয়া, সিঙ্গাপুর ও থাইল্যান্ড B2B প্যাক",
+    titleEn: "Malaysia, Singapore & Bangkok B2B Combos",
+    hookBn: "এয়ার টিকিটের পাশাপাশি ভিসা প্রসেসিং, হোটেল ও ট্রান্সফার কম্বোতে এজেন্সির জন্য বাড়তি কমিশন।",
+    hookEn: "Bundle wholesale airfares with visa assistance, hotels, and airport transfers for higher agency yield.",
+    marginTagBn: "কম্বো মার্জিন বুস্টার",
+    marginTagEn: "High-Yield Land + Air",
+    requirement: "visa",
+    prefillNoteBn: "মালয়েশিয়া, সিঙ্গাপুর ও থাইল্যান্ডের ভিসা, ট্যুর ও এয়ার টিকিট B2B প্যাকেজে আগ্রহী।",
+    prefillNoteEn: "Interested in ASEAN visa, holiday packages, and wholesale air ticketing.",
+  },
+];
+
 export function AgencyPortal({ language }: { language: Language }) {
   const bn = language === "bn";
   const [fields, setFields] = useState<AgencyFields>(initialAgencyFields);
@@ -52,10 +131,14 @@ export function AgencyPortal({ language }: { language: Language }) {
   const [simTickets, setSimTickets] = useState<number>(35);
   const [animatedSavings, setAnimatedSavings] = useState<number>(35 * 2200);
   const [activeOnboardingStep, setActiveOnboardingStep] = useState<number>(0);
+  const [activeHookId, setActiveHookId] = useState<string>("umrah-ksa");
 
   const priceRef = useRef<HTMLElement>(null);
   const formFieldsRef = useRef<HTMLDivElement>(null);
   const stepBannerRef = useRef<HTMLDivElement>(null);
+  const hooksGridRef = useRef<HTMLDivElement>(null);
+  const communityCardRef = useRef<HTMLDivElement>(null);
+  const orbitRingRef = useRef<SVGCircleElement>(null);
 
   const errors = agencyErrors(fields);
   const set = <K extends keyof AgencyFields>(key: K, value: AgencyFields[K]) =>
@@ -67,6 +150,19 @@ export function AgencyPortal({ language }: { language: Language }) {
     invalid(key) && (
       <small className="field-error">{bn ? "এই তথ্যটি যাচাই করুন" : "Please check this field"}</small>
     );
+
+  // anime.js continuous orbital pulse on the B2B Network Hub SVG & initial hook cards entrance
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (orbitRingRef.current) {
+      animate(orbitRingRef.current, {
+        strokeDashoffset: [180, 0],
+        duration: 6000,
+        loop: true,
+        ease: "linear",
+      });
+    }
+  }, []);
 
   // anime.js animated ROI counter when ticket slider changes
   useEffect(() => {
@@ -126,6 +222,25 @@ export function AgencyPortal({ language }: { language: Language }) {
       }
     }
   }, [activeOnboardingStep]);
+
+  const handleSelectMarketingHook = (hook: B2BMarketingHook) => {
+    setActiveHookId(hook.id);
+    set("requirement", hook.requirement);
+    set("businessNotes", bn ? hook.prefillNoteBn : hook.prefillNoteEn);
+    setActiveOnboardingStep(1);
+
+    const isReduced =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!isReduced && hooksGridRef.current) {
+      const cards = hooksGridRef.current.querySelectorAll(".b2b-hook-card");
+      animate(cards, {
+        scale: [0.985, 1],
+        delay: stagger(35),
+        duration: 320,
+        ease: "outQuad",
+      });
+    }
+  };
 
   function input(
     key: "agencyName" | "location" | "website" | "years" | "volume" | "fullName" | "phone" | "email",
@@ -274,15 +389,81 @@ export function AgencyPortal({ language }: { language: Language }) {
   return (
     <section id="sf-agency" className="content-section agency-section" aria-labelledby="agency-title">
       <div className="section-heading">
-        <p className="eyebrow">04 / AGENCY PARTNERS</p>
+        <p className="eyebrow">04 / AGENCY PARTNERS &amp; B2B SUBSCRIPTION</p>
         <h2 id="agency-title" className="display-heading">
           {bn ? "এজেন্সির জন্য নতুন সম্ভাবনা" : "Built for travel agencies"}
         </h2>
         <p>
           {bn
-            ? "আবেদন করুন; যাচাই ও লিখিত শর্তের পর পরবর্তী ধাপ জানানো হবে।"
-            : "Apply for review; next steps follow verification and written terms."}
+            ? "নন-আয়াটা ও স্বাধীন ট্রাভেল এজেন্সির জন্য ০% SAFARIA মার্কআপে হোলসেল ফেয়ার, ৬টি অপারেশনাল ডেস্ক এবং ৭২ ঘণ্টার পাইলট সুবিধা।"
+            : "Empowering Bangladeshi travel agencies with 0% SAFARIA markup, 6 dedicated operational desks, and a 72-hour verified pilot."}
         </p>
+      </div>
+
+      {/* High-Converting B2B Corridor & Offer Hooks Bar (Tailored for Bangladeshi Sub-Agents) */}
+      <div className="mb-8 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2 text-xs font-mono font-bold text-[#cfb57c] uppercase tracking-wider">
+            <Sparkles className="h-3.5 w-3.5 text-[#10b981]" />
+            <span>
+              {bn
+                ? "বাংলাদেশি এজেন্সির জন্য হাই-মার্জিন রুট ও অফার হুক (ক্লিক করে আবেদন প্রি-ফিল করুন)"
+                : "High-Margin Bangladeshi B2B Corridor Hooks (Click to pre-fill subscription enquiry)"}
+            </span>
+          </div>
+          <a
+            href={SAFARIA_CONFIG.whatsappChannelUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-[#10b981]/50 bg-[#06241e] px-3 py-1.5 text-xs font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#041713] transition-colors self-start sm:self-auto"
+          >
+            <Radio className="h-3.5 w-3.5" />
+            <span>
+              {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
+            </span>
+            <ArrowUpRight className="h-3.5 w-3.5" />
+          </a>
+        </div>
+
+        <div ref={hooksGridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {B2B_OFFER_HOOKS.map((hook) => {
+            const isSelected = activeHookId === hook.id;
+            return (
+              <button
+                key={hook.id}
+                type="button"
+                onClick={() => handleSelectMarketingHook(hook)}
+                className={`b2b-hook-card rounded-2xl border p-4 text-left transition-all flex flex-col justify-between gap-3 ${
+                  isSelected
+                    ? "border-[#cfb57c] bg-[#092c27] shadow-[0_14px_34px_rgba(0,0,0,0.35)] ring-1 ring-[#cfb57c]/60"
+                    : "border-[rgba(207,181,124,0.22)] bg-[rgba(6,36,30,0.75)] hover:border-[rgba(207,181,124,0.55)]"
+                }`}
+              >
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[10px] font-bold text-[#cfb57c] bg-[#041713] px-2 py-0.5 rounded border border-[rgba(207,181,124,0.3)]">
+                      {hook.corridor}
+                    </span>
+                    <span className="font-mono text-[10px] font-bold text-[#10b981]">
+                      {bn ? hook.marginTagBn : hook.marginTagEn}
+                    </span>
+                  </div>
+                  <strong className="block text-sm font-bold text-[#f3f0e7]">
+                    {bn ? hook.titleBn : hook.titleEn}
+                  </strong>
+                  <p className="text-xs text-[#b1c3bc] leading-relaxed">
+                    {bn ? hook.hookBn : hook.hookEn}
+                  </p>
+                </div>
+
+                <div className="pt-2 border-t border-[rgba(207,181,124,0.16)] flex items-center justify-between text-[11px] font-semibold text-[#cfb57c]">
+                  <span>{bn ? hook.badgeBn : hook.badgeEn}</span>
+                  <span>{isSelected ? (bn ? "✓ নির্বাচিত" : "✓ Selected") : bn ? "প্রি-ফিল →" : "Pre-fill →"}</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       <div className="agency-layout">
@@ -356,6 +537,64 @@ export function AgencyPortal({ language }: { language: Language }) {
             </div>
           </div>
 
+          {/* Official SAFARIA B2B WhatsApp Community Broadcast Hub */}
+          <div
+            ref={communityCardRef}
+            className="mt-4 rounded-xl border border-[#10b981]/40 bg-gradient-to-br from-[#062821] to-[#041713] p-4 space-y-3"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <svg className="h-7 w-7 shrink-0" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                  <circle cx="18" cy="18" r="15" stroke="rgba(207,181,124,0.25)" strokeWidth="1.2" />
+                  <circle
+                    ref={orbitRingRef}
+                    cx="18"
+                    cy="18"
+                    r="15"
+                    stroke="#10b981"
+                    strokeWidth="1.8"
+                    strokeDasharray="28 66"
+                  />
+                  <circle cx="18" cy="18" r="5" fill="#cfb57c" />
+                </svg>
+                <div>
+                  <span className="block font-mono text-[10px] font-bold uppercase tracking-wider text-[#10b981]">
+                    {bn ? "লাইভ ট্রেড কমিউনিটি" : "LIVE B2B TRADE CHANNEL"}
+                  </span>
+                  <strong className="text-xs font-bold text-[#f3f0e7]">
+                    {bn ? "SAFARIA এজেন্সি নেটওয়ার্ক হাব" : "SAFARIA Bangladesh Agency Hub"}
+                  </strong>
+                </div>
+              </div>
+              <Users className="h-4 w-4 text-[#cfb57c] shrink-0" />
+            </div>
+
+            <p className="text-xs text-[#b1c3bc] leading-relaxed">
+              {bn
+                ? "প্রতিদিনের ঢাকা-জেদ্দা/দুবাই হোলসেল ফেয়ার ড্রপ, গ্রুপ ব্লক সিট অ্যালার্ট এবং এয়ারলাইন সার্কুলার সবার আগে পেতে আমাদের অফিসিয়াল হোয়াটসঅ্যাপ চ্যানেলে ফলো করুন।"
+                : "Get daily Dhaka wholesale fare drops, Umrah seat block alerts, and instant airline waiver circulars in our official Bangladesh B2B WhatsApp channel."}
+            </p>
+
+            <a
+              href={SAFARIA_CONFIG.whatsappChannelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                if (communityCardRef.current) {
+                  animate(communityCardRef.current, {
+                    scale: [0.98, 1.01, 1],
+                    duration: 320,
+                    ease: "outQuad",
+                  });
+                }
+              }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-[#10b981] px-3.5 py-2 text-xs font-bold text-[#041713] hover:bg-[#34d399] transition-colors"
+            >
+              <span>{bn ? "WhatsApp কমিউনিটি চ্যানেলে যুক্ত হোন" : "Follow Official WhatsApp Channel"}</span>
+              <ArrowUpRight className="h-3.5 w-3.5" />
+            </a>
+          </div>
+
           <div className="agency-benefit">
             <strong>0% SAFARIA Markup</strong>
             <button
@@ -419,6 +658,20 @@ export function AgencyPortal({ language }: { language: Language }) {
                 className="button button-gold w-full text-center flex items-center justify-center gap-2"
               >
                 <span>{bn ? "WhatsApp-এ আবেদন খসড়া পাঠান" : "Relay to SAFARIA via WhatsApp"}</span>
+                <span aria-hidden="true">↗</span>
+              </a>
+              <a
+                href={SAFARIA_CONFIG.whatsappChannelUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#062b27] bg-[#062b27] px-4 py-2.5 text-xs font-bold text-[#f3f0e7] hover:opacity-90 transition-opacity"
+              >
+                <Radio className="h-3.5 w-3.5 text-[#10b981]" />
+                <span>
+                  {bn
+                    ? "অফিসিয়াল B2B WhatsApp কমিউনিটি চ্যানেলে যুক্ত হোন"
+                    : "Join SAFARIA B2B WhatsApp Community Channel"}
+                </span>
                 <span aria-hidden="true">↗</span>
               </a>
               <button

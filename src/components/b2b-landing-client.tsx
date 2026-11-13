@@ -27,10 +27,14 @@ import {
   Award,
   MapPin,
   Users,
+  Radio,
+  ArrowUpRight,
 } from "lucide-react";
 import { SAFARIA_CONFIG, AGENCY_PRICING, PILOT_ENTITLEMENTS, whatsappHrefFor } from "@/config/constants";
 import { PWAInstallButton } from "@/components/pwa-install-button";
 import { motion, AnimatePresence } from "motion/react";
+import { animate } from "animejs";
+import { B2BThreeCommandHub } from "@/components/b2b-three-hub";
 
 type PainCategory =
   | "PAIN_FARE"
@@ -323,8 +327,28 @@ export default function B2BLandingPage() {
     whatsAppUrl: string;
   } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [selectedCorridorHook, setSelectedCorridorHook] = useState<string>("DAC ➔ JED / RUH / MED");
+  const leadFormCardRef = React.useRef<HTMLDivElement>(null);
 
   const activePain = PAIN_DETAILS.find((p) => p.id === selectedPain) || PAIN_DETAILS[0];
+
+  const handleSelectOfferHook = (
+    pain: PainCategory,
+    plan: "MONTHLY" | "ANNUAL",
+    corridorLabel: string,
+  ) => {
+    setSelectedPain(pain);
+    setSelectedPlan(plan);
+    setSelectedCorridorHook(corridorLabel);
+    if (leadFormCardRef.current) {
+      leadFormCardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      animate(leadFormCardRef.current, {
+        scale: [0.98, 1.015, 1],
+        duration: 420,
+        ease: "outBack",
+      });
+    }
+  };
 
   const handleSubmitLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -477,8 +501,39 @@ export default function B2BLandingPage() {
               ✦ {bn ? "৬টি অপারেশনাল ডেস্ক" : "6 Operational Desks"}
             </span>
           </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-3 pt-4">
+            <a
+              href="#b2b-subscription-enquiry"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#c5a059] px-5 py-3 text-xs sm:text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-all shadow-lg"
+            >
+              <span>
+                {bn ? "B2B সাবস্ক্রিপশন ও ট্রায়াল আবেদন" : "Enquire B2B Subscription & 72h Pilot"}
+              </span>
+              <ArrowRight className="h-4 w-4" />
+            </a>
+            <a
+              href={SAFARIA_CONFIG.whatsappChannelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl border border-[#10b981]/60 bg-[#06201c] px-5 py-3 text-xs sm:text-sm font-bold text-[#10b981] hover:bg-[#10b981] hover:text-[#031412] transition-all"
+            >
+              <Radio className="h-4 w-4" />
+              <span>
+                {bn ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন" : "Join Official B2B WhatsApp Channel"}
+              </span>
+              <ArrowUpRight className="h-4 w-4" />
+            </a>
+          </div>
         </div>
       </section>
+
+      {/* Interactive Three.js 3D Command Core & Bangladeshi B2B Offer Hooks */}
+      <B2BThreeCommandHub
+        bn={bn}
+        selectedPain={selectedPain}
+        onSelectHook={handleSelectOfferHook}
+      />
 
       {/* Interactive Agency Needs Finder */}
       <section className="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8 space-y-12">
@@ -646,8 +701,16 @@ export default function B2BLandingPage() {
         </div>
 
         {/* Step 4: Lead Capture Form & WhatsApp Handoff */}
-        <div className="rounded-2xl border border-[#c5a059]/40 bg-[#06201c] p-6 sm:p-10 shadow-2xl max-w-2xl mx-auto space-y-6">
+        <div
+          id="b2b-subscription-enquiry"
+          ref={leadFormCardRef}
+          className="rounded-2xl border border-[#c5a059]/40 bg-[#06201c] p-6 sm:p-10 shadow-2xl max-w-2xl mx-auto space-y-6"
+        >
           <div className="text-center space-y-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#10b981]/40 bg-[#031412] px-3 py-0.5 font-mono text-[10px] font-bold text-[#10b981]">
+              <span>{bn ? "নির্বাচিত করিডোর ফোকাস:" : "SELECTED CORRIDOR FOCUS:"}</span>
+              <span className="text-[#c5a059]">{selectedCorridorHook}</span>
+            </span>
             <h3 className="font-display text-xl sm:text-2xl font-bold text-[#f7f2ea]">
               {bn ? "এজেন্সি পার্টনারশিপ ও ট্রায়াল আবেদন" : "Register Agency & Connect WhatsApp"}
             </h3>
@@ -700,7 +763,7 @@ export default function B2BLandingPage() {
               </div>
 
               {/* WhatsApp Launch Button */}
-              <div className="space-y-2 pt-2">
+              <div className="space-y-2.5 pt-2">
                 <button
                   type="button"
                   onClick={handleOpenWhatsAppDraft}
@@ -709,6 +772,21 @@ export default function B2BLandingPage() {
                   <MessageCircle className="h-5 w-5" />
                   <span>{bn ? "হোয়াটসঅ্যাপে পরবর্তী ধাপ জানুন" : "Open WhatsApp Concierge Draft"}</span>
                 </button>
+
+                <a
+                  href={SAFARIA_CONFIG.whatsappChannelUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-[#c5a059]/50 bg-[#06201c] px-5 py-2.5 text-xs font-bold text-[#c5a059] hover:bg-[#c5a059] hover:text-[#031412] transition-colors"
+                >
+                  <Radio className="h-4 w-4" />
+                  <span>
+                    {bn
+                      ? "অফিসিয়াল B2B WhatsApp চ্যানেলে যুক্ত হোন (ডেইলি ফেয়ার অ্যালার্ট)"
+                      : "Follow Official B2B WhatsApp Channel (Daily Fare Alerts)"}
+                  </span>
+                  <ArrowUpRight className="h-4 w-4" />
+                </a>
 
                 <p className="text-[11px] text-[#a3b8b0] leading-relaxed">
                   {bn ? (

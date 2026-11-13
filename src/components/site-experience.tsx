@@ -11,6 +11,7 @@ import { DeferredSection } from "./deferred-section";
 import { copy } from "@/lib/copy";
 import { origin, routes } from "@/lib/atlas-data";
 import { useSiteStore } from "@/lib/site-store";
+import { SAFARIA_CONFIG } from "@/config/constants";
 import { PWAInstallButton } from "./pwa-install-button";
 import { FlightProgressHUD } from "./flight-progress-hud";
 import { FlightRouteCanvas } from "./flight-route-canvas";
@@ -356,6 +357,14 @@ export function SiteExperience() {
             <Link href="/b2b" style={{ color: "var(--sf-gold)", textDecoration: "underline" }}>
               {bn ? "বি২বি পার্টনারশিপ" : "B2B Agency Membership"}
             </Link>
+            <a
+              href={SAFARIA_CONFIG.whatsappChannelUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#10b981", textDecoration: "underline", fontWeight: 600 }}
+            >
+              {bn ? "অফিসিয়াল WhatsApp চ্যানেল ↗" : "Official WhatsApp Channel ↗"}
+            </a>
             <Link href="/login" style={{ color: "var(--sf-gold)", textDecoration: "underline" }}>
               {bn ? "পার্টনার ও স্টাফ লগইন" : "Partner & Staff Portal"}
             </Link>
