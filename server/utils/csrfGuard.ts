@@ -30,6 +30,12 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
   if (process.env.VERCEL_URL) {
     allowedHosts.add(process.env.VERCEL_URL);
   }
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    allowedHosts.add(process.env.VERCEL_PROJECT_PRODUCTION_URL);
+  }
+  if (process.env.VERCEL_BRANCH_URL) {
+    allowedHosts.add(process.env.VERCEL_BRANCH_URL);
+  }
 
   const isHostAllowed = (host: string): boolean => {
     if (allowedHosts.has(host)) return true;
@@ -39,10 +45,12 @@ export function isAuthorizedOrigin(req: NextRequest): boolean {
       return true;
     }
 
-    // Strict vercel preview verification: only allow exact matching vercel preview host
+    // Strict vercel preview verification: only allow exact matching vercel deployment/production/branch host
     // or exact safaria.vibing.world subdomains, NEVER general suffixes like attacker.vercel.app
     if (process.env.VERCEL_URL && host === process.env.VERCEL_URL) return true;
     if (process.env.NEXT_PUBLIC_VERCEL_URL && host === process.env.NEXT_PUBLIC_VERCEL_URL) return true;
+    if (process.env.VERCEL_PROJECT_PRODUCTION_URL && host === process.env.VERCEL_PROJECT_PRODUCTION_URL) return true;
+    if (process.env.VERCEL_BRANCH_URL && host === process.env.VERCEL_BRANCH_URL) return true;
     if (host === "safaria.vibing.world" || host.endsWith(".safaria.vibing.world")) return true;
 
     // Reject all unknown or arbitrary vercel/vibing subdomains

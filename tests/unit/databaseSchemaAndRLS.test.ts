@@ -77,3 +77,41 @@ describe("Database Schema & Strict RLS Audit (001_safaria_core_schema.sql)", () 
     expect(sql).toContain("TO service_role USING (true) WITH CHECK (true)");
   });
 });
+
+describe("B2B Subscription & Invoices Migration (005_b2b_subscriptions_and_invoices.sql)", () => {
+  const migration005Path = path.resolve(
+    __dirname,
+    "../../supabase/migrations/005_b2b_subscriptions_and_invoices.sql"
+  );
+  const fullSchemaPath = path.resolve(__dirname, "../../supabase/FULL_PRODUCTION_SCHEMA.sql");
+  const sql005 = fs.readFileSync(migration005Path, "utf-8");
+  const fullSql = fs.readFileSync(fullSchemaPath, "utf-8");
+
+  it("extends agency_applications with SUSPENDED status and Directive 005 subscription/telemetry columns", () => {
+    expect(sql005).toContain("'SUSPENDED'");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS plan");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS subscription_started_at");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS subscription_expires_at");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS assigned_staff_owner");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS whatsapp_draft_opened");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS whatsapp_inbound_confirmed");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS pain_category");
+    expect(sql005).toContain("ADD COLUMN IF NOT EXISTS district");
+  });
+
+  it("creates agency_invoices table with foreign key and strict RLS policies", () => {
+    expect(sql005).toContain("CREATE TABLE IF NOT EXISTS agency_invoices");
+    expect(sql005).toContain("REFERENCES agency_applications(id) ON DELETE CASCADE");
+    expect(sql005).toContain("ALTER TABLE agency_invoices ENABLE ROW LEVEL SECURITY;");
+    expect(sql005).toContain("ON agency_invoices FOR SELECT TO authenticated");
+    expect(sql005).toContain("ON agency_invoices FOR ALL TO service_role USING (true) WITH CHECK (true)");
+    expect(sql005).not.toMatch(/FOR SELECT TO anon/i);
+  });
+
+  it("includes agency_invoices and subscription columns inside FULL_PRODUCTION_SCHEMA.sql", () => {
+    expect(fullSql).toContain("CREATE TABLE IF NOT EXISTS agency_invoices");
+    expect(fullSql).toContain("whatsapp_draft_opened BOOLEAN");
+    expect(fullSql).toContain("subscription_expires_at TIMESTAMPTZ");
+  });
+});
+

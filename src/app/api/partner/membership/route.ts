@@ -22,7 +22,11 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const targetAgencyId = agencyId || "agency-greendelta-01";
+  let targetAgencyId = agencyId;
+  if (!targetAgencyId) {
+    const agencies = await enquiriesRepository.listAgencyApplications();
+    targetAgencyId = agencies[0]?.id || "agency-greendelta-01";
+  }
 
   try {
     const entitlements = await enquiriesRepository.getAgencyEntitlementUsage(targetAgencyId);

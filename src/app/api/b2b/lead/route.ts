@@ -126,12 +126,10 @@ export async function POST(req: NextRequest) {
       monthlyTicketVolume: volumeEnum,
       notes: leadNotes,
       consentAgreed: true,
+      painCategory: input.painCategory,
+      district: input.district,
+      plan: input.planInterest === "ANNUAL" ? "ANNUAL" : (input.planInterest === "DEMO" ? "TRIAL" : "MONTHLY"),
     });
-
-    // Tag lead with pain category and plan
-    application.painCategory = input.painCategory;
-    application.district = input.district;
-    application.plan = input.planInterest === "ANNUAL" ? "ANNUAL" : "MONTHLY";
 
     // 2. Enqueue GHL CRM sync through outbox
     await ghlAdapter.syncAgencyApplication(application);

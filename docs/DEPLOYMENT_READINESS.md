@@ -1,32 +1,59 @@
-# SAFARIA Next.js deployment readiness
+# SAFARIA Next.js — Vercel + Supabase Deployment Guide
 
-## Production status — 6 November 2026
+## Repository & Architecture
 
-- Source: `https://github.com/bhaifreakinsazzad-ops/SAFARIA-Tours-Travels`, branch `main`.
-- Host: Vercel team `notrealengine`, project `safaria-tours-travels`, configured as Next.js on Node 24.
-- Public URL: `https://safaria.vibing.world/`. The `safaria` CNAME points to `cname.vercel-dns.com`; Vercel reports the domain correctly configured. HTTPS GET returned 200 with the SAFARIA title and Vercel response headers.
-- Browser checks passed against the deployed Vercel URL (Atlas, 26 offers, 33 destinations, forms) and the public custom domain (metadata, language layouts, WhatsApp drafts, and legacy endpoint check). Vercel reported no runtime errors at verification time.
-- Supabase is not connected because this release uses client-side drafts and visitor-initiated WhatsApp enquiries; it has no enquiry database or server credentials.
+- **GitHub Repository**: `https://github.com/bhaifreakinsazzad-ops/SAFARIA-Tours-Travels` (branch `main`)
+- **Framework**: Next.js 16 (App Router, Node 20/24) + Progressive Web App (`/manifest.json`, `/sw.js`, `/offline`)
+- **Database**: Supabase PostgreSQL with Row-Level Security (RLS) across all B2B & enquiry tables (`supabase/FULL_PRODUCTION_SCHEMA.sql` and incremental migrations `001`–`005`).
 
-## Implemented and checked
+---
 
-- The Next.js source contains the owner-supplied canonical root `https://safaria.vibing.world/`, contact `+8801674178437`, and agency prices ৳5,999 monthly / ৳69,999 annual in one config file.
-- The purge gate rejects the old page path, form shortcut, phone and price values from `src/`. Browser QA checks that the page makes no requests to legacy form or page endpoints.
-- Travel Studio, agency application and route quotation prepare encoded WhatsApp drafts only. A visitor must press Send; there is no GHL submission or success claim.
-- Bengali and English fonts are self hosted through `next/font`. The hero logo and skyline use optimized Next.js images, and OG/Twitter share the local `public/images/social-share.jpg` asset.
-- `robots.txt` and `sitemap.xml` point to the canonical root. The production build completes without warnings.
-- Local Lighthouse scores (Edge, production build): mobile **91 performance / 100 accessibility / 100 best practices / 100 SEO**; desktop **99 / 100 / 100 / 100**. Both runs reported zero layout shift and no run warnings. Scores can differ on the deployed host and real devices.
-- `npm audit --omit=dev --audit-level=high` found zero production dependency vulnerabilities during this audit.
+## 1. Supabase Setup (Required Before First Login)
 
-## Release boundary
+1. Create or open your Supabase project.
+2. Open **Supabase Dashboard → SQL Editor** and execute `/supabase/FULL_PRODUCTION_SCHEMA.sql` (idempotent; creates all 8 tables, RLS policies, indexes, and the PostgreSQL `check_and_increment_rate_limit` RPC).
+   - If upgrading an existing database that already has `001`–`004` applied, run `/supabase/migrations/005_b2b_subscriptions_and_invoices.sql`.
+3. From **Project Settings → API** and **Database**, copy:
+   - `NEXT_PUBLIC_SUPABASE_URL` & `SUPABASE_URL`
+   - `SUPABASE_SERVICE_ROLE_KEY` (server-only secret)
+   - `DATABASE_URL` (Postgres connection URI for strict RLS-scoped partner queries)
 
-The public site is live. Browser device profiles emulate iPhone and Pixel behavior; actual iOS Safari, Android WhatsApp delivery, and supplier responses remain unverified. The visitor must still press Send in WhatsApp for an enquiry to reach SAFARIA.
+---
 
-The owner-supplied pricing, 0% SAFARIA markup qualification, 72-hour trial and customer data handling still need the operator's approved written terms before a public commercial launch. The form does not activate a subscription or trial.
+## 2. Vercel Environment Variables
 
-## Verification commands
+Set these variables in **Vercel → Project Settings → Environment Variables** (`Production` and `Preview`):
 
-Run `npm run lint`, `npm run typecheck`, `npm run build`, `npm run verify:purge`, `npm run verify:atlas`, `npm run verify:phase23`, and `npm run verify:phase45` from `web/`, with `npm run start` running for browser checks. Phase 4/5 screenshots and Lighthouse JSON reports are local in `qa-phase45/`.
+- `NEXT_PUBLIC_SUPABASE_URL` — Supabase Project URL
+- `SUPABASE_URL` — Same Supabase Project URL
+- `SUPABASE_SERVICE_ROLE_KEY` — Supabase Service Role key (server-side only)
+- `DATABASE_URL` — Supabase Postgres connection URI
+- `SESSION_SECRET` — Strong 32+ character random secret (`openssl rand -hex 32`)
+- `ADMIN_API_KEY` — Secret key for service/cron admin calls
+- `CRON_SECRET` — Bearer token used by `/api/cron/dispatch-outbox` (configured in `vercel.json`)
+- `BOOTSTRAP_ADMIN_EMAIL` — Initial `SUPER_ADMIN` email; first login auto-creates the row in `staff_users`
+- `BOOTSTRAP_ADMIN_PASSWORD` — Initial `SUPER_ADMIN` password
 
-Playwright's iPhone and Pixel profiles verify viewport, user agent and WhatsApp URL formatting. They do not replace a real iOS Safari or Android WhatsApp send test.
+Optional GoHighLevel CRM Outbox sync variables:
+- `GHL_API_KEY` (or `GHL_ACCESS_TOKEN`), `GHL_LOCATION_ID`, `GHL_PIPELINE_ID`, `GHL_PIPELINE_STAGE_ID`
 
+---
+
+## 3. Core B2B Workflows & Endpoints
+
+- Public landing & Travel Atelier (`/`), B2B Partner Landing & Agency Needs Finder (`/b2b`), Offline Fallback (`/offline`)
+- Partner Workspace (`/partner`) with all six operational desks, real membership status, entitlement usage counters, invoices, and renewal info
+- Admin Triage Console (`/admin`) with 30-day analytics (Recharts), lead assignment, 72-hour trial approval, subscription activation (`BDT 5,999` Monthly / `BDT 69,999` Annual), invoice reconciliation, and suspension controls
+- Background CRM Outbox Cron (`/api/cron/dispatch-outbox` scheduled in `vercel.json`)
+
+---
+
+## 4. Pre-Deploy Verification Commands
+
+```bash
+npm run verify:purge
+npm run typecheck
+npm run lint
+npm test
+NODE_ENV=production npm run build
+```
