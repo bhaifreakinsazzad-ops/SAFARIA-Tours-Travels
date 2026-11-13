@@ -15,6 +15,7 @@ import { SAFARIA_CONFIG } from "@/config/constants";
 import { PWAInstallButton } from "./pwa-install-button";
 import { FlightProgressHUD } from "./flight-progress-hud";
 import { FlightRouteCanvas } from "./flight-route-canvas";
+import { UniversalOffersStrip } from "./universal-offers-strip";
 
 const JourneyAtlas = dynamic(() => import("./journey-atlas").then((module) => module.JourneyAtlas), {
   ssr: false,
@@ -321,6 +322,8 @@ export function SiteExperience() {
           <div className="site-corridor-wrapper max-w-6xl mx-auto px-4 sm:px-6">
             <FlightRouteCanvas language={language} onSelectRoute={openRoute} />
           </div>
+
+          <UniversalOffersStrip language={language} onSelect={openOffer} />
 
           <DeferredSection
             id="sf26-offers"
