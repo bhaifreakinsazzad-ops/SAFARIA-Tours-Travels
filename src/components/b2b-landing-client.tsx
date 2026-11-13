@@ -70,10 +70,10 @@ const PAIN_DETAILS: PainDetail[] = [
     titleEn: "Slow or Opaque Wholesale Airfare Quotes",
     descBn: "জিডিএস টার্মিনাল না থাকা বা বড় কনসোলিডেটরের দীর্ঘ লাইনে ফেয়ার পেতে কয়েক ঘণ্টা নষ্ট হয়।",
     descEn: "Non-IATA agencies lose client sales waiting hours for consolidators to return net fare quotes.",
-    solutionBn: "FareDesk™-এ রিকোয়েস্ট সাবমিট করার কয়েক মিনিটের মধ্যে ডেডিকেটেড অপারেটর বেস্ট নেট রেট নিশ্চিত করে।",
-    solutionEn: "Dedicated fare operators source aggregated GDS/LCC wholesale net pricing in minutes.",
-    metricBn: "গড়ে ১০-১৫ মিনিটে কোটেশন",
-    metricEn: "10–15 min average quote SLA",
+    solutionBn: "FareDesk™-এ এজেন্সির ফেয়ার অনুরোধ, প্রয়োজনীয় তথ্য এবং ফলো-আপ একটি প্রক্রিয়ায় সংগঠিত করুন। সরবরাহকারীর কোটেশন চুক্তি ও নিশ্চিতকরণসাপেক্ষ।",
+    solutionEn: "Organize agency fare requests and follow-ups in one workflow. Supplier quotes depend on finalized contracts and confirmation.",
+    metricBn: "সংগঠিত ফেয়ার রিকোয়েস্ট",
+    metricEn: "Structured fare requests",
     icon: <DollarSign className="h-5 w-5 text-[#c5a059]" />,
   },
   {
@@ -85,70 +85,70 @@ const PAIN_DETAILS: PainDetail[] = [
     titleEn: "Complex Multi-City PNRs & Split-Ticket Errors",
     descBn: "গ্রুপ বুকিং বা মাল্টি-সিটি রুটে সামান্য ভুলেও টিকেটিং বাতিল বা অতিরিক্ত চার্জ হয়।",
     descEn: "Manual PNR creation across split-carrier itineraries leads to costly errors and cancellations.",
-    solutionBn: "BookingDesk™-এ নির্ভুল স্প্লিট-ফেয়ার ব্রেকডাউন এবং ভেরিফাইড পিএনআর হোল্ড নিশ্চিত করা হয়।",
-    solutionEn: "Precise PNR hold management and split-ticket coordination with 100% price transparency.",
-    metricBn: "১০০% নির্ভুল টিকেট যাচাই",
-    metricEn: "Zero PNR breakdown errors",
+    solutionBn: "BookingDesk™-এ যাত্রীর তথ্য, অনুরোধ ও অগ্রগতি সংগঠিত করুন; বাস্তব বুকিং ও PNR ইস্যু অনুমোদিত সরবরাহকারীর ওপর নির্ভরশীল।",
+    solutionEn: "Manage booking requests, passenger details and status. Live PNR holds and issuance require authorized supplier access.",
+    metricBn: "রিকোয়েস্ট ও স্ট্যাটাস ট্র্যাকিং",
+    metricEn: "Request status tracking",
     icon: <Ticket className="h-5 w-5 text-[#c5a059]" />,
   },
   {
     id: "PAIN_PAYMENT",
     deskName: "ClearMargin™",
     badgeBn: "স্বচ্ছ মার্জিন",
-    badgeEn: "Zero Hidden Fees",
+    badgeEn: "Transparent Fee Records",
     titleBn: "লুকানো চার্জ ও হিসাব মেলানোর ঝামেলা",
     titleEn: "Hidden Markups & Confusing Sub-Agent Ledgers",
     descBn: "মাস শেষে সাপ্লায়ারের অ্যাকাউন্টে হিসাব মেলে না; অস্পষ্ট ফি এজেন্সির মার্জিন খেয়ে ফেলে।",
     descEn: "Traditional vendors hide obscure surcharges that silently erode your hard-earned agency commission.",
-    solutionBn: "ClearMargin™-এ প্রতিটি টিকেটের গ্রস, নেট এবং আপনার অর্জিত সাব-এজেন্ট মার্জিন সরাসরি লাইভ লেজারে দৃশ্যমান।",
-    solutionEn: "Real-time transparent ledger where your sub-agent margin is calculated and confirmed instantly.",
-    metricBn: "০% হিডেন মার্কআপ গ্যারান্টি",
-    metricEn: "100% Real-time Ledger",
+    solutionBn: "ClearMargin™-এ অনুমোদিত বুকিংয়ের খরচ, ফি ও মার্জিন নথিভুক্ত করার ওয়ার্কফ্লো দেখুন; প্রকৃত কমিশন চুক্তি অনুযায়ী নির্ধারিত হবে।",
+    solutionEn: "Explore structured cost, fee and margin records. Actual agency commissions require confirmed written commercial terms.",
+    metricBn: "লিখিত চার্জ ব্রেকডাউন",
+    metricEn: "Documented fee breakdown",
     icon: <TrendingUp className="h-5 w-5 text-[#c5a059]" />,
   },
   {
     id: "PAIN_AFTERCARE",
     deskName: "AfterCare Desk™",
     badgeBn: "আফটার-কেয়ার",
-    badgeEn: "24/7 Operations",
+    badgeEn: "24/7 Staffed Contact",
     titleBn: "ফ্লাইট বাতিল, রি-ইস্যু বা রিফান্ডে সহায়তা না পাওয়া",
     titleEn: "Emergency Reissues, Waivers & Refund Delays",
     descBn: "যাত্রীর জরুরি রিরুটিং বা ফ্লাইট পরিবর্তনের সময় সাপ্লায়ারের কোনো সাপোর্ট পাওয়া যায় না।",
     descEn: "When airlines reschedule or passengers request urgent reissues, standard vendor lines go silent.",
-    solutionBn: "AfterCare Desk™-এ ডেডিকেটেড টিম ২৪/৭ সরাসরি এয়ারলাইন ওয়েভার ও দ্রুত রি-ইস্যু হ্যান্ডেল করে।",
-    solutionEn: "Dedicated specialist support for involuntary rerouting, date changes, and expedited refunds.",
-    metricBn: "জরুরি কেসে অগ্রাধিকার ট্র্যাকিং",
-    metricEn: "Priority queue with tracking ID",
+    solutionBn: "SAFARIA-এর ২৪/৭ সাপোর্ট টিমে ফলো-আপ অনুরোধ জানান। এয়ারলাইন ওয়েভার, রি-ইস্যু বা রিফান্ডের সিদ্ধান্ত সংশ্লিষ্ট সরবরাহকারীর।",
+    solutionEn: "Reach our staffed 24/7 support team for follow-up. Airline waivers, reissues and refunds depend on provider rules.",
+    metricBn: "২৪/৭ টিমে যোগাযোগ",
+    metricEn: "24/7 staffed contact",
     icon: <Headphones className="h-5 w-5 text-[#c5a059]" />,
   },
   {
     id: "PAIN_TRUST",
     deskName: "Verified Workflow™",
     badgeBn: "নাম ও পাসপোর্ট অডিট",
-    badgeEn: "Anti-Penalty Gate",
+    badgeEn: "Passenger Data Checks",
     titleBn: "যাত্রীর নামে ভুল হয়ে পেনাল্টি ও ক্লায়েন্ট অসন্তোষ",
     titleEn: "Passenger Name Mismatches & Heavy Airline Penalties",
     descBn: "পাসপোর্টের নামের সাথে টিকেটের অমিলের কারণে হাজার হাজার টাকার পেনাল্টি গুনতে হয়।",
     descEn: "A single misspelled character or maiden name discrepancy results in hefty airline re-issuance fines.",
-    solutionBn: "Verified Workflow™ টিকিট ইস্যুর আগেই সারনেম, গিভেন নেইম ও পাসপোর্ট মেয়াদের স্বয়ংক্রিয় অডিট সম্পন্ন করে।",
-    solutionEn: "Pre-ticketing passenger audit compares GDS naming conventions against passport rules to stop fines.",
-    metricBn: "৳১৫,০০০+ জরিমানা সাশ্রয়",
-    metricEn: "Eliminates naming fines",
+    solutionBn: "Verified Workflow™-এ দেওয়া নাম ও পাসপোর্ট মেয়াদ যাচাই করার সহায়ক টুল ব্যবহার করুন; চূড়ান্ত নিয়ম এয়ারলাইনভেদে আলাদা।",
+    solutionEn: "Use passenger-name and passport-expiry checks as a pre-issuance aid; airlines retain final acceptance rules.",
+    metricBn: "নাম ও ডকুমেন্ট চেক",
+    metricEn: "Name and document checks",
     icon: <FileCheck className="h-5 w-5 text-[#c5a059]" />,
   },
   {
     id: "PAIN_GROWTH",
     deskName: "PartnerGrowth™",
     badgeBn: "এজেন্সি স্কেলিং",
-    badgeEn: "Volume Incentives",
+    badgeEn: "Partner Growth Planning",
     titleBn: "ছোট বা স্বাধীন এজেন্সির জন্য কোনো ইনসেন্টিভ না থাকা",
     titleEn: "Zero Volume Incentives for Independent Agencies",
     descBn: "বড় আয়াটা এজেন্সি সব ইনসেন্টিভ পায়, আর স্বাধীন ও লোকাল এজেন্সিগুলো পিছিয়ে পড়ে।",
     descEn: "Independent agencies handle substantial ticket volume but receive zero volume recognition from airlines.",
-    solutionBn: "PartnerGrowth™ টিকেট সংখ্যার ভিত্তিতে সিলভার, গোল্ড ও প্ল্যাটিনাম টায়ার রিওয়ার্ড ও কমিশন বোনাস প্রদান করে।",
-    solutionEn: "Transparent volume milestone tracker rewarding your agency with tiered commission escalators.",
-    metricBn: "টায়ার অনুযায়ী বাড়তি সুবিধা",
-    metricEn: "Silver / Gold / Platinum tiers",
+    solutionBn: "PartnerGrowth™-এ পার্টনার অনুরোধ ও পারফরম্যান্স ট্র্যাকিং পরিকল্পনা দেখুন। কমিশন ও ইনসেন্টিভ চুক্তি সম্পন্ন না হওয়া পর্যন্ত ঘোষণা করা হচ্ছে না।",
+    solutionEn: "Explore partner activity tracking. Commission and incentive rates will be offered only under finalized written agreements.",
+    metricBn: "পার্টনার আগ্রহ নিবন্ধন",
+    metricEn: "Partner pre-registration",
     icon: <Sparkles className="h-5 w-5 text-[#c5a059]" />,
   },
 ];
@@ -157,85 +157,6 @@ const BD_DISTRICTS = [
   "Dhaka", "Chittagong", "Sylhet", "Rajshahi", "Khulna", "Barisal", "Rangpur", "Mymensingh",
   "Cox's Bazar", "Comilla", "Narayanganj", "Gazipur", "Brahmanbaria", "Bogra", "Jessore",
   "Feni", "Dinajpur", "Tangail", "Faridpur", "Pabna", "Noakhali", "Kushtia", "Sirajganj",
-];
-
-interface Testimonial {
-  id: string;
-  agencyName: string;
-  locationBn: string;
-  locationEn: string;
-  contactName: string;
-  roleBn: string;
-  roleEn: string;
-  metricBn: string;
-  metricEn: string;
-  quoteBn: string;
-  quoteEn: string;
-  deskUsed: string;
-  tier: "Gold Partner" | "Platinum Partner" | "Verified Associate";
-}
-
-const TESTIMONIALS: Testimonial[] = [
-  {
-    id: "sylhet-aviation",
-    agencyName: "Sylhet Aviation & Holidays",
-    locationBn: "জিন্দাবাজার, সিলেট",
-    locationEn: "Zindabazar, Sylhet",
-    contactName: "Kawsar Ahmed",
-    roleBn: "ম্যানেজিং ডিরেক্টর",
-    roleEn: "Managing Director",
-    metricBn: "১০০% পেনাল্টি-মুক্ত টিকেট",
-    metricEn: "Zero Name Mismatch Fines",
-    quoteBn: "লন্ডন ও ম্যানচেস্টার রুটে আমাদের প্রতি মাসে শতাধিক প্রবাসী ক্লায়েন্ট বুকিং করেন। Verified Workflow™ চালু করার পর থেকে পাসপোর্টের নামের ভুলের জন্য একটি পেনাল্টিও গুনতে হয়নি। বুকিং সংক্রান্ত নিশ্চিন্ততা সত্যিই অসাধারণ!",
-    quoteEn: "Serving the Sylhet-UK expat corridor requires strict naming precision. Verified Workflow™ eliminated passport name discrepancies entirely, saving our agency thousands in avoidable airline penalties.",
-    deskUsed: "Verified Workflow™ & BookingDesk™",
-    tier: "Platinum Partner",
-  },
-  {
-    id: "green-bengal",
-    agencyName: "Green Bengal Travel International",
-    locationBn: "মতিঝিল বা/এ, ঢাকা",
-    locationEn: "Motijheel C/A, Dhaka",
-    contactName: "Tariqul Islam",
-    roleBn: "হেড অব অপারেশন্স",
-    roleEn: "Head of Operations",
-    metricBn: "১২ মিনিটে নেট কোটেশন",
-    metricEn: "12 Min Average SLA",
-    quoteBn: "আগে বড় কনসোলিডেটরের কাছ থেকে হোলসেল ফেয়ারের রিপ্লাই পেতে ৩-৪ ঘণ্টা অপেক্ষা করতে হতো। FareDesk™-এ রিকোয়েস্ট দিলে ১২-১৫ মিনিটে স্পষ্ট নেট রেট পেয়ে যাই, ফলে ক্লায়েন্ট অন্য কোথাও যাওয়ার আগেই ডিল ক্লোজ করতে পারছি।",
-    quoteEn: "Waiting 3 to 4 hours for consolidator quotes used to cost us corporate deals. With FareDesk™, we get verified wholesale net fares within 12 minutes, driving our corporate booking conversion up by 34%.",
-    deskUsed: "FareDesk™ & ClearMargin™",
-    tier: "Gold Partner",
-  },
-  {
-    id: "ctg-port",
-    agencyName: "Chittagong Port Air Link",
-    locationBn: "আগ্রাবাদ, চট্টগ্রাম",
-    locationEn: "Agrabad, Chattogram",
-    contactName: "Mohammad Rashed",
-    roleBn: "প্রতিষ্ঠাতা ও সিইও",
-    roleEn: "Founder & CEO",
-    metricBn: "০% গোপন চার্জ",
-    metricEn: "100% Margin Transparency",
-    quoteBn: "মার্কেটপ্লেসের সবচেয়ে বড় সমস্যা ছিল লুকানো মার্কআপ। ClearMargin™-এর রিয়েল-টাইম লেজারে আমরা প্রতিটি টিকেটের গ্রস ও নেট দেখে নিজেরাই আমাদের সাব-এজেন্ট মার্জিন নির্ধারণ করি। কোনো হিডেন চার্জ নেই।",
-    quoteEn: "Hidden markups from traditional suppliers used to eat away our margin. ClearMargin™ provides total ledger clarity with zero concealed charges, so our sub-agent earnings are protected on every single PNR.",
-    deskUsed: "ClearMargin™",
-    tier: "Verified Associate",
-  },
-  {
-    id: "bismillah-umrah",
-    agencyName: "Bismillah Umrah & Hajj Kafela",
-    locationBn: "পল্টন, ঢাকা",
-    locationEn: "Paltan, Dhaka",
-    contactName: "Maulana Enamul Huq",
-    roleBn: "প্রধান সমন্বয়ক",
-    roleEn: "Chief Coordinator",
-    metricBn: "২৪/৭ জরুরি ফ্লাইট সমন্বয়",
-    metricEn: "24/7 Peak Season Relief",
-    quoteBn: "রমজান ও পিক ওমরাহ মৌসুমে ফ্লাইট শিডিউল পরিবর্তনের কারণে আগে আমাদের ঘুম হারাম হতো। AfterCare Desk™ সরাসরি এয়ারলাইন্সের সাথে ওয়েভার ও জরুরি রি-ইস্যু হ্যান্ডেল করায় আমাদের যাত্রীদের ভোগান্তি শূন্যের কোঠায় নেমে এসেছে।",
-    quoteEn: "During peak Umrah seasons, unexpected schedule changes caused intense client distress. AfterCare Desk™ manages waivers and emergency reissues 24/7 with dedicated priority queues.",
-    deskUsed: "AfterCare Desk™",
-    tier: "Platinum Partner",
-  },
 ];
 
 interface FAQItem {
@@ -486,16 +407,16 @@ export default function B2BLandingPage() {
 
           <p className="mx-auto max-w-2xl text-sm sm:text-base text-[#a3b8b0] leading-relaxed">
             {bn
-              ? "জিডিএস টার্মিনাল ছাড়াই নন-আয়াটা ও স্বাধীন ট্রাভেল এজেন্সির জন্য দ্রুততম ফেয়ার কোটেশন, ০% নিজস্ব মার্কআপ এবং ২৪/৭ অপারেশন সাপোর্ট।"
-              : "Empowering non-IATA and independent travel agencies across Bangladesh with wholesale inventory, 0% SAFARIA markup, and transparent remittance."}
+              ? "স্বাধীন ট্রাভেল এজেন্সির জন্য ৬টি অপারেশনাল ডেস্কের ওয়ার্কফ্লো, ২৪/৭ সাপোর্ট টিম ও আগাম পার্টনারশিপ নিবন্ধন। এয়ারলাইন/সাপ্লায়ার চুক্তি আলোচনা পর্যায়ে।"
+              : "Explore six agency desk workflows and staffed 24/7 support. Partner registrations are open while airline and supplier agreements are being negotiated."}
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-3 pt-2 text-xs">
             <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-emerald-300 font-medium">
-              ✦ {bn ? "৭২ ঘণ্টার পাইলট ট্রায়াল" : "72-Hour Pilot Trial Available"}
+              ✦ {bn ? "যাচাইসাপেক্ষ পাইলট ডেমো" : "Pilot demo on approval"}
             </span>
             <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
-              ✦ {bn ? "০% নিজস্ব মার্কআপ" : "0% SAFARIA Markup"}
+              ✦ {bn ? "পার্টনার প্রি-রেজিস্ট্রেশন" : "Partner pre-registration"}
             </span>
             <span className="rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3 py-1 text-[#c5a059] font-medium">
               ✦ {bn ? "৬টি অপারেশনাল ডেস্ক" : "6 Operational Desks"}
@@ -508,7 +429,7 @@ export default function B2BLandingPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-[#c5a059] px-5 py-3 text-xs sm:text-sm font-bold text-[#031412] hover:bg-[#d6b26c] transition-all shadow-lg"
             >
               <span>
-                {bn ? "B2B সাবস্ক্রিপশন ও ট্রায়াল আবেদন" : "Enquire B2B Subscription & 72h Pilot"}
+                {bn ? "B2B পার্টনার হতে আগ্রহ জানান" : "Register B2B partnership interest"}
               </span>
               <ArrowRight className="h-4 w-4" />
             </a>
@@ -982,99 +903,36 @@ export default function B2BLandingPage() {
         </div>
       </section>
 
-      {/* Agency Partner Testimonials Section (Social Proof) */}
-      <section className="border-t border-[#c5a059]/20 bg-[#041916]/70 px-4 py-16 sm:px-8">
-        <div className="mx-auto max-w-6xl space-y-12">
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-[#c5a059]/40 bg-[#c5a059]/10 px-3.5 py-1 text-xs font-semibold text-[#c5a059] uppercase tracking-wider">
-              <Users className="h-3.5 w-3.5" />
-              <span>{bn ? "পার্টনার এজেন্সিদের বাস্তব অভিজ্ঞতা" : "Verified Agency Partner Social Proof"}</span>
-            </div>
-            <h2 className="font-display text-2xl sm:text-4xl font-bold text-[#f7f2ea]">
-              {bn
-                ? "বাংলাদেশের শীর্ষস্থানীয় ট্রাভেল এজেন্সিসমূহ কেন SAFARIA বেছে নিয়েছে"
-                : "Why Independent Agencies Across Bangladesh Scale with SAFARIA"}
-            </h2>
-            <p className="text-xs sm:text-sm text-[#a3b8b0] max-w-2xl mx-auto">
-              {bn
-                ? "ঢাকা, সিলেট ও চট্টগ্রামের স্বাধীন ও নন-আয়াটা এজেন্সিদের বাস্তব কর্মদক্ষতা ও সাফল্যের চিত্র।"
-                : "Real operations leaders, real wholesale turnaround improvements, and zero airline naming penalties."}
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {TESTIMONIALS.map((t) => (
-              <div
-                key={t.id}
-                className="group relative flex flex-col justify-between rounded-2xl border border-[#c5a059]/30 bg-[#06201c] p-6 sm:p-7 shadow-lg transition-all hover:border-[#c5a059] hover:shadow-[0_12px_36px_rgba(197,160,89,0.15)]"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 rounded-full border border-[#c5a059]/40 bg-[#031412] px-2.5 py-0.5 text-[11px] font-semibold text-[#c5a059]">
-                      <Award className="h-3 w-3" />
-                      {t.tier}
-                    </span>
-                    <span className="font-mono text-[10px] text-[#a3b8b0] bg-[#031412] px-2 py-0.5 rounded border border-[#c5a059]/20">
-                      {t.deskUsed}
-                    </span>
-                  </div>
-
-                  {/* 5-star rating */}
-                  <div className="flex items-center gap-1" aria-label="5 out of 5 stars">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <Star key={s} className="h-4 w-4 fill-[#c5a059] text-[#c5a059]" />
-                    ))}
-                  </div>
-
-                  {/* Operational impact callout */}
-                  <div className="flex items-center gap-2 rounded-xl bg-[#031412] border border-emerald-500/30 px-3 py-2 text-xs font-semibold text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                    <span>{bn ? t.metricBn : t.metricEn}</span>
-                  </div>
-
-                  {/* Quote Body */}
-                  <div className="relative pl-3 border-l-2 border-[#c5a059]/40 text-xs sm:text-sm text-[#d1dfd9] leading-relaxed italic">
-                    <Quote className="h-4 w-4 text-[#c5a059]/40 mb-1" />
-                    <span>&ldquo;{bn ? t.quoteBn : t.quoteEn}&rdquo;</span>
-                  </div>
-                </div>
-
-                {/* Author Info */}
-                <div className="pt-4 mt-4 border-t border-[#c5a059]/20 flex items-center justify-between">
-                  <div>
-                    <h4 className="font-display text-sm font-bold text-[#f7f2ea]">{t.agencyName}</h4>
-                    <p className="text-[11px] text-[#718b82]">
-                      {t.contactName} • <span className="text-[#a3b8b0]">{bn ? t.roleBn : t.roleEn}</span>
-                    </p>
-                  </div>
-                  <span className="flex items-center gap-1 text-[11px] text-[#a3b8b0] bg-[#031412] px-2.5 py-1 rounded-lg border border-[#c5a059]/20">
-                    <MapPin className="h-3 w-3 text-[#c5a059]" />
-                    <span>{bn ? t.locationBn : t.locationEn}</span>
-                  </span>
-                </div>
+      {/* Pre-registration proof of process — never display invented agency reviews */}
+      <section className="border-t border-[#c5a059]/20 bg-[#041916]/70 px-4 py-16 sm:px-8" aria-labelledby="partner-launch-heading">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#c5a059]">
+            {bn ? "বর্তমান অংশীদারিত্বের অবস্থা" : "PARTNERSHIP LAUNCH STATUS"}
+          </p>
+          <h2 id="partner-launch-heading" className="font-display text-2xl sm:text-4xl font-bold text-[#f7f2ea]">
+            {bn ? "প্রথমেই স্বচ্ছতা, তারপর পার্টনারশিপ।" : "Clarity before commercial commitments."}
+          </h2>
+          <p className="max-w-3xl text-sm leading-relaxed text-[#a3b8b0]">
+            {bn
+              ? "আমাদের B2B ওয়ার্কফ্লো ও সাপোর্ট টিম সম্পর্কে জেনে আগাম আগ্রহ নিবন্ধন করুন। এয়ারলাইন ও সরবরাহকারীদের সঙ্গে চুক্তি আলোচনাধীন। লাইভ টিকেটিং, কমিশন, ইনভেন্টরি ও চূড়ান্ত মূল্য এখনো নিশ্চিত নয়।"
+              : "Register interest in our B2B workflows and support team. Airline and supplier agreements are under negotiation; live ticketing, commissions, inventory and final commercial terms are not yet confirmed."}
+          </p>
+          <div className="grid gap-4 sm:grid-cols-3">
+            {[
+              [bn ? "ওয়ার্কফ্লো ডেমো" : "Workflow preview", bn ? "৬টি অপারেশনাল ডেস্কের সম্ভাব্য ব্যবহার দেখুন।" : "Explore how the six operations desks are designed to work."],
+              [bn ? "২৪/৭ সাপোর্ট টিম" : "24/7 support staff", bn ? "অনুরোধ ও ফলো-আপের জন্য আমাদের টিমে যোগাযোগ করুন।" : "Contact our staffed team for questions and follow-up."],
+              [bn ? "যাচাইসাপেক্ষ পরবর্তী ধাপ" : "Verification-first onboarding", bn ? "চুক্তি ও অনুমোদন নিশ্চিত হলে লিখিত শর্ত জানানো হবে।" : "Receive written commercial terms after supplier and approval checks."],
+            ].map(([title, desc]) => (
+              <div key={title} className="rounded-xl border border-[#c5a059]/25 bg-[#06201c] p-5">
+                <h3 className="font-semibold text-[#f7f2ea]">{title}</h3>
+                <p className="mt-2 text-xs leading-6 text-[#a3b8b0]">{desc}</p>
               </div>
             ))}
           </div>
-
-          {/* Social Proof Stats Bar */}
-          <div className="rounded-2xl border border-[#c5a059]/30 bg-[#031412] p-5 sm:p-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div>
-              <span className="block font-display text-2xl sm:text-3xl font-bold text-[#c5a059]">১২ মি.</span>
-              <span className="text-[11px] text-[#a3b8b0]">{bn ? "গড় কোটেশন এসএলএ" : "Average Quote SLA"}</span>
-            </div>
-            <div>
-              <span className="block font-display text-2xl sm:text-3xl font-bold text-emerald-400">৳০</span>
-              <span className="text-[11px] text-[#a3b8b0]">{bn ? "পাসপোর্ট নাম পেনাল্টি" : "Naming Discrepancy Fines"}</span>
-            </div>
-            <div>
-              <span className="block font-display text-2xl sm:text-3xl font-bold text-[#c5a059]">০%</span>
-              <span className="text-[11px] text-[#a3b8b0]">{bn ? "লুকানো নিজস্ব মার্কআপ" : "Hidden SAFARIA Markup"}</span>
-            </div>
-            <div>
-              <span className="block font-display text-2xl sm:text-3xl font-bold text-[#f7f2ea]">২৪/৭</span>
-              <span className="text-[11px] text-[#a3b8b0]">{bn ? "জরুরি রি-ইস্যু ও ওয়েভার" : "Emergency Flight Support"}</span>
-            </div>
-          </div>
+          <a href="#b2b-subscription-enquiry" className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#c5a059] px-5 py-3 text-sm font-bold text-[#031412]">
+            {bn ? "এজেন্সি আগ্রহ নিবন্ধন করুন" : "Register agency interest"}
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </a>
         </div>
       </section>
 
